@@ -1,0 +1,344 @@
+/* style.css */
+:root {
+  --primary-color: #dc3545; /* Red */
+  --secondary-color: #6c757d; /* Gray */
+  --light-color: #ffffff; /* White */
+  --dark-color: #343a40; /* Dark Gray */
+  --light-gray: #f8f9fa; /* Light Gray */
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: Arial, sans-serif;
+  line-height: 1.6;
+  color: var(--dark-color);
+  background-color: var(--light-color);
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+header {
+  padding: 20px 0;
+  border-bottom: 1px solid var(--secondary-color);
+  display: flex;
+  flex-direction: column;
+}
+
+.header-top {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.logo {
+  width: 100px;
+  height: auto;
+  margin-right: 20px;
+}
+
+.site-title {
+  font-size: 36px;
+  color: var(--primary-color);
+  text-transform: uppercase;
+  font-weight: bold;
+}
+
+nav {
+  display: flex;
+  gap: 20px;
+}
+
+nav a {
+  text-decoration: none;
+  color: var(--secondary-color);
+  font-weight: bold;
+  padding: 8px 15px;
+  border-radius: 4px;
+  transition: all 0.3s ease;
+}
+
+nav a:hover {
+  background-color: var(--primary-color);
+  color: var(--light-color);
+}
+
+nav a.active {
+  color: var(--light-color);
+  background-color: var(--primary-color);
+}
+
+main {
+  padding: 30px 0;
+  min-height: calc(100vh - 160px);
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: var(--primary-color);
+  margin-bottom: 20px;
+}
+
+.main-title {
+  text-align: center;
+  font-size: 36px;
+  color: #dc3545; /* Red instead of blue */
+  margin-bottom: 30px;
+  text-transform: uppercase;
+  font-weight: bold;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: bold;
+  color: var(--dark-color);
+}
+
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"] {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid var(--secondary-color);
+  border-radius: 4px;
+  font-size: 16px;
+}
+
+button {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+button:hover {
+  background-color: #c82333; /* Darker Red */
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 20px 0;
+}
+
+table th, table td {
+  padding: 10px;
+  text-align: left;
+  border-bottom: 1px solid var(--secondary-color);
+}
+
+table th {
+  background-color: var(--secondary-color);
+  color: var(--light-color);
+}
+
+table tr:nth-child(even) {
+  background-color: var(--light-gray);
+}
+
+.tournament-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  justify-content: space-between;
+}
+
+.region {
+  flex: 1;
+  min-width: 220px;
+  max-width: 24%;
+  border: 1px solid var(--secondary-color);
+  border-radius: 8px;
+  padding: 15px;
+  background-color: var(--light-gray);
+  margin-bottom: 20px;
+}
+
+.region-title {
+  text-align: center;
+  padding-bottom: 10px;
+  margin-bottom: 15px;
+  border-bottom: 2px solid #dc3545; /* Red instead of blue */
+  color: #dc3545; /* Red instead of blue */
+  font-weight: bold;
+}
+
+.team-row {
+  display: flex;
+  align-items: center;
+  padding: 8px;
+  border-bottom: 1px solid var(--light-gray);
+  transition: background-color 0.3s;
+}
+
+.seed {
+  width: 30px;
+  text-align: center;
+  font-weight: bold;
+}
+
+.team-logo {
+  width: 30px;
+  height: 30px;
+  margin: 0 10px;
+  object-fit: contain;
+}
+
+.team-name {
+  flex-grow: 1;
+}
+
+.team-button {
+  padding: 5px 10px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  background-color: var(--primary-color);
+  color: white;
+}
+
+.team-button.unpurchase {
+  background-color: var(--secondary-color);
+}
+
+.team-button.disabled {
+  background-color: var(--secondary-color);
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.selected {
+  background-color: rgba(220, 53, 69, 0.1);
+}
+
+.unaffordable {
+  background-color: rgba(108, 117, 125, 0.1);
+}
+
+.balance-display {
+  text-align: center;
+  font-size: 24px;
+  margin: 20px 0;
+  padding: 10px;
+  border-radius: 8px;
+  background-color: #f8f9fa; /* Light gray instead of light blue */
+  border: 2px solid #dc3545; /* Red border */
+  color: #dc3545;
+}
+
+.selected-teams {
+  margin-top: 30px;
+  padding: 20px;
+  border: 1px solid var(--secondary-color);
+  border-radius: 8px;
+  background-color: var(--light-gray);
+}
+
+.selected-team-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.selected-team-tag {
+  display: inline-flex;
+  align-items: center;
+  background-color: var(--light-gray);
+  padding: 5px 10px;
+  border-radius: 20px;
+  border: 1px solid var(--secondary-color);
+}
+
+.selected-team-logo {
+  width: 20px;
+  height: 20px;
+  margin-right: 5px;
+}
+
+.team-cost {
+  display: inline-block;
+  margin-left: 5px;
+  color: var(--secondary-color);
+  font-size: 0.9em;
+}
+
+.user-info-form {
+  max-width: 600px;
+  margin: 0 auto 30px;
+  padding: 20px;
+  background-color: #f8f9fa; /* Light gray instead of light blue */
+  border-radius: 8px;
+  border: 1px solid #6c757d; /* Gray border */
+}
+
+/* Replace any blue button styling */
+.edit-btn {
+  background-color: #6c757d; /* Gray instead of blue */
+  color: white;
+}
+
+.edit-btn:hover {
+  background-color: #5a6268; /* Darker gray */
+}
+
+/* Final Four section in tournament.html */
+.final-four-section {
+  margin: 40px 0;
+  border: 1px solid #dc3545; /* Red instead of blue */
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.final-four-title {
+  background-color: #dc3545; /* Red instead of blue */
+  color: white;
+  padding: 15px;
+  font-size: 28px;
+  text-align: center;
+}
+
+footer {
+  text-align: center;
+  padding: 20px 0;
+  color: var(--secondary-color);
+  border-top: 1px solid var(--secondary-color);
+}
+
+@media (max-width: 1200px) {
+  .region {
+    max-width: 48%;
+  }
+}
+
+@media (max-width: 768px) {
+  .region {
+    max-width: 100%;
+  }
+  
+  .form-row {
+    flex-direction: column;
+  }
+  
+  .header-top {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .logo {
+    margin-right: 0;
+    margin-bottom: 15px;
+  }
+}

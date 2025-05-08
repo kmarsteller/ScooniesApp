@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Scoonies - NCAA Tournament Team Selection</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        .tournament-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: space-between;
+        }
+        
+        .region {
+            flex: 1;
+            min-width: 220px;
+            max-width: 24%;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            background-color: #f9f9f9;
+            margin-bottom: 20px;
+        }
+        
+        .region-title {
+            text-align: center;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #dc3545;
+            color: #dc3545;
+            font-weight: bold;
+        }
+        
+        .team-row {
+            display: flex;
+            align-items: center;
+            padding: 8px;
+            border-bottom: 1px solid #eee;
+            transition: background-color 0.3s;
+        }
+        
+        .seed {
+            width: 30px;
+            text-align: center;
+            font-weight: bold;
+        }
+        
+        .team-logo {
+            width: 30px;
+            height: 30px;
+            margin: 0 10px;
+            object-fit: contain;
+        }
+        
+        .team-name {
+            flex-grow: 1;
+        }
+        
+        .team-button {
+            padding: 5px 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            background-color: #28a745;
+            color: white;
+        }
+        
+        .team-button.unpurchase {
+            background-color: #dc3545;
+        }
+        
+        .team-button.disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+        }
+        
+        .selected {
+            background-color: rgba(40, 167, 69, 0.2);
+        }
+        
+        .unaffordable {
+            background-color: rgba(108, 117, 125, 0.2);
+        }
+        
+        .balance-display {
+            text-align: center;
+            font-size: 24px;
+            margin: 20px 0;
+            padding: 10px;
+            border-radius: 8px;
+            background-color:#f8f9fa;
+            border: 2px solid #dc3545;
+        }
+        
+        .selected-teams {
+            margin-top: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background-color: #f9f9f9;
+        }
+        
+        .selected-team-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .selected-team-tag {
+            display: inline-flex;
+            align-items: center;
+            background-color: #e9ecef;
+            padding: 5px 10px;
+            border-radius: 20px;
+        }
+        
+        .selected-team-logo {
+            width: 20px;
+            height: 20px;
+            margin-right: 5px;
+        }
+        
+        .team-cost {
+            display: inline-block;
+            margin-left: 5px;
+            color: #6c757d;
+            font-size: 0.9em;
+        }
+        
+        .main-title {
+            text-align: center;
+            font-size: 36px;
+            color: #dc3545;
+            margin-bottom: 30px;
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+        
+        .user-info-form {
+            max-width: 600px;
+            margin: 0 auto 30px;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+        }
+        
+        .form-row {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .form-field {
+            flex: 1;
+        }
+        
+        @media (max-width: 1200px) {
+            .region {
+                max-width: 48%;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .region {
+                max-width: 100%;
+            }
+            
+            .form-row {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-top">
+            <img src="Scoonies.jpg" alt="The Scoonies Logo">
+        </div>
+        <nav>
+            <a href="/">About</a>
+            <a href="/submit.html" class="active">Make a Scoonie</a>
+            <a href="/standings.html">Standings</a>
+            <a href="/admin">Admin</a>
+        </nav>
+    </header>
+    
+    <main>        
+        <form id="entryForm">
+            <div class="user-info-form">
+                <h2>Entry Information</h2>
+                <div class="form-row">
+                    <div class="form-field">
+                        <label for="playerName">Your Name:</label>
+                        <input type="text" id="playerName" name="playerName" required>
+                    </div>
+                    <div class="form-field">
+                        <label for="nickname">Entry Nickname:</label>
+                        <input type="text" id="nickname" name="nickname" required>
+                    </div>
+                </div>
+                <div class="form-field">
+                    <label for="email">Email Address:</label>
+                    <input type="email" id="email" name="email" required>
+                </div>
+            </div>
+            
+            <div class="balance-display">
+                Points Remaining: <span id="balanceDisplay">200</span>
+            </div>
+            
+            <div class="tournament-container" id="tournamentContainer">
+                <!-- Regions will be loaded here dynamically -->
+                <div class="loading">Loading teams...</div>
+            </div>
+            
+            <div class="selected-teams">
+                <h2>Your Selected Teams</h2>
+                <div id="selectedTeamsList" class="selected-team-list">
+                    <p id="noTeamsMessage">No teams selected yet</p>
+                </div>
+            </div>
+            
+            <div style="text-align: center; margin-top: 30px;">
+                <button id="submitEntry" type="button">Submit Your Entry</button>
+            </div>
+        </form>
+        
+        <div id="message"></div>
+    </main>
+    
+    <footer>
+        <p>&copy; 2025 The Scoonies</p>
+    </footer>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Variables to track game state
+            let balance = 200;
+            let selectedTeams = [];
+            
+            // Calculate cost based on seed
+            function getTeamCost(seed) {
+                return Math.max(5, 80 - ((seed - 1) * 5));
+            }
+            
+            // Load teams from CSV
+            fetch('/teams.csv')
+                .then(response => response.text())
+                .then(data => {
+                    // Parse CSV
+                    const rows = data.split('\n').filter(row => row.trim());
+                    const headers = rows[0].split(',');
+                    const teamData = rows.slice(1).map(row => {
+                        const values = row.split(',');
+                        return {
+                            seed: parseInt(values[0]),
+                            logoUrl: values[1],
+                            teamName: values[2],
+                            region: values[3]
+                        };
+                    });
+                    
+                    // Group by region
+                    const regions = {};
+                    teamData.forEach(team => {
+                        if (!regions[team.region]) {
+                            regions[team.region] = [];
+                        }
+                        regions[team.region].push(team);
+                    });
+                    
+                    // Sort teams by seed within each region
+                    for (const region in regions) {
+                        regions[region].sort((a, b) => a.seed - b.seed);
+                    }
+                    
+                    // Clear loading message
+                    document.getElementById('tournamentContainer').innerHTML = '';
+                    
+                    // Create region columns - ensure 4 columns for four regions
+                    const sortedRegions = Object.keys(regions).sort(); // East, Midwest, South, West
+                    
+                    sortedRegions.forEach(region => {
+                        const regionDiv = document.createElement('div');
+                        regionDiv.className = 'region';
+                        
+                        const regionTitle = document.createElement('div');
+                        regionTitle.className = 'region-title';
+                        regionTitle.textContent = region + ' Region';
+                        regionDiv.appendChild(regionTitle);
+                        
+                        // Add teams to region
+                        regions[region].forEach(team => {
+                            const teamRow = document.createElement('div');
+                            teamRow.className = 'team-row';
+                            teamRow.dataset.seed = team.seed;
+                            teamRow.dataset.team = team.teamName;
+                            teamRow.dataset.region = team.region;
+                            teamRow.dataset.logo = team.logoUrl;
+                            teamRow.dataset.cost = getTeamCost(team.seed);
+                            
+                            const seed = document.createElement('div');
+                            seed.className = 'seed';
+                            seed.textContent = team.seed;
+                            
+                            const logo = document.createElement('img');
+                            logo.className = 'team-logo';
+                            logo.src = team.logoUrl;
+                            logo.alt = team.teamName + ' logo';
+                            
+                            const teamName = document.createElement('div');
+                            teamName.className = 'team-name';
+                            teamName.textContent = team.teamName;
+                            
+                            const cost = getTeamCost(team.seed);
+                            const affordable = cost <= balance;
+                            
+                            const button = document.createElement('button');
+                            button.className = affordable ? 'team-button' : 'team-button disabled';
+                            button.textContent = affordable ? `Purchase (${cost} pts)` : 'Can\'t Afford';
+                            
+                            if (affordable) {
+                                button.addEventListener('click', function() {
+                                    toggleTeamSelection(teamRow);
+                                });
+                            }
+                            
+                            teamRow.appendChild(seed);
+                            teamRow.appendChild(logo);
+                            teamRow.appendChild(teamName);
+                            teamRow.appendChild(button);
+                            
+                            if (!affordable) {
+                                teamRow.classList.add('unaffordable');
+                            }
+                            
+                            regionDiv.appendChild(teamRow);
+                        });
+                        
+                        document.getElementById('tournamentContainer').appendChild(regionDiv);
+                    });
+                    
+                    // Update all team rows' affordability
+                    updateAffordability();
+                })
+                .catch(error => {
+                    console.error('Error loading teams:', error);
+                    document.getElementById('tournamentContainer').innerHTML = 
+                        '<div class="error">Error loading teams. Please refresh the page or try again later.</div>';
+                });
+            
+            // Toggle team selection
+            function toggleTeamSelection(teamRow) {
+                const seed = parseInt(teamRow.dataset.seed);
+                const teamName = teamRow.dataset.team;
+                const region = teamRow.dataset.region;
+                const logo = teamRow.dataset.logo;
+                const cost = parseInt(teamRow.dataset.cost);
+                
+                const isSelected = teamRow.classList.contains('selected');
+                const button = teamRow.querySelector('.team-button');
+                
+                if (isSelected) {
+                    // Remove team from selection
+                    teamRow.classList.remove('selected');
+                    button.textContent = `Purchase (${cost} pts)`;
+                    button.classList.remove('unpurchase');
+                    
+                    // Update balance
+                    balance += cost;
+                    
+                    // Update selected teams array
+                    selectedTeams = selectedTeams.filter(team => 
+                        !(team.teamName === teamName && team.region === region));
+                } else {
+                    // Check if there's enough balance
+                    if (cost > balance) {
+                        // Don't use alert here, just prevent the action
+                        // and maybe show a status message instead
+                        showStatusMessage('Not enough points for this team!', 'error');
+                        return;
+                    }
+                    
+                    // Add team to selection
+                    teamRow.classList.add('selected');
+                    button.textContent = `Remove (${cost} pts)`;
+                    button.classList.add('unpurchase');
+                    
+                    // Update balance
+                    balance -= cost;
+                    
+                    // Add to selected teams array
+                    selectedTeams.push({
+                        seed,
+                        teamName,
+                        region,
+                        logo,
+                        cost
+                    });
+                }
+                
+                // Update balance display
+                document.getElementById('balanceDisplay').textContent = balance;
+                
+                // Update selected teams list
+                renderSelectedTeamsList();
+                
+                // Update affordability of all teams
+                updateAffordability();
+            }
+            
+            // Completely re-render the selected teams list
+            function renderSelectedTeamsList() {
+                const listElement = document.getElementById('selectedTeamsList');
+                
+                // Clear previous content
+                listElement.innerHTML = '';
+                
+                if (selectedTeams.length === 0) {
+                    // Show no teams message
+                    const noTeamsMessage = document.createElement('p');
+                    noTeamsMessage.id = 'noTeamsMessage';
+                    noTeamsMessage.textContent = 'No teams selected yet';
+                    listElement.appendChild(noTeamsMessage);
+                    return;
+                }
+                
+                // Sort by region and seed
+                const sortedTeams = [...selectedTeams].sort((a, b) => {
+                    if (a.region !== b.region) {
+                        return a.region.localeCompare(b.region);
+                    }
+                    return a.seed - b.seed;
+                });
+                
+                // Add each team to the list
+                sortedTeams.forEach(team => {
+                    const teamTag = document.createElement('div');
+                    teamTag.className = 'selected-team-tag';
+                    
+                    const logoImg = document.createElement('img');
+                    logoImg.className = 'selected-team-logo';
+                    logoImg.src = team.logo;
+                    logoImg.alt = team.teamName;
+                    
+                    const teamText = document.createElement('span');
+                    teamText.textContent = `#${team.seed} ${team.teamName} - ${team.region}`;
+                    
+                    const costSpan = document.createElement('span');
+                    costSpan.className = 'team-cost';
+                    costSpan.textContent = `(${team.cost} pts)`;
+                    
+                    teamTag.appendChild(logoImg);
+                    teamTag.appendChild(teamText);
+                    teamTag.appendChild(costSpan);
+                    
+                    listElement.appendChild(teamTag);
+                });
+            }
+            
+            // Update affordability of all teams
+            function updateAffordability() {
+                const teamRows = document.querySelectorAll('.team-row');
+                
+                teamRows.forEach(row => {
+                    if (row.classList.contains('selected')) {
+                        return; // Skip already selected teams
+                    }
+                    
+                    const cost = parseInt(row.dataset.cost);
+                    const button = row.querySelector('.team-button');
+                    
+                    if (cost > balance) {
+                        row.classList.add('unaffordable');
+                        button.textContent = 'Can\'t Afford';
+                        button.classList.add('disabled');
+                        button.disabled = true;
+                    } else {
+                        row.classList.remove('unaffordable');
+                        button.textContent = `Purchase (${cost} pts)`;
+                        button.classList.remove('disabled');
+                        button.disabled = false;
+                    }
+                });
+            }
+            
+            // Add this function to show status messages instead of alerts
+            function showStatusMessage(message, type) {
+                const messageDiv = document.getElementById('message');
+                if (!messageDiv) return;
+                
+                messageDiv.textContent = message;
+                messageDiv.className = type;
+                
+                // Clear message after a delay
+                setTimeout(() => {
+                    messageDiv.textContent = '';
+                    messageDiv.className = '';
+                }, 3000);
+            }
+            
+            // Handle submit button click
+            document.getElementById('submitEntry').addEventListener('click', function() {
+                // Trigger the form submission
+                handleFormSubmission();
+            });
+            
+            // Handle form submission
+            function handleFormSubmission() {
+                // Only validate form fields when submit is explicitly clicked
+                const playerName = document.getElementById('playerName').value.trim();
+                const nickname = document.getElementById('nickname').value.trim();
+                const email = document.getElementById('email').value.trim();
+                
+                // Validate form fields
+                if (!playerName || !nickname || !email) {
+                    alert('Please fill in all required fields: Name, Nickname, and Email');
+                    return;
+                }
+                
+                // Calculate total points spent
+                const pointsSpent = selectedTeams.reduce((sum, team) => sum + team.cost, 0);
+                const startingPoints = 200;
+                
+                // Enforce exactly 200 points spent - only at submission time
+                if (pointsSpent !== startingPoints) {
+                    alert(`You must spend exactly 200 points. Currently you've spent ${pointsSpent} points.`);
+                    return;
+                }
+                
+                if (selectedTeams.length === 0) {
+                    alert('Please select at least one team before submitting.');
+                    return;
+                }
+                
+                // Prepare data for submission
+                const formData = {
+                    playerName,
+                    nickname,
+                    email,
+                    selectedTeams
+                };
+                
+                // Submit entry to server
+                fetch('/api/entries', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData),
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(err => {
+                            throw new Error(err.error || 'Network response was not ok');
+                        });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // Show success message
+                    const messageDiv = document.getElementById('message');
+                    messageDiv.textContent = data.message || 'Entry submitted successfully!';
+                    messageDiv.className = 'success';
+                    
+                    // Disable the form after submission
+                    document.getElementById('submitEntry').disabled = true;
+                    document.getElementById('playerName').disabled = true;
+                    document.getElementById('nickname').disabled = true;
+                    document.getElementById('email').disabled = true;
+                    
+                    // Disable all team buttons
+                    document.querySelectorAll('.team-button').forEach(button => {
+                        button.disabled = true;
+                    });
+                    
+                    // Optionally, redirect to standings
+                    setTimeout(() => {
+                        window.location.href = '/standings.html';
+                    }, 3000);
+                })
+                .catch(error => {
+                    console.error('Error submitting entry:', error);
+                    const messageDiv = document.getElementById('message');
+                    messageDiv.textContent = error.message || 'Error submitting entry. Please try again.';
+                    messageDiv.className = 'error';
+                });
+            }
+        });
+    </script>
+</body>
+</html>

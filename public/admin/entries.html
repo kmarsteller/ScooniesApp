@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Scoonies - Manage Entries</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        .main-title {
+            text-align: center;
+            font-size: 36px;
+            color: #dc3545;
+            margin-bottom: 30px;
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+        
+        .admin-nav {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 30px;
+            gap: 20px;
+        }
+        
+        .admin-nav a {
+            padding: 10px 20px;
+            background-color: #f8f9fa;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            text-decoration: none;
+            color: #333;
+        }
+        
+        .admin-nav a.active {
+            background-color: #dc3545;
+            color: white;
+            border-color: #dc3545;
+        }
+        
+        .entries-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            font-size: 14px;
+        }
+        
+        .entries-table th, 
+        .entries-table td {
+            padding: 10px;
+            border: 1px solid #ddd;
+            vertical-align: top;
+        }
+        
+        .entries-table th {
+            background-color: #f8f9fa;
+            text-align: left;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        
+        .entries-table tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        
+        .entries-table tr:hover {
+            background-color: #f0f0f0;
+        }
+        
+        .delete-btn, .edit-btn {
+            padding: 5px 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 2px;
+        }
+        
+        .delete-btn {
+            background-color: #dc3545;
+            color: white;
+        }
+        
+        .edit-btn {
+            background-color: #dc3545;
+            color: white;
+        }
+        
+        .delete-btn:hover {
+            background-color: #c82333;
+        }
+        
+        .edit-btn:hover {
+            background-color: #0069d9;
+        }
+        
+        .status-message {
+            text-align: center;
+            margin: 20px 0;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        
+        .status-message.success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        
+        .status-message.error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        
+        .no-entries {
+            text-align: center;
+            padding: 30px;
+            font-style: italic;
+            color: #6c757d;
+        }
+        
+        .team-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+        
+        .team-item {
+            display: flex;
+            align-items: center;
+            padding: 3px 6px;
+            background-color: #f0f0f0;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        
+        .team-seed {
+            font-weight: bold;
+            margin-right: 3px;
+        }
+        
+        .team-logo {
+            width: 16px;
+            height: 16px;
+            margin-right: 3px;
+        }
+        
+        .region-label {
+            color: #6c757d;
+            font-size: 11px;
+            margin-left: 3px;
+        }
+        
+        .edit-form {
+            display: none;
+            background: white;
+            border: 1px solid #ddd;
+            padding: 15px;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1000;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            max-width: 500px;
+            width: 80%;
+        }
+        
+        .edit-form h3 {
+            margin-top: 0;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+        
+        .edit-form-field {
+            margin-bottom: 15px;
+        }
+        
+        .edit-form-field label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        
+        .edit-form-field input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        
+        .edit-form-buttons {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0,0,0,0.5);
+            z-index: 999;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-top">
+            <img src="../Scoonies.jpg" alt="The Scoonies Logo">
+        </div>
+        <nav>
+            <a href="/">About</a>
+            <a href="/submit.html">Make a Scoonie</a>
+            <a href="/standings.html">Standings</a>
+            <a href="/admin" class="active">Admin</a>
+        </nav>
+    </header>
+    
+    <main>
+        <h1 class="main-title">The Scoonies - Manage Entries</h1>
+        
+        <div class="admin-nav">
+            <a href="/admin/tournament">Tournament Bracket</a>
+            <a href="/admin/entries" class="active">Manage Entries</a>
+        </div>
+        
+        <div id="statusMessage" class="status-message"></div>
+        
+        <div id="entriesContainer">
+            <div class="loading">Loading entries...</div>
+        </div>
+        
+        <!-- Edit Entry Form -->
+        <div id="overlay" class="overlay"></div>
+        <div id="editForm" class="edit-form">
+            <h3>Edit Entry</h3>
+            <form id="entryEditForm">
+                <input type="hidden" id="editEntryId" name="editEntryId">
+                
+                <div class="edit-form-field">
+                    <label for="editPlayerName">Player Name:</label>
+                    <input type="text" id="editPlayerName" name="editPlayerName" required>
+                </div>
+                
+                <div class="edit-form-field">
+                    <label for="editNickname">Nickname:</label>
+                    <input type="text" id="editNickname" name="editNickname" required>
+                </div>
+                
+                <div class="edit-form-field">
+                    <label for="editEmail">Email:</label>
+                    <input type="email" id="editEmail" name="editEmail" required>
+                </div>
+                
+                <div class="edit-form-buttons">
+                    <button type="button" id="cancelEditBtn" class="delete-btn">Cancel</button>
+                    <button type="submit" id="saveEditBtn" class="edit-btn">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </main>
+    
+    <footer>
+        <p>&copy; 2025 The Scoonies NCAA Tournament Selection Game</p>
+    </footer>
+    
+    <script>
+        console.log('Entries page loading...');
+
+        let retryCount = 0;
+        const MAX_RETRIES = 3;
+
+        function loadEntriesWithRetry() {
+            retryCount = 0;
+            loadEntries();
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Load entries
+            loadEntries();
+            
+            // Setup form event listeners
+            setupEditForm();
+        });
+        
+        // Load entries
+        function loadEntries() {    
+            console.log(`Attempt ${retryCount + 1} of ${MAX_RETRIES + 1} to load entries...`);
+
+            // Show loading indicator to user
+            document.getElementById('entriesContainer').innerHTML = '<div class="loading">Loading entries...</div>';
+            
+            fetch('/api/admin/entries')
+                .then(response => {
+                    console.log('Response status:', response.status);
+                    
+                    // Clone the response to inspect its content
+                    const clonedResponse = response.clone();
+                    
+                    clonedResponse.text().then(text => {
+                        console.log('Response length:', text.length);
+                        console.log('Response preview:', text.substring(0, 100) + '...');
+                        
+                        // Check if response seems empty
+                        if (text.trim() === '' || text.trim() === '{}' || text.trim() === '{"entries":[]}') {
+                            console.error('Empty response received');
+                            document.getElementById('entriesContainer').innerHTML = 
+                                '<div class="error">Empty response received. Trying again in 5 seconds...</div>';
+                            
+                            // Auto-retry after delay
+                            setTimeout(loadEntries, 5000);
+                            return;
+                        }
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error('Failed to load entries: ' + response.status);
+                    }
+                    
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Entries data received:', data ? 'yes' : 'no');
+                    console.log('Number of entries:', data?.entries?.length || 0);
+                    
+                    if (!data || !data.entries) {
+                        throw new Error('Invalid data format received');
+                    }
+                    
+                    renderEntries(data.entries);
+                })
+                .catch(error => {
+                    console.error('Error loading entries:', error);
+                    document.getElementById('entriesContainer').innerHTML = 
+                        `<div class="error">Error loading entries: ${error.message}. <button id="retryBtn">Retry</button></div>`;
+                        
+                    document.getElementById('retryBtn').addEventListener('click', loadEntries);
+                });
+        }
+        
+        // Fallback: load entries from standings endpoint
+        function loadEntriesFromStandings() {
+            console.log('Attempting to load entries from standings endpoint...');
+            
+            fetch('/api/standings')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Failed to load standings data');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Standings data:', data);
+                    renderEntries(data.entries || []);
+                })
+                .catch(error => {
+                    console.error('Error loading standings data:', error);
+                    document.getElementById('entriesContainer').innerHTML = 
+                        `<div class="error">Error loading entries from standings: ${error.message}.</div>`;
+                });
+        }
+        
+        // Render entries table
+        function renderEntries(entries) {
+            const container = document.getElementById('entriesContainer');
+            
+            if (!entries || entries.length === 0) {
+                container.innerHTML = '<div class="no-entries">No entries found</div>';
+                return;
+            }
+            
+            // Create table
+            const table = document.createElement('table');
+            table.className = 'entries-table';
+            
+            // Create header
+            const thead = document.createElement('thead');
+            const headerRow = document.createElement('tr');
+            
+            const headers = ['ID', 'Nickname', 'Player Name', 'Email', 'Score', 'Submission Date', 'Teams', 'Actions'];
+            
+            headers.forEach(header => {
+                const th = document.createElement('th');
+                th.textContent = header;
+                headerRow.appendChild(th);
+            });
+            
+            thead.appendChild(headerRow);
+            table.appendChild(thead);
+            
+            // Create body
+            const tbody = document.createElement('tbody');
+            
+            entries.forEach(entry => {
+                const row = document.createElement('tr');
+                
+                // ID
+                const idCell = document.createElement('td');
+                idCell.textContent = entry.id;
+                row.appendChild(idCell);
+                
+                // Nickname
+                const nicknameCell = document.createElement('td');
+                nicknameCell.textContent = entry.nickname;
+                row.appendChild(nicknameCell);
+                
+                // Player Name
+                const nameCell = document.createElement('td');
+                nameCell.textContent = entry.player_name;
+                row.appendChild(nameCell);
+                
+                // Email
+                const emailCell = document.createElement('td');
+                emailCell.textContent = entry.email;
+                row.appendChild(emailCell);
+                
+                // Score
+                const scoreCell = document.createElement('td');
+                scoreCell.textContent = entry.score;
+                row.appendChild(scoreCell);
+                
+                // Submission Date
+                const dateCell = document.createElement('td');
+                const date = new Date(entry.submission_date);
+                dateCell.textContent = date.toLocaleString();
+                row.appendChild(dateCell);
+                
+                // Teams
+                const teamsCell = document.createElement('td');
+                
+                if (entry.teams && entry.teams.length > 0) {
+                    const teamList = document.createElement('div');
+                    teamList.className = 'team-list';
+                    
+                    // Sort teams by region and seed
+                    const sortedTeams = [...entry.teams].sort((a, b) => {
+                        if (a.region !== b.region) {
+                            return a.region.localeCompare(b.region);
+                        }
+                        return a.seed - b.seed;
+                    });
+                    
+                    sortedTeams.forEach(team => {
+                        const teamItem = document.createElement('div');
+                        teamItem.className = 'team-item';
+                        
+                        // Add strikethrough if eliminated
+                        if (team.is_eliminated) {
+                            teamItem.style.textDecoration = 'line-through';
+                            teamItem.style.color = '#999';
+                        }
+                        
+                        const seedSpan = document.createElement('span');
+                        seedSpan.className = 'team-seed';
+                        seedSpan.textContent = `#${team.seed}`;
+                        
+                        const logoImg = document.createElement('img');
+                        logoImg.className = 'team-logo';
+                        logoImg.src = `/images/logos/${team.team_name.toLowerCase().replace(/[^a-z0-9]/g, '-')}.png`;
+                        logoImg.alt = team.team_name;
+                        logoImg.onerror = function() {
+                            this.src = 'https://a.espncdn.com/combiner/i?img=/i/teamlogos/ncaa/500/'+team.id+'.png';
+                            this.onerror = function() {
+                                this.src = '/images/generic-team-logo.png';
+                                this.onerror = null;
+                            };
+                        };
+                        
+                        const nameSpan = document.createElement('span');
+                        nameSpan.textContent = team.team_name;
+                        
+                        const regionSpan = document.createElement('span');
+                        regionSpan.className = 'region-label';
+                        regionSpan.textContent = `(${team.region})`;
+                        
+                        teamItem.appendChild(seedSpan);
+                        teamItem.appendChild(logoImg);
+                        teamItem.appendChild(nameSpan);
+                        teamItem.appendChild(regionSpan);
+                        
+                        teamList.appendChild(teamItem);
+                    });
+                    
+                    teamsCell.appendChild(teamList);
+                } else {
+                    teamsCell.textContent = 'No teams';
+                }
+                
+                row.appendChild(teamsCell);
+                
+                // Actions
+                const actionsCell = document.createElement('td');
+                
+                // Edit button
+                const editBtn = document.createElement('button');
+                editBtn.className = 'edit-btn';
+                editBtn.textContent = 'Edit';
+                editBtn.dataset.entryId = entry.id;
+                editBtn.dataset.playerName = entry.player_name;
+                editBtn.dataset.nickname = entry.nickname;
+                editBtn.dataset.email = entry.email;
+                editBtn.addEventListener('click', function() {
+                    showEditForm(entry);
+                });
+                
+                // Delete button
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'delete-btn';
+                deleteBtn.textContent = 'Delete';
+                deleteBtn.dataset.entryId = entry.id;
+                deleteBtn.addEventListener('click', function() {
+                    if (confirm(`Are you sure you want to delete the entry "${entry.nickname}" by ${entry.player_name}?`)) {
+                        deleteEntry(entry.id);
+                    }
+                });
+                
+                actionsCell.appendChild(editBtn);
+                actionsCell.appendChild(deleteBtn);
+                row.appendChild(actionsCell);
+                
+                tbody.appendChild(row);
+            });
+            
+            table.appendChild(tbody);
+            container.innerHTML = '';
+            container.appendChild(table);
+        }
+        
+        // Delete an entry
+        function deleteEntry(entryId) {
+            console.log(`Attempting to delete entry ${entryId}...`);
+            
+            fetch(`/api/admin/entry/${entryId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            })
+            .then(response => {
+                console.log(`Delete response status: ${response.status}`);
+                
+                if (!response.ok) {
+                    return response.json().then(err => {
+                        throw new Error(err.error || `Failed to delete entry: ${response.status}`);
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Delete successful:', data);
+                showStatusMessage('Entry deleted successfully', 'success');
+                // Reload entries
+                loadEntries();
+            })
+            .catch(error => {
+                console.error('Error deleting entry:', error);
+                showStatusMessage(`Error deleting entry: ${error.message}. Please try again.`, 'error');
+            });
+        }
+
+        
+        // Setup edit form event listeners
+        function setupEditForm() {
+            const overlay = document.getElementById('overlay');
+            const editForm = document.getElementById('editForm');
+            const cancelBtn = document.getElementById('cancelEditBtn');
+            const editFormElement = document.getElementById('entryEditForm');
+            
+            // Cancel button closes the form
+            cancelBtn.addEventListener('click', function() {
+                closeEditForm();
+            });
+            
+            // Click outside the form closes it
+            overlay.addEventListener('click', function() {
+                closeEditForm();
+            });
+            
+            // Handle form submission
+            editFormElement.addEventListener('submit', function(event) {
+                event.preventDefault();
+                
+                const entryId = document.getElementById('editEntryId').value;
+                const playerName = document.getElementById('editPlayerName').value.trim();
+                const nickname = document.getElementById('editNickname').value.trim();
+                const email = document.getElementById('editEmail').value.trim();
+                
+                if (!playerName || !nickname || !email) {
+                    alert('Please fill in all fields');
+                    return;
+                }
+                
+                updateEntry(entryId, {
+                    player_name: playerName,
+                    nickname: nickname,
+                    email: email
+                });
+            });
+        }
+        
+        // Show edit form
+        function showEditForm(entry) {
+            document.getElementById('editEntryId').value = entry.id;
+            document.getElementById('editPlayerName').value = entry.player_name;
+            document.getElementById('editNickname').value = entry.nickname;
+            document.getElementById('editEmail').value = entry.email;
+            
+            document.getElementById('overlay').style.display = 'block';
+            document.getElementById('editForm').style.display = 'block';
+        }
+        
+        // Close edit form
+        function closeEditForm() {
+            document.getElementById('overlay').style.display = 'none';
+            document.getElementById('editForm').style.display = 'none';
+        }
+        
+       // Update entry
+        function updateEntry(entryId, data) {
+            console.log(`Attempting to update entry ${entryId}...`, data);
+            
+            fetch(`/api/admin/entry/${entryId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data),
+            })
+            .then(response => {
+                console.log(`Update response status: ${response.status}`);
+                
+                if (!response.ok) {
+                    return response.json().then(err => {
+                        throw new Error(err.error || `Failed to update entry: ${response.status}`);
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Update successful:', data);
+                showStatusMessage('Entry updated successfully', 'success');
+                closeEditForm();
+                // Reload entries
+                loadEntries();
+            })
+            .catch(error => {
+                console.error('Error updating entry:', error);
+                showStatusMessage(`Error updating entry: ${error.message}. Please try again.`, 'error');
+            });
+        }
+        
+        // Show status message
+        function showStatusMessage(message, type) {
+            const statusDiv = document.getElementById('statusMessage');
+            statusDiv.textContent = message;
+            statusDiv.className = `status-message ${type}`;
+            
+            // Clear message after a delay
+            setTimeout(() => {
+                statusDiv.textContent = '';
+                statusDiv.className = 'status-message';
+            }, 5000);
+        }
+    </script>
+</body>
+</html>

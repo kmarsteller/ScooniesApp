@@ -1,0 +1,330 @@
+<!-- standings.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Scoonies - Tournament Standings</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        .main-title {
+            text-align: center;
+            font-size: 36px;
+            color: #dc3545;
+            margin-bottom: 30px;
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+        
+        .standings-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .standings-filter {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 20px;
+            gap: 10px;
+        }
+        
+        .entry-card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+        
+        .entry-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .entry-rank {
+            font-size: 28px;
+            font-weight: bold;
+            color: #dc3545;
+            padding: 0 15px;
+            min-width: 80px;
+            text-align: center;
+        }
+        
+        .entry-info {
+            flex-grow: 1;
+        }
+        
+        .entry-nickname {
+            font-size: 20px;
+            font-weight: bold;
+        }
+        
+        .entry-player {
+            font-size: 14px;
+            color: #6c757d;
+        }
+        
+        .entry-score {
+            font-size: 24px;
+            font-weight: bold;
+            background-color: #dc3545;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 4px;
+        }
+        
+        .entry-teams {
+            padding: 15px;
+        }
+        
+        .team-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .team-item {
+            display: flex;
+            align-items: center;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: #f8f9fa;
+        }
+        
+        .team-item.eliminated {
+            text-decoration: line-through;
+            color: #999;
+            background-color: #f1f1f1;
+        }
+        
+        .team-seed {
+            min-width: 25px;
+            font-weight: bold;
+            margin-right: 5px;
+        }
+        
+        .team-logo {
+            width: 25px;
+            height: 25px;
+            margin-right: 8px;
+        }
+        
+        .team-region {
+            color: #6c757d;
+            font-size: 0.9em;
+            margin-left: 5px;
+        }
+        
+        .team-points {
+            margin-left: 8px;
+            font-weight: bold;
+            color: #28a745;
+        }
+        
+        .no-entries-message {
+            text-align: center;
+            padding: 40px;
+            color: #6c757d;
+            font-style: italic;
+        }
+        
+        .loading-message {
+            text-align: center;
+            padding: 40px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-top">
+            <img src="Scoonies.jpg" alt="The Scoonies Logo">
+        </div>
+        <nav>
+            <a href="/">About</a>
+            <a href="/submit.html">Make a Scoonie</a>
+            <a href="/standings.html" class="active">Standings</a>
+            <a href="/admin">Admin</a>
+        </nav>
+    </header>
+    
+    <main>
+        <h1 class="main-title">Standings</h1>
+        
+        <div class="standings-container">
+            <div class="standings-filter">
+                <button id="refreshBtn" class="action-button">Refresh Standings</button>
+            </div>
+            
+            <div id="standingsContent" class="standings-content">
+                <div class="loading-message">Loading standings...</div>
+            </div>
+        </div>
+    </main>
+    
+    <footer>
+        <p>&copy; 2026 The Scoonies</p>
+    </footer>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Load standings data
+            loadStandings();
+            
+            // Refresh button
+            document.getElementById('refreshBtn').addEventListener('click', loadStandings);
+        });
+        
+        // Load standings from the server
+        function loadStandings() {
+            fetch('/api/standings')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Failed to load standings');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    renderStandings(data);
+                })
+                .catch(error => {
+                    console.error('Error loading standings:', error);
+                    document.getElementById('standingsContent').innerHTML = 
+                        '<div class="error">Error loading standings. Please try again later.</div>';
+                });
+        }
+        
+        // Render standings
+        function renderStandings(data) {
+            const standingsContent = document.getElementById('standingsContent');
+            
+            // Sort entries by score (highest first)
+            const sortedEntries = data.entries.sort((a, b) => b.score - a.score);
+            
+            if (sortedEntries.length === 0) {
+                standingsContent.innerHTML = '<div class="no-entries-message">No entries yet. Be the first to submit!</div>';
+                return;
+            }
+            
+            // Clear previous content
+            standingsContent.innerHTML = '';
+            
+            // Create entry cards
+            sortedEntries.forEach((entry, index) => {
+                const entryCard = document.createElement('div');
+                entryCard.className = 'entry-card';
+                
+                // Entry header
+                const entryHeader = document.createElement('div');
+                entryHeader.className = 'entry-header';
+                
+                const entryRank = document.createElement('div');
+                entryRank.className = 'entry-rank';
+                entryRank.textContent = `#${index + 1}`;
+                
+                const entryInfo = document.createElement('div');
+                entryInfo.className = 'entry-info';
+                
+                const entryNickname = document.createElement('div');
+                entryNickname.className = 'entry-nickname';
+                entryNickname.textContent = entry.nickname;
+                
+                const entryPlayer = document.createElement('div');
+                entryPlayer.className = 'entry-player';
+                entryPlayer.textContent = `${entry.player_name} (${entry.email})`;
+                
+                entryInfo.appendChild(entryNickname);
+                entryInfo.appendChild(entryPlayer);
+                
+                const entryScore = document.createElement('div');
+                entryScore.className = 'entry-score';
+                entryScore.textContent = `${entry.score} pts`;
+                
+                entryHeader.appendChild(entryRank);
+                entryHeader.appendChild(entryInfo);
+                entryHeader.appendChild(entryScore);
+                
+                // Entry teams
+                const entryTeams = document.createElement('div');
+                entryTeams.className = 'entry-teams';
+                
+                const teamList = document.createElement('div');
+                teamList.className = 'team-list';
+                
+                // Sort teams by region and seed
+                const sortedTeams = entry.teams.sort((a, b) => {
+                    if (a.region !== b.region) {
+                        return a.region.localeCompare(b.region);
+                    }
+                    return a.seed - b.seed;
+                });
+                
+                // Add team items
+                sortedTeams.forEach(team => {
+                    const teamItem = document.createElement('div');
+                    teamItem.className = 'team-item';
+                    
+                    if (team.is_eliminated) {
+                        teamItem.classList.add('eliminated');
+                    }
+                    
+                    const seedSpan = document.createElement('span');
+                    seedSpan.className = 'team-seed';
+                    seedSpan.textContent = `#${team.seed}`;
+                    
+                    const logoImg = document.createElement('img');
+                    logoImg.className = 'team-logo';
+                    //logoImg.src = team.logo_url;
+                    logoImg.alt = team.team_name;
+                  /*  logoImg.onerror = function() {
+                        // Fallback if logo can't be found
+                        this.src = '/images/generic-team-logo.png';
+                        this.onerror = null;
+                    };
+                    */
+                    logoImg.src = `/images/logos/${team.team_name.toLowerCase().replace(/[^a-z0-9]/g, '-')}.png`;
+                    logoImg.onerror = function() {
+                        // Fallback to remote URL if local file doesn't exist
+                        this.src = team.logo_url;
+                        // If that fails too, use a generic logo
+                        this.onerror = function() {
+                            this.src = '/images/generic-team-logo.png';
+                            this.onerror = null;
+                        };
+                    };
+                    const nameSpan = document.createElement('span');
+                    nameSpan.textContent = team.team_name;
+                    
+                    const regionSpan = document.createElement('span');
+                    regionSpan.className = 'team-region';
+                    regionSpan.textContent = `(${team.region})`;
+                    
+                    const pointsSpan = document.createElement('span');
+                    pointsSpan.className = 'team-points';
+                    pointsSpan.textContent = `[${team.points_earned} pts]`;
+                    
+                    teamItem.appendChild(seedSpan);
+                    teamItem.appendChild(logoImg);
+                    teamItem.appendChild(nameSpan);
+                    teamItem.appendChild(regionSpan);
+                    teamItem.appendChild(pointsSpan);
+                    
+                    teamList.appendChild(teamItem);
+                });
+                
+                entryTeams.appendChild(teamList);
+                
+                // Add all elements to the card
+                entryCard.appendChild(entryHeader);
+                entryCard.appendChild(entryTeams);
+                
+                // Add card to standings content
+                standingsContent.appendChild(entryCard);
+            });
+        }
+    </script>
+</body>
+</html>

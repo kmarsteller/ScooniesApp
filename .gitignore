@@ -1,0 +1,16 @@
+# Operating System files
+**/.DS_Store
+
+# Log files
+
+# Dependencies for Node.js
+node_modules/
+
+# SQLite3-related 
+db/game.db
+
+# Build artifacts
+
+# Environment files
+
+# IDE-specific files
