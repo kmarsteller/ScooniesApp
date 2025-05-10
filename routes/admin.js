@@ -13,7 +13,6 @@ router.get('/tournament', (req, res) => {
     });
 });
 
-// Add this near the top of routes/admin.js
 // Admin login
 router.post('/login', (req, res) => {
     const { username, password } = req.body;
@@ -91,7 +90,6 @@ router.put('/entry/:id', (req, res) => {
 });
 
 // Get all entries (for admin panel)
-// In routes/admin.js, ensure this route is defined and working
 router.get('/entries', (req, res) => {
     console.log('GET /api/admin/entries endpoint called at', new Date().toISOString());
     
@@ -148,6 +146,7 @@ router.get('/entries', (req, res) => {
         res.status(500).json({ error: 'Database error: ' + err.message, entries: [] });
     });
 });
+
 // Advance a team to the next round
 router.post('/advance-team', (req, res) => {
     const { winnerId, loserId, toRound } = req.body;
@@ -240,9 +239,9 @@ router.post('/advance-to-final', (req, res) => {
     db.serialize(() => {
         db.run('BEGIN TRANSACTION');
         
-        // Update winner
+        // Update winner - set both is_finalist and round_reached to 6
         db.run(
-            'UPDATE tournament_progress SET is_finalist = 1 WHERE id = ?',
+            'UPDATE tournament_progress SET is_finalist = 1, round_reached = 6 WHERE id = ?',
             [winnerId],
             err => {
                 if (err) {
@@ -290,9 +289,9 @@ router.post('/declare-champion', (req, res) => {
     db.serialize(() => {
         db.run('BEGIN TRANSACTION');
         
-        // Update winner as champion
+        // Update winner as champion - also set round_reached to 7
         db.run(
-            'UPDATE tournament_progress SET is_champion = 1 WHERE id = ?',
+            'UPDATE tournament_progress SET is_champion = 1, round_reached = 7 WHERE id = ?',
             [winnerId],
             err => {
                 if (err) {
@@ -357,34 +356,47 @@ router.post('/update-scores', (req, res) => {
                 let errorOccurred = false;
                 
                 teams.forEach(team => {
+                    // Skip teams that lost in the first round
                     if (team.is_eliminated && team.round_reached === 1) {
-                        // Team lost in first round, no points
                         return;
                     }
                     
-                    // Calculate points based on seed and round reached
+                    // Calculate points for this team
                     let points = 0;
-
-                    // Base points: Seed × Round for each round
-                    // For example, if a team reaches Round 3 (Sweet 16), they should get:
-                    // Seed × 1 (for winning Round 1)
-                    // + Seed × 2 (for winning Round 2)
-                    // + Seed × 3 (for winning Round 3)
-                    for (let i = 2; i <= team.round_reached; i++) {
-                        points += team.seed * (i - 1);
+                    const seed = team.seed;
+                    
+                    // Base case - team won at least 1 game (reached Round of 32)
+                    if (team.round_reached >= 2) {
+                        // Round of 32 points
+                        points += seed * 1;
                     }
-
-                    // Bonus points remain the same
-                    if (team.is_final_four) {
-                        points += 5; // Final Four bonus
+                    
+                    // Team reached Sweet 16
+                    if (team.round_reached >= 3) {
+                        points += seed * 2;
                     }
-
-                    if (team.is_finalist) {
-                        points += 10; // Championship game bonus
+                    
+                    // Team reached Elite 8
+                    if (team.round_reached >= 4) {
+                        points += seed * 3;
                     }
-
-                    if (team.is_champion) {
-                        points += 15; // Champion bonus
+                    
+                    // Team reached Final Four
+                    if (team.round_reached >= 5 || team.is_final_four) {
+                        points += seed * 4; // Points for winning Elite 8
+                        points += 5;        // Final Four bonus
+                    }
+                    
+                    // Team reached Championship Game
+                    if (team.round_reached >= 6 || team.is_finalist) {
+                        points += seed * 5; // Points for winning Final Four
+                        points += 10;       // Championship bonus
+                    }
+                    
+                    // Team won Championship
+                    if (team.round_reached >= 7 || team.is_champion) {
+                        points += seed * 6; // Points for winning Championship
+                        points += 15;       // Champion bonus
                     }
                     
                     // Update points for all entries that selected this team
@@ -554,6 +566,8 @@ router.post('/reset-tournament', (req, res) => {
             }
         );
     });
+});
+
 // Delete an entry
 router.delete('/entry/:id', (req, res) => {
     const entryId = req.params.id;
@@ -610,8 +624,4 @@ router.delete('/entry/:id', (req, res) => {
     });
 });
 
-
-});
-
-// Make sure to export the router
 module.exports = router;

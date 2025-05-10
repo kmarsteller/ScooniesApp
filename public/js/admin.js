@@ -1,3 +1,4 @@
+
 // Update scores based on NCAA tournament results
 router.post('/update-scores', (req, res) => {
     // In a real app, verify admin JWT token here
@@ -89,4 +90,4 @@ router.post('/update-scores', (req, res) => {
             });
         });
     });
-});	
+}); 

@@ -241,6 +241,37 @@
             let balance = 200;
             let selectedTeams = [];
             
+            // Save form inputs on focus out/blur to prevent loss
+            const playerNameInput = document.getElementById('playerName');
+            const nicknameInput = document.getElementById('nickname');
+            const emailInput = document.getElementById('email');
+            
+            // Add change/input event handlers to save values in session storage
+            playerNameInput.addEventListener('input', function() {
+                sessionStorage.setItem('scoonies_playerName', this.value);
+            });
+            
+            nicknameInput.addEventListener('input', function() {
+                sessionStorage.setItem('scoonies_nickname', this.value);
+            });
+            
+            emailInput.addEventListener('input', function() {
+                sessionStorage.setItem('scoonies_email', this.value);
+            });
+            
+            // Restore values on page load if they exist
+            if (sessionStorage.getItem('scoonies_playerName')) {
+                playerNameInput.value = sessionStorage.getItem('scoonies_playerName');
+            }
+            
+            if (sessionStorage.getItem('scoonies_nickname')) {
+                nicknameInput.value = sessionStorage.getItem('scoonies_nickname');
+            }
+            
+            if (sessionStorage.getItem('scoonies_email')) {
+                emailInput.value = sessionStorage.getItem('scoonies_email');
+            }
+            
             // Calculate cost based on seed
             function getTeamCost(seed) {
                 return Math.max(5, 80 - ((seed - 1) * 5));
@@ -321,9 +352,11 @@
                             const button = document.createElement('button');
                             button.className = affordable ? 'team-button' : 'team-button disabled';
                             button.textContent = affordable ? `Purchase (${cost} pts)` : 'Can\'t Afford';
+                            button.type = 'button'; // Important to prevent form submission
                             
                             if (affordable) {
-                                button.addEventListener('click', function() {
+                                button.addEventListener('click', function(e) {
+                                    e.preventDefault(); // Prevent any default form action
                                     toggleTeamSelection(teamRow);
                                 });
                             }
@@ -503,7 +536,8 @@
             }
             
             // Handle submit button click
-            document.getElementById('submitEntry').addEventListener('click', function() {
+            document.getElementById('submitEntry').addEventListener('click', function(e) {
+                e.preventDefault(); // Prevent any form submission
                 // Trigger the form submission
                 handleFormSubmission();
             });

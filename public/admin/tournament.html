@@ -6,6 +6,7 @@
     <title>The Scoonies - Tournament Administration</title>
     <link rel="stylesheet" href="/css/style.css">
     <style>
+        /* Keep all the previous styles */
         .main-title {
             text-align: center;
             font-size: 36px;
@@ -88,7 +89,7 @@
         }
         
         .region-title {
-            background-color:#f8f9fa;
+            background-color: #f8f9fa;
             color: #dc3545;
             padding: 15px;
             font-size: 24px;
@@ -96,6 +97,7 @@
             border-bottom: 1px solid #ddd;
         }
         
+        /* Modified bracket styles to improve alignment */
         .bracket-container {
             display: flex;
             padding: 20px;
@@ -105,6 +107,8 @@
         .round {
             min-width: 220px;
             margin: 0 10px;
+            display: flex;
+            flex-direction: column;
         }
         
         .round-title {
@@ -115,13 +119,54 @@
             margin-bottom: 15px;
             font-weight: bold;
             color: #495057;
+            flex: 0 0 auto;
+        }
+        
+        /* Adjusted round content styles */
+        .round-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-around;
+        }
+        
+        /* Fixed matchup spacing to ensure teams are fully visible */
+        .matchup-slot {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 10px; /* Reduced margin */
+            justify-content: center;
         }
         
         .matchup {
-            margin-bottom: 20px;
             border: 1px solid #ddd;
             border-radius: 4px;
             overflow: hidden;
+            margin-bottom: 10px; /* Added margin to separate matchups */
+        }
+        
+        /* Adjusted heights for different rounds */
+        .round-1 .matchup-slot {
+            height: auto; /* Auto height for Round of 64 to show all teams */
+            min-height: 100px;
+            margin-bottom: 15px; /* Added more space between matchups */
+        }
+        
+        .round-2 .matchup-slot {
+            height: auto; /* Auto height */
+            min-height: 120px;
+            margin-bottom: 30px; /* More space between matchups */
+        }
+        
+        .round-3 .matchup-slot {
+            height: auto;
+            min-height: 150px;
+            margin-bottom: 60px;
+        }
+        
+        .round-4 .matchup-slot {
+            height: auto;
+            min-height: 120px;
         }
         
         .team {
@@ -131,6 +176,7 @@
             border-bottom: 1px solid #eee;
             cursor: pointer;
             transition: background-color 0.2s;
+            min-height: 45px; /* Ensure minimum height for teams */
         }
         
         .team:last-child {
@@ -251,6 +297,21 @@
             border-radius: 4px;
             font-style: italic;
         }
+        
+        /* Connector styles */
+        .connector {
+            position: relative;
+        }
+        
+        .connector::after {
+            content: '';
+            position: absolute;
+            right: -10px;
+            top: 50%;
+            width: 10px;
+            height: 2px;
+            background-color: #ddd;
+        }
     </style>
 </head>
 <body>
@@ -361,7 +422,7 @@
             bracketContent.appendChild(finalFourSection);
         }
         
-        // Create a region section
+        // Create a region section with properly aligned bracket
         function createRegionSection(region, teams, allTeams) {
             const regionSection = document.createElement('div');
             regionSection.className = 'region-section';
@@ -384,12 +445,16 @@
             
             rounds.forEach(roundInfo => {
                 const roundDiv = document.createElement('div');
-                roundDiv.className = 'round';
+                roundDiv.className = `round round-${roundInfo.round}`;
                 
                 const roundTitle = document.createElement('div');
                 roundTitle.className = 'round-title';
                 roundTitle.textContent = roundInfo.name;
                 roundDiv.appendChild(roundTitle);
+                
+                const roundContent = document.createElement('div');
+                roundContent.className = 'round-content';
+                roundDiv.appendChild(roundContent);
                 
                 if (roundInfo.round === 1) {
                     // First round matchups (1 vs 16, 8 vs 9, etc.)
@@ -398,7 +463,11 @@
                         [6, 11], [3, 14], [7, 10], [2, 15]
                     ];
                     
-                    matchups.forEach(seedPair => {
+                    matchups.forEach((seedPair, index) => {
+                        const matchupSlot = document.createElement('div');
+                        matchupSlot.className = 'matchup-slot';
+                        matchupSlot.dataset.slotIndex = index;
+                        
                         const team1 = teams.find(t => t.seed === seedPair[0]);
                         const team2 = teams.find(t => t.seed === seedPair[1]);
                         
@@ -406,9 +475,11 @@
                             const matchupDiv = document.createElement('div');
                             matchupDiv.className = 'matchup';
                             matchupDiv.dataset.matchupId = `${team1.seed}-${team2.seed}`;
+                            matchupDiv.dataset.slotIndex = index;
                             
                             // Team 1
                             const team1Div = createTeamDiv(team1);
+                            team1Div.classList.add('connector-top');
                             if (!team1.is_eliminated) {
                                 team1Div.addEventListener('click', () => advanceTeam(team1, team2));
                             }
@@ -416,36 +487,40 @@
                             
                             // Team 2
                             const team2Div = createTeamDiv(team2);
+                            team2Div.classList.add('connector-bottom');
                             if (!team2.is_eliminated) {
                                 team2Div.addEventListener('click', () => advanceTeam(team2, team1));
                             }
                             matchupDiv.appendChild(team2Div);
                             
-                            roundDiv.appendChild(matchupDiv);
+                            matchupSlot.appendChild(matchupDiv);
                         }
+                        
+                        roundContent.appendChild(matchupSlot);
                     });
                 } else if (roundInfo.round === 2) {
-                    // Second round (Round of 32) - follow the proper bracket structure
-                    const secondRoundMatchups = [
-                        // Top bracket (1/16 vs 8/9)
-                        [[1, 16], [8, 9]], 
-                        // Top bracket (5/12 vs 4/13)
-                        [[5, 12], [4, 13]],
-                        // Bottom bracket (6/11 vs 3/14)
-                        [[6, 11], [3, 14]],
-                        // Bottom bracket (7/10 vs 2/15)
-                        [[7, 10], [2, 15]]
-                    ];
-                    
-                    secondRoundMatchups.forEach(matchupPair => {
+                    // Second round (Round of 32) with proper alignment
+                    for (let i = 0; i < 4; i++) {
+                        const matchupSlot = document.createElement('div');
+                        matchupSlot.className = 'matchup-slot';
+                        matchupSlot.dataset.slotIndex = i;
+                        
+                        // This matchup corresponds to winners from first round slots 2*i and 2*i+1
                         const matchupDiv = document.createElement('div');
                         matchupDiv.className = 'matchup';
+                        matchupDiv.dataset.slotIndex = i;
                         
-                        // Find teams that have reached or passed this round (including eliminated ones)
+                        // Find teams that have reached or passed this round
                         const teamsInMatchup = allTeams.filter(team => 
                             team.region === region && 
-                            team.round_reached >= 2 && 
-                            matchupPair.flat().includes(team.seed)
+                            team.round_reached >= 2 &&
+                            (
+                                // For proper seeding pattern in each matchup
+                                (i === 0 && (team.seed === 1 || team.seed === 8 || team.seed === 9 || team.seed === 16)) ||
+                                (i === 1 && (team.seed === 4 || team.seed === 5 || team.seed === 12 || team.seed === 13)) ||
+                                (i === 2 && (team.seed === 3 || team.seed === 6 || team.seed === 11 || team.seed === 14)) ||
+                                (i === 3 && (team.seed === 2 || team.seed === 7 || team.seed === 10 || team.seed === 15))
+                            )
                         );
                         
                         if (teamsInMatchup.length > 0) {
@@ -481,26 +556,32 @@
                             matchupDiv.appendChild(emptySlot);
                         }
                         
-                        roundDiv.appendChild(matchupDiv);
-                    });
+                        matchupSlot.appendChild(matchupDiv);
+                        roundContent.appendChild(matchupSlot);
+                    }
                 } else if (roundInfo.round === 3) {
-                    // Sweet 16 - Top bracket vs top bracket, bottom bracket vs bottom bracket
-                    const sweetSixteenMatchups = [
-                        // Top bracket (seeds 1,4,5,8,9,12,13,16)
-                        [1, 4, 5, 8, 9, 12, 13, 16],
-                        // Bottom bracket (seeds 2,3,6,7,10,11,14,15)
-                        [2, 3, 6, 7, 10, 11, 14, 15]
-                    ];
-                    
-                    sweetSixteenMatchups.forEach(possibleSeeds => {
+                    // Sweet 16 with proper alignment
+                    for (let i = 0; i < 2; i++) {
+                        const matchupSlot = document.createElement('div');
+                        matchupSlot.className = 'matchup-slot';
+                        matchupSlot.dataset.slotIndex = i;
+                        
+                        // This matchup corresponds to winners from second round slots 2*i and 2*i+1
                         const matchupDiv = document.createElement('div');
                         matchupDiv.className = 'matchup';
+                        matchupDiv.dataset.slotIndex = i;
                         
-                        // Find teams that have reached or passed this round (including eliminated ones)
+                        // Find teams that have reached or passed this round
                         const teamsInMatchup = allTeams.filter(team => 
                             team.region === region && 
-                            team.round_reached >= 3 && 
-                            possibleSeeds.includes(team.seed)
+                            team.round_reached >= 3 &&
+                            (
+                                // For proper seeding pattern in each matchup
+                                (i === 0 && (team.seed === 1 || team.seed === 4 || team.seed === 5 || team.seed === 8 || 
+                                              team.seed === 9 || team.seed === 12 || team.seed === 13 || team.seed === 16)) ||
+                                (i === 1 && (team.seed === 2 || team.seed === 3 || team.seed === 6 || team.seed === 7 || 
+                                              team.seed === 10 || team.seed === 11 || team.seed === 14 || team.seed === 15))
+                            )
                         );
                         
                         if (teamsInMatchup.length > 0) {
@@ -536,12 +617,18 @@
                             matchupDiv.appendChild(emptySlot);
                         }
                         
-                        roundDiv.appendChild(matchupDiv);
-                    });
+                        matchupSlot.appendChild(matchupDiv);
+                        roundContent.appendChild(matchupSlot);
+                    }
                 } else if (roundInfo.round === 4) {
                     // Elite 8 - One matchup for the regional championship
+                    const matchupSlot = document.createElement('div');
+                    matchupSlot.className = 'matchup-slot';
+                    matchupSlot.dataset.slotIndex = 0;
+                    
                     const matchupDiv = document.createElement('div');
                     matchupDiv.className = 'matchup';
+                    matchupDiv.dataset.slotIndex = 0;
                     
                     // Find teams that have reached or passed this round (including eliminated ones)
                     const teamsInMatchup = allTeams.filter(team => 
@@ -582,7 +669,8 @@
                         matchupDiv.appendChild(emptySlot);
                     }
                     
-                    roundDiv.appendChild(matchupDiv);
+                    matchupSlot.appendChild(matchupDiv);
+                    roundContent.appendChild(matchupSlot);
                 }
                 
                 bracketContainer.appendChild(roundDiv);
@@ -592,8 +680,11 @@
             return regionSection;
         }
         
+        // Rest of the code remains the same...
+        
         // Create Final Four section
         function createFinalFourSection(tournamentData) {
+            // This function can remain as it was in the original code
             const finalFourSection = document.createElement('div');
             finalFourSection.className = 'final-four-section';
             
@@ -849,20 +940,12 @@
         
         // Advance a team to the next round
         function advanceTeam(winner, loser) {
-            // Check if this is an undo operation
-            if (loser.is_eliminated) {
-                // This is an undo - the "loser" is already eliminated, so we're undoing the previous result
-                undoAdvancement(winner, loser);
-                return;
-            }
-            
             // This is a normal advancement
             const toRound = winner.round_reached + 1;
             
             // Send to server
             fetch('/api/admin/advance-team', {
                 method: 'POST',
-                headersmethod: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
@@ -919,52 +1002,8 @@
             });
         }
         
-        // Add function to undo advancement
-        function undoAdvancement(currentWinner, originalWinner) {
-            // The current winner is the team we initially clicked
-            // The originalWinner is the eliminated team we're trying to restore
-            
-            // For this to work, both teams need to be in the same previous round
-            const previousRound = originalWinner.round_reached;
-            
-            // Send to server
-            fetch('/api/admin/undo-advancement', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    winnerId: currentWinner.id,  // Current winner will become eliminated
-                    loserId: originalWinner.id,  // Original winner will be restored
-                    previousRound: previousRound
-                }),
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Failed to undo advancement');
-                }
-                return response.json();
-            })
-            .then(data => {
-                showStatusMessage(`Restored ${originalWinner.team_name} as the winner`, 'success');
-                // Reload tournament data
-                loadTournamentData();
-            })
-            .catch(error => {
-                console.error('Error undoing advancement:', error);
-                showStatusMessage('Error undoing advancement. Please try again.', 'error');
-            });
-        }
-        
         // Advance a team to the championship game
         function advanceTeamToFinal(winner, loser) {
-            // Check if this is an undo operation
-            if (loser.is_eliminated) {
-                // This is an undo - the "loser" is already eliminated, so we're undoing the previous result
-                undoAdvancementToFinal(winner, loser);
-                return;
-            }
-            
             // Regular advancement to final
             fetch('/api/admin/advance-to-final', {
                 method: 'POST',
@@ -993,46 +1032,9 @@
             });
         }
         
-        // Add function to undo advancement to final
-        function undoAdvancementToFinal(currentWinner, originalWinner) {
-            // Similar to undoAdvancement but for final four teams
-            fetch('/api/admin/undo-advancement', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    winnerId: currentWinner.id,
-                    loserId: originalWinner.id,
-                    previousRound: 5  // Final Four round
-                }),
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Failed to undo advancement');
-                }
-                return response.json();
-            })
-            .then(data => {
-                showStatusMessage(`Restored ${originalWinner.team_name} to the Final Four`, 'success');
-                // Reload tournament data
-                loadTournamentData();
-            })
-            .catch(error => {
-                console.error('Error undoing advancement:', error);
-                showStatusMessage('Error undoing advancement. Please try again.', 'error');
-            });
-        }
         
         // Declare the champion
-        function declareChampion(winner, loser) {
-            // Check if this is an undo operation
-            if (loser.is_eliminated) {
-                // This is an undo - the "loser" is already eliminated, so we're undoing the previous result
-                undoChampionDeclaration(winner, loser);
-                return;
-            }
-            
+        function declareChampion(winner, loser) {        
             // Regular champion declaration
             fetch('/api/admin/declare-champion', {
                 method: 'POST',
@@ -1061,35 +1063,6 @@
             });
         }
         
-        // Add function to undo champion declaration
-        function undoChampionDeclaration(currentWinner, originalWinner) {
-            fetch('/api/admin/undo-advancement', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    winnerId: currentWinner.id,
-                    loserId: originalWinner.id,
-                    previousRound: 6  // Championship round
-                }),
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Failed to undo championship');
-                }
-                return response.json();
-            })
-            .then(data => {
-                showStatusMessage(`Undid championship result, restored both teams to finals`, 'success');
-                // Reload tournament data
-                loadTournamentData();
-            })
-            .catch(error => {
-                console.error('Error undoing championship:', error);
-                showStatusMessage('Error undoing championship. Please try again.', 'error');
-            });
-        }
         
         // Update all scores based on tournament progress
         function updateAllScores() {
