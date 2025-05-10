@@ -833,37 +833,70 @@
 
         // Entry status toggle
         document.addEventListener('DOMContentLoaded', function() {
+            console.log("DOM loaded, checking entry status...");
+            
             // Check initial entry status
             checkEntryStatus();
             
             // Toggle entry status button
-            document.getElementById('toggleEntryStatusBtn').addEventListener('click', function() {
-                if (confirm('Are you sure you want to change the entry submission status?')) {
-                    toggleEntryStatus();
-                }
-            });
+            const toggleButton = document.getElementById('toggleEntryStatusBtn');
+            if (toggleButton) {
+                toggleButton.addEventListener('click', function() {
+                    console.log("Toggle button clicked");
+                    if (confirm('Are you sure you want to change the entry submission status?')) {
+                        toggleEntryStatus();
+                    }
+                });
+            } else {
+                console.error("Toggle button element not found!");
+            }
         });
 
         // Check entry status
         function checkEntryStatus() {
+            console.log("Checking entry status...");
             fetch('/api/admin/entry-status')
                 .then(response => {
+                    console.log("Entry status response:", response.status);
                     if (!response.ok) {
                         throw new Error('Failed to fetch entry status');
                     }
                     return response.json();
                 })
                 .then(data => {
+                    console.log("Entry status data:", data);
                     updateEntryStatusDisplay(data.entriesOpen);
                 })
                 .catch(error => {
                     console.error('Error fetching entry status:', error);
                     showStatusMessage('Error fetching entry status: ' + error.message, 'error');
+                    
+                    // Show error in status display
+                    const statusDisplay = document.getElementById('statusDisplay');
+                    if (statusDisplay) {
+                        statusDisplay.textContent = 'Error checking entry status';
+                        statusDisplay.className = 'status-message error';
+                    }
+                    
+                    // Enable button with default text
+                    const toggleBtn = document.getElementById('toggleEntryStatusBtn');
+                    if (toggleBtn) {
+                        toggleBtn.textContent = 'TOGGLE ENTRY STATUS';
+                        toggleBtn.disabled = false;
+                    }
                 });
         }
 
         // Toggle entry status
         function toggleEntryStatus() {
+            console.log("Toggling entry status...");
+            // Show loading state
+            const toggleBtn = document.getElementById('toggleEntryStatusBtn');
+            if (toggleBtn) {
+                toggleBtn.textContent = 'Updating...';
+                toggleBtn.disabled = true;
+            }
+            
             fetch('/api/admin/toggle-entry-status', {
                 method: 'POST',
                 headers: {
@@ -872,37 +905,53 @@
                 body: JSON.stringify({}),
             })
             .then(response => {
+                console.log("Toggle response:", response.status);
                 if (!response.ok) {
                     throw new Error('Failed to toggle entry status');
                 }
                 return response.json();
             })
             .then(data => {
+                console.log("Toggle data:", data);
                 updateEntryStatusDisplay(data.entriesOpen);
                 showStatusMessage(data.message, 'success');
             })
             .catch(error => {
                 console.error('Error toggling entry status:', error);
                 showStatusMessage('Error toggling entry status: ' + error.message, 'error');
+                
+                // Re-enable button
+                if (toggleBtn) {
+                    toggleBtn.disabled = false;
+                }
             });
         }
 
         // Update entry status display
         function updateEntryStatusDisplay(entriesOpen) {
+            console.log("Updating display for entries open:", entriesOpen);
             const statusDisplay = document.getElementById('statusDisplay');
             const toggleBtn = document.getElementById('toggleEntryStatusBtn');
+            
+            if (!statusDisplay || !toggleBtn) {
+                console.error("Could not find status display or toggle button elements");
+                return;
+            }
             
             if (entriesOpen) {
                 statusDisplay.textContent = 'Entry Submissions are OPEN';
                 statusDisplay.className = 'status-message success';
-                toggleBtn.textContent = 'CLOSE DOWN NEW ENTRIES';
+                toggleBtn.textContent = 'CLOSE ENTRIES';
                 toggleBtn.style.backgroundColor = '#dc3545'; // Red
             } else {
                 statusDisplay.textContent = 'Entry Submissions are CLOSED';
                 statusDisplay.className = 'status-message error';
-                toggleBtn.textContent = 'OPEN ENTRY SUBMISSIONS';
+                toggleBtn.textContent = 'OPEN ENTRIES';
                 toggleBtn.style.backgroundColor = '#28a745'; // Green
             }
+            
+            // Make sure button is enabled
+            toggleBtn.disabled = false;
         }
     </script>
 </body>
