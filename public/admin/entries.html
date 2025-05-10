@@ -390,7 +390,23 @@
                 <div id="statusDisplay" class="status-message" style="margin-bottom: 10px;">Checking entry status...</div>
                 <button id="toggleEntryStatusBtn" class="action-button" disabled>Loading...</button>
             </div>
-            
+            <div class="admin-section" style="margin-top: 20px;">
+                <div class="section-header">Team Visibility Control</div>
+                <div class="section-content">
+                    <h3>Control User Team Selections Visibility</h3>
+                    <p>Use this control to show or hide team selections in the public standings page:</p>
+                    
+                    <div class="visibility-control" style="text-align: center; margin: 20px 0;">
+                        <div id="visibilityStatus" class="status-message" style="margin-bottom: 10px;">Checking visibility status...</div>
+                        <button id="toggleVisibilityBtn" class="action-button" disabled>Loading...</button>
+                    </div>
+                    
+                    <div class="visibility-info" style="background-color: #f8f9fa; border-radius: 8px; padding: 15px; margin-top: 15px;">
+                        <h4 style="margin-top: 0;">Why Hide Team Selections?</h4>
+                        <p>Hiding team selections before the tournament begins prevents participants from copying others' strategies. When hidden, the standings page will display "SELECTIONS HIDDEN BY COMMISSIONER" instead of showing the teams.</p>
+                    </div>
+                </div>
+            </div>
             <div id="statusMessage" class="status-message"></div>
         </div>
     </div>
@@ -947,6 +963,119 @@
                 statusDisplay.textContent = 'Entry Submissions are CLOSED';
                 statusDisplay.className = 'status-message error';
                 toggleBtn.textContent = 'OPEN ENTRIES';
+                toggleBtn.style.backgroundColor = '#28a745'; // Green
+            }
+            
+            // Make sure button is enabled
+            toggleBtn.disabled = false;
+        }
+        // Team visibility toggle
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add this to your existing DOMContentLoaded handler
+            // or create a new one if needed
+            
+            // Check initial team visibility status
+            checkTeamVisibility();
+            
+            // Toggle team visibility button
+            const toggleVisBtn = document.getElementById('toggleVisibilityBtn');
+            if (toggleVisBtn) {
+                toggleVisBtn.addEventListener('click', function() {
+                    if (confirm('Are you sure you want to change the team selections visibility?')) {
+                        toggleTeamVisibility();
+                    }
+                });
+            }
+        });
+
+        // Check team visibility status
+        function checkTeamVisibility() {
+            fetch('/api/admin/team-visibility')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Failed to fetch team visibility status');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    updateVisibilityDisplay(data.teamsVisible);
+                })
+                .catch(error => {
+                    console.error('Error fetching team visibility status:', error);
+                    showStatusMessage('Error checking team visibility status: ' + error.message, 'error');
+                    
+                    // Show error in status display
+                    const statusDisplay = document.getElementById('visibilityStatus');
+                    if (statusDisplay) {
+                        statusDisplay.textContent = 'Error checking team visibility status';
+                        statusDisplay.className = 'status-message error';
+                    }
+                    
+                    // Enable button with default text
+                    const toggleBtn = document.getElementById('toggleVisibilityBtn');
+                    if (toggleBtn) {
+                        toggleBtn.textContent = 'TOGGLE TEAM VISIBILITY';
+                        toggleBtn.disabled = false;
+                    }
+                });
+        }
+
+        // Toggle team visibility
+        function toggleTeamVisibility() {
+            // Show loading state
+            const toggleBtn = document.getElementById('toggleVisibilityBtn');
+            if (toggleBtn) {
+                toggleBtn.textContent = 'Updating...';
+                toggleBtn.disabled = true;
+            }
+            
+            fetch('/api/admin/toggle-team-visibility', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({}),
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to toggle team visibility');
+                }
+                return response.json();
+            })
+            .then(data => {
+                updateVisibilityDisplay(data.teamsVisible);
+                showStatusMessage(data.message, 'success');
+            })
+            .catch(error => {
+                console.error('Error toggling team visibility:', error);
+                showStatusMessage('Error toggling team visibility: ' + error.message, 'error');
+                
+                // Re-enable button
+                if (toggleBtn) {
+                    toggleBtn.disabled = false;
+                }
+            });
+        }
+
+        // Update visibility status display
+        function updateVisibilityDisplay(teamsVisible) {
+            const statusDisplay = document.getElementById('visibilityStatus');
+            const toggleBtn = document.getElementById('toggleVisibilityBtn');
+            
+            if (!statusDisplay || !toggleBtn) {
+                console.error("Could not find visibility status display or toggle button elements");
+                return;
+            }
+            
+            if (teamsVisible) {
+                statusDisplay.textContent = 'Team Selections are VISIBLE to Users';
+                statusDisplay.className = 'status-message success';
+                toggleBtn.textContent = 'HIDE TEAM SELECTIONS';
+                toggleBtn.style.backgroundColor = '#dc3545'; // Red
+            } else {
+                statusDisplay.textContent = 'Team Selections are HIDDEN from Users';
+                statusDisplay.className = 'status-message error';
+                toggleBtn.textContent = 'SHOW TEAM SELECTIONS';
                 toggleBtn.style.backgroundColor = '#28a745'; // Green
             }
             

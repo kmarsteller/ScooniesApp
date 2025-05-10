@@ -678,5 +678,59 @@ router.post('/toggle-entry-status', (req, res) => {
         }
     );
 });
+router.get('/team-visibility', (req, res) => {
+    db.get(
+        "SELECT value FROM system_settings WHERE key = 'teams_visible'",
+        (err, row) => {
+            if (err) {
+                console.error('Error fetching team visibility status:', err);
+                return res.status(500).json({ error: 'Database error: ' + err.message });
+            }
+            
+            // Default to false if no setting exists
+            const teamsVisible = row ? row.value === 'true' : false;
+            
+            res.json({ 
+                teamsVisible: teamsVisible
+            });
+        }
+    );
+});
+
+// Toggle team visibility status
+router.post('/toggle-team-visibility', (req, res) => {
+    // First, get current status
+    db.get(
+        "SELECT value FROM system_settings WHERE key = 'teams_visible'",
+        (err, row) => {
+            if (err) {
+                console.error('Error fetching team visibility status:', err);
+                return res.status(500).json({ error: 'Database error: ' + err.message });
+            }
+            
+            // Default to false if no setting exists
+            const currentStatus = row ? row.value === 'true' : false;
+            // New status is the opposite
+            const newStatus = !currentStatus;
+            
+            // Update the status
+            db.run(
+                "INSERT OR REPLACE INTO system_settings (key, value) VALUES (?, ?)",
+                ['teams_visible', newStatus.toString()],
+                function(err) {
+                    if (err) {
+                        console.error('Error updating team visibility status:', err);
+                        return res.status(500).json({ error: 'Database error: ' + err.message });
+                    }
+                    
+                    res.json({ 
+                        teamsVisible: newStatus,
+                        message: newStatus ? 'Team selections are now visible to users' : 'Team selections are now hidden from users'
+                    });
+                }
+            );
+        }
+    );
+});
 
 module.exports = router;

@@ -59,6 +59,25 @@ function initializeDatabase() {
             )
         `);
         
+        // Add team visibility setting to system_settings
+        db.get("SELECT COUNT(*) as count FROM system_settings WHERE key = 'teams_visible'", (err, row) => {
+            if (err) {
+                console.error('Error checking team visibility setting:', err);
+                return;
+            }
+            
+            if (row.count === 0) {
+                // Set teams as hidden by default
+                db.run("INSERT INTO system_settings (key, value) VALUES (?, ?)", 
+                    ["teams_visible", "false"], err => {
+                        if (err) {
+                            console.error('Error inserting team visibility setting:', err);
+                            return;
+                        }
+                        console.log('Default team visibility setting created (teams hidden)');
+                    });
+            }
+        });
         // Check if tournament_progress table is empty
         db.get("SELECT COUNT(*) as count FROM tournament_progress", (err, row) => {
             if (err) {
