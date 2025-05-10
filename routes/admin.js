@@ -552,19 +552,18 @@ router.post('/reset-tournament', (req, res) => {
                             return res.status(500).json({ error: 'Error resetting entry scores: ' + err.message });
                         }
                         
-                        // Commit transaction
-                        db.run('COMMIT', err => {
-                            if (err) {
-                                db.run('ROLLBACK');
-                                return res.status(500).json({ error: 'Transaction error: ' + err.message });
-                            }
-                            
-                            res.json({ message: 'Tournament reset successfully' });
-                        });
+                    // Commit transaction
+                    db.run('COMMIT', err => {
+                        if (err) {
+                            db.run('ROLLBACK');
+                            return res.status(500).json({ error: 'Transaction error: ' + err.message });
+                    }
+                        
+                    res.json({ message: 'Tournament reset successfully' });
                     });
                 });
-            }
-        );
+            });
+        });
     });
 });
 
@@ -622,6 +621,62 @@ router.delete('/entry/:id', (req, res) => {
             }
         );
     });
+});
+
+// Get entry status
+router.get('/entry-status', (req, res) => {
+    db.get(
+        "SELECT value FROM system_settings WHERE key = 'entries_open'",
+        (err, row) => {
+            if (err) {
+                console.error('Error fetching entry status:', err);
+                return res.status(500).json({ error: 'Database error: ' + err.message });
+            }
+            
+            // Default to true if no setting exists
+            const entriesOpen = row ? row.value === 'true' : true;
+            
+            res.json({ 
+                entriesOpen: entriesOpen
+            });
+        }
+    );
+});
+
+// Toggle entry status
+router.post('/toggle-entry-status', (req, res) => {
+    // First, get current status
+    db.get(
+        "SELECT value FROM system_settings WHERE key = 'entries_open'",
+        (err, row) => {
+            if (err) {
+                console.error('Error fetching entry status:', err);
+                return res.status(500).json({ error: 'Database error: ' + err.message });
+            }
+            
+            // Default to true if no setting exists
+            const currentStatus = row ? row.value === 'true' : true;
+            // New status is the opposite
+            const newStatus = !currentStatus;
+            
+            // Update the status
+            db.run(
+                "INSERT OR REPLACE INTO system_settings (key, value) VALUES (?, ?)",
+                ['entries_open', newStatus.toString()],
+                function(err) {
+                    if (err) {
+                        console.error('Error updating entry status:', err);
+                        return res.status(500).json({ error: 'Database error: ' + err.message });
+                    }
+                    
+                    res.json({ 
+                        entriesOpen: newStatus,
+                        message: newStatus ? 'Entries are now open' : 'Entries are now closed'
+                    });
+                }
+            );
+        }
+    );
 });
 
 module.exports = router;

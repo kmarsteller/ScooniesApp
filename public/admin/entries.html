@@ -53,8 +53,11 @@
         
         .entries-table th {
             background-color: #f8f9fa;
+            color: #dc3545;
+            font-weight: bold;
             text-align: left;
             position: sticky;
+            padding: 12px 10px;
             top: 0;
             z-index: 10;
         }
@@ -222,7 +225,13 @@
     
     <main>
         <h1 class="main-title">The Scoonies - Manage Entries</h1>
-        
+                
+        <div class="entry-status-control" style="text-align: center; margin: 20px 0;">
+            <div id="statusDisplay" class="status-message" style="margin-bottom: 10px;"></div>
+            <button id="toggleEntryStatusBtn" class="action-button">Turn Off Entries</button>
+        </div>
+
+
         <div class="admin-nav">
             <a href="/admin/tournament">Tournament Bracket</a>
             <a href="/admin/entries" class="active">Manage Entries</a>
@@ -664,6 +673,80 @@
                 statusDiv.textContent = '';
                 statusDiv.className = 'status-message';
             }, 5000);
+        }
+
+        // Entry status toggle
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check initial entry status
+            checkEntryStatus();
+            
+            // Toggle entry status button
+            document.getElementById('toggleEntryStatusBtn').addEventListener('click', function() {
+                if (confirm('Are you sure you want to change the entry submission status?')) {
+                    toggleEntryStatus();
+                }
+            });
+        });
+
+        // Check entry status
+        function checkEntryStatus() {
+            fetch('/api/admin/entry-status')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Failed to fetch entry status');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    updateEntryStatusDisplay(data.entriesOpen);
+                })
+                .catch(error => {
+                    console.error('Error fetching entry status:', error);
+                    showStatusMessage('Error fetching entry status: ' + error.message, 'error');
+                });
+        }
+
+        // Toggle entry status
+        function toggleEntryStatus() {
+            fetch('/api/admin/toggle-entry-status', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({}),
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to toggle entry status');
+                }
+                return response.json();
+            })
+            .then(data => {
+                updateEntryStatusDisplay(data.entriesOpen);
+                showStatusMessage(data.message, 'success');
+            })
+            .catch(error => {
+                console.error('Error toggling entry status:', error);
+                showStatusMessage('Error toggling entry status: ' + error.message, 'error');
+            });
+        }
+
+        // Update entry status display
+        function updateEntryStatusDisplay(entriesOpen) {
+            const statusDisplay = document.getElementById('statusDisplay');
+            const toggleBtn = document.getElementById('toggleEntryStatusBtn');
+            
+            if (entriesOpen) {
+                statusDisplay.textContent = 'Entry Submissions are OPEN';
+                statusDisplay.className = 'status-message success';
+                toggleBtn.textContent = 'CLOSE DOWN NEW ENTRIES';
+                toggleBtn.style.backgroundColor = '#dc3545'; // Red
+            } else {
+                statusDisplay.textContent = 'Entry Submissions are CLOSED';
+                statusDisplay.className = 'status-message error';
+                toggleBtn.textContent = 'OPEN ENTRY SUBMISSIONS';
+                toggleBtn.style.backgroundColor = '#28a745'; // Green
+            }
         }
     </script>
 </body>

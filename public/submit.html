@@ -237,39 +237,69 @@
     
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // Check if entries are open
+            checkEntryStatus();
+            
             // Variables to track game state
             let balance = 200;
             let selectedTeams = [];
             
-            // Save form inputs on focus out/blur to prevent loss
-            const playerNameInput = document.getElementById('playerName');
-            const nicknameInput = document.getElementById('nickname');
-            const emailInput = document.getElementById('email');
-            
-            // Add change/input event handlers to save values in session storage
-            playerNameInput.addEventListener('input', function() {
-                sessionStorage.setItem('scoonies_playerName', this.value);
-            });
-            
-            nicknameInput.addEventListener('input', function() {
-                sessionStorage.setItem('scoonies_nickname', this.value);
-            });
-            
-            emailInput.addEventListener('input', function() {
-                sessionStorage.setItem('scoonies_email', this.value);
-            });
-            
-            // Restore values on page load if they exist
-            if (sessionStorage.getItem('scoonies_playerName')) {
-                playerNameInput.value = sessionStorage.getItem('scoonies_playerName');
+            // Function to check if entries are open
+            function checkEntryStatus() {
+                fetch('/api/entries/status')
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Failed to fetch entry status');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (!data.entriesOpen) {
+                            // Entries are closed
+                            disableSubmission("SUBMIT DEADLINE HAS PASSED");
+                            
+                            // Show message
+                            const messageDiv = document.createElement('div');
+                            messageDiv.className = 'error';
+                            messageDiv.style.textAlign = 'center';
+                            messageDiv.style.padding = '20px';
+                            messageDiv.style.marginBottom = '20px';
+                            messageDiv.style.backgroundColor = '#f8d7da';
+                            messageDiv.style.color = '#721c24';
+                            messageDiv.style.borderRadius = '4px';
+                            messageDiv.textContent = 'The deadline for submitting entries has passed. You can no longer make new entries.';
+                            
+                            // Insert after the form title
+                            const formTitle = document.querySelector('.main-title');
+                            formTitle.parentNode.insertBefore(messageDiv, formTitle.nextSibling);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error checking entry status:', error);
+                    });
             }
             
-            if (sessionStorage.getItem('scoonies_nickname')) {
-                nicknameInput.value = sessionStorage.getItem('scoonies_nickname');
-            }
-            
-            if (sessionStorage.getItem('scoonies_email')) {
-                emailInput.value = sessionStorage.getItem('scoonies_email');
+            // Function to disable the submission form
+            function disableSubmission(buttonText) {
+                // Disable all form fields
+                const formFields = document.querySelectorAll('input, select, textarea');
+                formFields.forEach(field => {
+                    field.disabled = true;
+                });
+                
+                // Disable team buttons
+                const teamButtons = document.querySelectorAll('.team-button');
+                teamButtons.forEach(button => {
+                    button.disabled = true;
+                    button.classList.add('disabled');
+                });
+                
+                // Update submit button
+                const submitButton = document.getElementById('submitEntry');
+                submitButton.disabled = true;
+                submitButton.textContent = buttonText;
+                submitButton.style.backgroundColor = '#6c757d'; // Gray color
+                submitButton.style.cursor = 'not-allowed';
             }
             
             // Calculate cost based on seed
@@ -352,11 +382,9 @@
                             const button = document.createElement('button');
                             button.className = affordable ? 'team-button' : 'team-button disabled';
                             button.textContent = affordable ? `Purchase (${cost} pts)` : 'Can\'t Afford';
-                            button.type = 'button'; // Important to prevent form submission
                             
                             if (affordable) {
-                                button.addEventListener('click', function(e) {
-                                    e.preventDefault(); // Prevent any default form action
+                                button.addEventListener('click', function() {
                                     toggleTeamSelection(teamRow);
                                 });
                             }
@@ -536,8 +564,7 @@
             }
             
             // Handle submit button click
-            document.getElementById('submitEntry').addEventListener('click', function(e) {
-                e.preventDefault(); // Prevent any form submission
+            document.getElementById('submitEntry').addEventListener('click', function() {
                 // Trigger the form submission
                 handleFormSubmission();
             });

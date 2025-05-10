@@ -59,9 +59,6 @@ function initializeDatabase() {
             )
         `);
         
-        // Add this to your database.js file in the initializeDatabase function
-        // After creating the tournament_progress table:
-
         // Check if tournament_progress table is empty
         db.get("SELECT COUNT(*) as count FROM tournament_progress", (err, row) => {
             if (err) {
@@ -155,6 +152,40 @@ function initializeDatabase() {
                 db.run("INSERT INTO admin_users (username, password_hash) VALUES (?, ?)", 
                     ["keith", "6969"]);
             }
+        });
+        
+        // Entry status table
+        db.run(`
+            CREATE TABLE IF NOT EXISTS system_settings (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                key TEXT UNIQUE NOT NULL,
+                value TEXT NOT NULL
+            )
+        `, err => {
+            if (err) {
+                console.error('Error creating system_settings table:', err);
+                return;
+            }
+            
+            // Insert default settings if none exist
+            db.get("SELECT COUNT(*) as count FROM system_settings WHERE key = 'entries_open'", (err, row) => {
+                if (err) {
+                    console.error('Error checking system settings:', err);
+                    return;
+                }
+                
+                if (row.count === 0) {
+                    // Set entries as open by default
+                    db.run("INSERT INTO system_settings (key, value) VALUES (?, ?)", 
+                        ["entries_open", "true"], err => {
+                            if (err) {
+                                console.error('Error inserting default setting:', err);
+                                return;
+                            }
+                            console.log('Default entry status setting created (entries open)');
+                        });
+                }
+            });
         });
     });
     
