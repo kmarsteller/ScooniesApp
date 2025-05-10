@@ -208,6 +208,156 @@
             background-color: rgba(0,0,0,0.5);
             z-index: 999;
         }
+        .admin-section {
+            margin-bottom: 30px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .section-header {
+            background-color: #dc3545;
+            color: white;
+            padding: 12px 15px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        
+        .section-content {
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+        
+        /* Improved navigation tabs */
+        .admin-nav {
+            display: flex;
+            background-color: #e9ecef;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .admin-nav a {
+            padding: 15px 25px;
+            text-decoration: none;
+            color: #495057;
+            font-weight: bold;
+            border-right: 1px solid #ddd;
+            transition: all 0.2s ease;
+        }
+        
+        .admin-nav a:last-child {
+            border-right: none;
+        }
+        
+        .admin-nav a.active {
+            background-color: #f8f9fa;
+            color: #dc3545;
+            border-bottom: 3px solid #dc3545;
+        }
+        
+        .admin-nav a:hover:not(.active) {
+            background-color: #dee2e6;
+        }
+        
+        /* Entry status control styling */
+        .entry-status-control {
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .status-message {
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        
+        .status-message.success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        
+        .status-message.error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        
+        /* Toggle button styling */
+        #toggleEntryStatusBtn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            display: inline-flex;
+            align-items: center;
+            transition: all 0.2s ease;
+        }
+        
+        #toggleEntryStatusBtn:before {
+            content: "✉️";
+            margin-right: 8px;
+            font-size: 18px;
+        }
+        
+        #toggleEntryStatusBtn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        /* Entries table styling improvements */
+        .entries-container {
+            margin-top: 20px;
+        }
+        
+        .entries-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .entries-table th {
+            background-color: #f8f9fa;
+            color: #dc3545;
+            border-bottom: 2px solid #dc3545;
+            font-weight: bold;
+            padding: 12px 10px;
+            text-align: left;
+        }
+        
+        .entries-table td {
+            padding: 10px;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        .entries-table tr:hover {
+            background-color: #f5f5f5;
+        }
+        
+        .delete-btn, .edit-btn {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 2px;
+            font-weight: bold;
+            transition: all 0.2s ease;
+        }
+        
+        .delete-btn {
+            background-color: #dc3545;
+            color: white;
+        }
+        
+        .edit-btn {
+            background-color: #6c757d;
+            color: white;
+        }
+        
+        .delete-btn:hover, .edit-btn:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
     </style>
 </head>
 <body>
@@ -224,24 +374,30 @@
     </header>
     
     <main>
-        <h1 class="main-title">The Scoonies - Manage Entries</h1>
-                
-        <div class="entry-status-control" style="text-align: center; margin: 20px 0;">
-            <div id="statusDisplay" class="status-message" style="margin-bottom: 10px;"></div>
-            <button id="toggleEntryStatusBtn" class="action-button">Turn Off Entries</button>
-        </div>
-
-
+       <div class="admin-section">
+        <div class="section-header">Tournament Administration</div>
+        
         <div class="admin-nav">
             <a href="/admin/tournament">Tournament Bracket</a>
             <a href="/admin/entries" class="active">Manage Entries</a>
         </div>
         
-        <div id="statusMessage" class="status-message"></div>
-        
-        <div id="entriesContainer">
-            <div class="loading">Loading entries...</div>
+        <div class="section-content">
+            <h3>Entry Submission Controls</h3>
+            <p>Use this control to open or close entry submissions:</p>
+            
+            <div class="entry-status-control">
+                <div id="statusDisplay" class="status-message" style="margin-bottom: 10px;">Checking entry status...</div>
+                <button id="toggleEntryStatusBtn" class="action-button" disabled>Loading...</button>
+            </div>
+            
+            <div id="statusMessage" class="status-message"></div>
         </div>
+    </div>
+
+    <div class="entries-container" id="entriesContainer">
+        <div class="loading">Loading entries...</div>
+    </div>
         
         <!-- Edit Entry Form -->
         <div id="overlay" class="overlay"></div>
