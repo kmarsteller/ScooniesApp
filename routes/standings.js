@@ -21,7 +21,7 @@ router.get('/', (req, res) => {
             
             // Get all entries with scores
             db.all(
-                `SELECT id, player_name, email, nickname, score
+                `SELECT id, player_name, email, nickname, score, has_paid
                  FROM entries
                  ORDER BY score DESC`,
                 (err, entries) => {

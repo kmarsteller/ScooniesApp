@@ -47,19 +47,22 @@ router.post('/login', (req, res) => {
 // Update an entry
 router.put('/entry/:id', (req, res) => {
     const entryId = req.params.id;
-    const { player_name, nickname, email } = req.body;
+    const { player_name, nickname, email, has_paid } = req.body;
     
     if (!entryId || !player_name || !nickname || !email) {
         return res.status(400).json({ error: 'All fields are required' });
     }
     
+    // Convert has_paid to 0 or 1 for SQLite boolean
+    const hasPaidValue = has_paid ? 1 : 0;
+
     // Begin transaction
     db.serialize(() => {
         db.run('BEGIN TRANSACTION');
         
         // Update the entry
         db.run(
-            'UPDATE entries SET player_name = ?, nickname = ?, email = ? WHERE id = ?',
+            'UPDATE entries SET player_name = ?, nickname = ?, email = ? has_paid = ? WHERE id = ?',
             [player_name, nickname, email, entryId],
             function(err) {
                 if (err) {
@@ -88,7 +91,39 @@ router.put('/entry/:id', (req, res) => {
         );
     });
 });
-
+// Update payment status for an entry
+router.put('/entry/:id/payment', (req, res) => {
+    const entryId = req.params.id;
+    const { has_paid } = req.body;
+    
+    if (!entryId) {
+        return res.status(400).json({ error: 'Entry ID is required' });
+    }
+    
+    // Convert has_paid to 0 or 1 for SQLite boolean
+    const hasPaidValue = has_paid ? 1 : 0;
+    
+    // Update payment status
+    db.run(
+        'UPDATE entries SET has_paid = ? WHERE id = ?',
+        [hasPaidValue, entryId],
+        function(err) {
+            if (err) {
+                return res.status(500).json({ error: 'Error updating payment status: ' + err.message });
+            }
+            
+            if (this.changes === 0) {
+                return res.status(404).json({ error: 'Entry not found' });
+            }
+            
+            res.json({ 
+                message: 'Payment status updated successfully',
+                entryId,
+                has_paid: hasPaidValue
+            });
+        }
+    );
+});
 // Get all entries (for admin panel)
 router.get('/entries', (req, res) => {
     console.log('GET /api/admin/entries endpoint called at', new Date().toISOString());
@@ -96,7 +131,7 @@ router.get('/entries', (req, res) => {
     // Use a promise-based approach for more reliable handling
     new Promise((resolve, reject) => {
         db.all(
-            `SELECT id, player_name, email, nickname, score, submission_date
+            `SELECT id, player_name, email, nickname, score, submission_date, has_paid
              FROM entries
              ORDER BY submission_date DESC`,
             (err, entries) => {

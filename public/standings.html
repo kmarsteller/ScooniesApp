@@ -136,6 +136,22 @@
             text-align: center;
             padding: 40px;
         }
+        .payment-status {
+            margin-left: 8px;
+            font-size: 0.9em;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        .payment-status.paid {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .payment-status.unpaid {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
     </style>
 </head>
 <body>
@@ -258,9 +274,17 @@
                 entryScore.className = 'entry-score';
                 entryScore.textContent = `${entry.score} pts`;
                 
+                // Add payment status indicator
+                if (entry.has_paid !== undefined) {
+                    const paymentStatus = document.createElement('span');
+                    paymentStatus.className = entry.has_paid ? 'payment-status paid' : 'payment-status unpaid';
+                    paymentStatus.textContent = entry.has_paid ? ' • Paid' : ' • Payment Pending';
+                    entryPlayer.appendChild(paymentStatus);
+                }
                 entryHeader.appendChild(entryRank);
                 entryHeader.appendChild(entryInfo);
                 entryHeader.appendChild(entryScore);
+                //entryHeader.appendChild(paymentStatus);
                 
                 // Entry teams
                 const entryTeams = document.createElement('div');

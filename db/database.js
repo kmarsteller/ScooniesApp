@@ -21,12 +21,13 @@ function initializeDatabase() {
         // Entries table
         db.run(`
             CREATE TABLE IF NOT EXISTS entries (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                player_name TEXT NOT NULL,
-                email TEXT NOT NULL,
-                nickname TEXT NOT NULL,
-                score INTEGER DEFAULT 0,
-                submission_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              player_name TEXT NOT NULL,
+              email TEXT NOT NULL,
+              nickname TEXT NOT NULL,
+              score INTEGER DEFAULT 0,
+              submission_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+              has_paid BOOLEAN DEFAULT 0
             )
         `);
         
@@ -58,6 +59,7 @@ function initializeDatabase() {
                 is_champion BOOLEAN DEFAULT 0
             )
         `);
+        
         
         // Add team visibility setting to system_settings
         db.get("SELECT COUNT(*) as count FROM system_settings WHERE key = 'teams_visible'", (err, row) => {

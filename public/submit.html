@@ -415,6 +415,23 @@
         <h1 class="main-title">Make a Scoonie</h1>
         
         <form id="entryForm">
+
+            
+            <div class="balance-display">
+                Points Remaining: <span id="balanceDisplay">200</span>
+            </div>
+            
+            <div class="tournament-container" id="tournamentContainer">
+                <!-- Regions will be loaded here dynamically -->
+                <div class="loading">Loading teams...</div>
+            </div>
+            
+            <div class="selected-teams">
+                <h2>Your Selected Teams</h2>
+                <div id="selectedTeamsList" class="selected-team-list">
+                    <p id="noTeamsMessage">No teams selected yet</p>
+                </div>
+            </div>
             <div class="user-info-form">
                 <h2>Entry Information</h2>
                 <div class="form-row">
@@ -432,23 +449,6 @@
                     <input type="email" id="email" name="email" required>
                 </div>
             </div>
-            
-            <div class="balance-display">
-                Points Remaining: <span id="balanceDisplay">200</span>
-            </div>
-            
-            <div class="tournament-container" id="tournamentContainer">
-                <!-- Regions will be loaded here dynamically -->
-                <div class="loading">Loading teams...</div>
-            </div>
-            
-            <div class="selected-teams">
-                <h2>Your Selected Teams</h2>
-                <div id="selectedTeamsList" class="selected-team-list">
-                    <p id="noTeamsMessage">No teams selected yet</p>
-                </div>
-            </div>
-            
             <div style="text-align: center; margin-top: 30px;">
                 <button id="submitEntry" type="button">Submit Your Entry</button>
             </div>
@@ -464,19 +464,19 @@
                     <button id="closeDonation" class="close-btn">&times;</button>
                 </div>
                 <div class="donation-body">
-                    <p>Thank you for participating in The Scoonies! Would you like to make a small donation to help cover our costs?</p>
+                    <p>Thank you for participating in The Scoonies! Would you like to pay for your entry via PayPal or Venmo?</p>
                     
                     <div class="donation-options">
                         <div class="donation-option paypal">
                             <img src="https://www.paypalobjects.com/webstatic/mktg/logo/pp_cc_mark_37x23.jpg" alt="PayPal">
-                            <h3>Donate with PayPal</h3>
+                            <h3>Settle up with PayPal</h3>
                             <p>Quick and secure payment using PayPal</p>
                             <div class="donation-amounts">
-                                <button class="amount-btn selected" data-amount="5">$5</button>
-                                <button class="amount-btn" data-amount="10">$10</button>
+                                <button class="amount-btn selected" data-amount="10">$10</button>
                                 <button class="amount-btn" data-amount="20">$20</button>
+                                <button class="amount-btn" data-amount="30">$30</button>
                             </div>
-                            <a href="#" id="paypalDonateBtn" class="donate-btn" target="_blank">Donate via PayPal</a>
+                            <a href="#" id="paypalDonateBtn" class="donate-btn" target="_blank">Pay via PayPal to @BrianSwarts</a>
                         </div>
                         
                         <div class="donation-option venmo">
@@ -484,7 +484,7 @@
                             <h3>Send via Venmo</h3>
                             <p>Use Venmo to send your donation</p>
                             <div class="venmo-info">
-                                <p>Venmo: <strong>@YourVenmoUsername</strong></p>
+                                <p>Venmo: <strong>@Brian-Swarts</strong></p>
                                 <p>Scan with your phone:</p>
                                 <div id="venmoQRCode" class="qr-code">
                                     <!-- Replace this comment with an actual QR code image -->
@@ -492,13 +492,13 @@
                                     <div class="placeholder-qr">QR Placeholder</div>
                                 </div>
                             </div>
-                            <a href="https://venmo.com/YourVenmoUsername" class="donate-btn" target="_blank">Open Venmo</a>
+                            <a href="https://venmo.com/Brian-Swarts" class="donate-btn" target="_blank">Open Venmo</a>
                         </div>
                     </div>
                     
                     <div class="donation-footer">
-                        <button id="skipDonation" class="skip-btn">Maybe Next Time</button>
-                        <p class="donation-note">All donations are voluntary and not tax-deductible.</p>
+                        <button id="skipDonation" class="skip-btn">Not now. I promise to pay after I finish all my entries.</button>
+                        <p class="donation-note">Paying for Scoonies is for entertainment purposes only, is voluntary, and is not tax-deductible.</p>
                     </div>
                 </div>
             </div>

@@ -384,7 +384,8 @@
         
         <div class="section-content">
             <h3>Entry Submission Controls</h3>
-            <p>Use this control to open or close entry submissions:</p>
+            <p>The Manage Entries tab contains controls for <br>(1)Turning on/off the ability to submit Scoonies (usually you want those off once the tournament begins). <br>(2)Making players' choices visible to the public (after the tourney starts). <br>(3) Editing or deleting entries, marking payment status of a bracket.
+            <p>Use this control to open or close entry submissions:</p><br>
             
             <div class="entry-status-control">
                 <div id="statusDisplay" class="status-message" style="margin-bottom: 10px;">Checking entry status...</div>
@@ -436,7 +437,12 @@
                     <label for="editEmail">Email:</label>
                     <input type="email" id="editEmail" name="editEmail" required>
                 </div>
-                
+
+                <div class="edit-form-field">
+                    <label for="editHasPaid">Payment Status:</label>
+                    <input type="checkbox" id="editHasPaid" name="editHasPaid">
+                </div>
+
                 <div class="edit-form-buttons">
                     <button type="button" id="cancelEditBtn" class="delete-btn">Cancel</button>
                     <button type="submit" id="saveEditBtn" class="edit-btn">Save Changes</button>
@@ -446,7 +452,7 @@
     </main>
     
     <footer>
-        <p>&copy; 2025 The Scoonies NCAA Tournament Selection Game</p>
+        <p>&copy; 2025 The Scoonies </p>
     </footer>
     
     <script>
@@ -562,7 +568,7 @@
             const thead = document.createElement('thead');
             const headerRow = document.createElement('tr');
             
-            const headers = ['ID', 'Nickname', 'Player Name', 'Email', 'Score', 'Submission Date', 'Teams', 'Actions'];
+            const headers = ['ID', 'Nickname', 'Player Name', 'Email', 'Score', 'Submission Date', 'Payment Status', 'Teams', 'Actions'];
             
             headers.forEach(header => {
                 const th = document.createElement('th');
@@ -610,6 +616,18 @@
                 dateCell.textContent = date.toLocaleString();
                 row.appendChild(dateCell);
                 
+                // Payment Status
+                const paymentCell = document.createElement('td');
+                const paymentCheckbox = document.createElement('input');
+                paymentCheckbox.type = 'checkbox';
+                paymentCheckbox.checked = entry.has_paid === 1;
+                paymentCheckbox.dataset.entryId = entry.id;
+                paymentCheckbox.addEventListener('change', function() {
+                    updatePaymentStatus(entry.id, this.checked);
+                });
+                paymentCell.appendChild(paymentCheckbox);
+                row.appendChild(paymentCell);
+
                 // Teams
                 const teamsCell = document.createElement('td');
                 
@@ -769,7 +787,7 @@
                 const playerName = document.getElementById('editPlayerName').value.trim();
                 const nickname = document.getElementById('editNickname').value.trim();
                 const email = document.getElementById('editEmail').value.trim();
-                
+                const has_paid = document.getElementById('')
                 if (!playerName || !nickname || !email) {
                     alert('Please fill in all fields');
                     return;
@@ -789,7 +807,7 @@
             document.getElementById('editPlayerName').value = entry.player_name;
             document.getElementById('editNickname').value = entry.nickname;
             document.getElementById('editEmail').value = entry.email;
-            
+            document.getElementById('editHasPaid').checked = entry.has_paid === 1;
             document.getElementById('overlay').style.display = 'block';
             document.getElementById('editForm').style.display = 'block';
         }
@@ -833,7 +851,38 @@
                 showStatusMessage(`Error updating entry: ${error.message}. Please try again.`, 'error');
             });
         }
-        
+       
+        // Update payment status
+        function updatePaymentStatus(entryId, isPaid) {
+            console.log(`Updating payment status for entry ${entryId} to ${isPaid}`);
+            
+            fetch(`/api/admin/entry/${entryId}/payment`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ has_paid: isPaid }),
+            })
+            .then(response => {
+                console.log(`Payment update response status: ${response.status}`);
+                
+                if (!response.ok) {
+                    return response.json().then(err => {
+                        throw new Error(err.error || `Failed to update payment status: ${response.status}`);
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Payment update successful:', data);
+                showStatusMessage('Payment status updated successfully', 'success');
+            })
+            .catch(error => {
+                console.error('Error updating payment status:', error);
+                showStatusMessage(`Error updating payment status: ${error.message}. Please try again.`, 'error');
+            });
+        }
+       
         // Show status message
         function showStatusMessage(message, type) {
             const statusDiv = document.getElementById('statusMessage');
