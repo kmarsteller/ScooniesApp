@@ -493,66 +493,51 @@ router.post('/update-scores', (req, res) => {
     });
 });
 
-// Undo a team advancement
-router.post('/undo-advancement', (req, res) => {
-    const { winnerId, loserId, previousRound } = req.body;
+// Update Final Four matchups
+router.post('/final-four-matchups', (req, res) => {
+    const { semifinal1, semifinal2 } = req.body;
     
-    // Begin transaction
-    db.serialize(() => {
-        db.run('BEGIN TRANSACTION');
-        
-        // Update the current "winner" back to their previous state
-        db.run(
-            `UPDATE tournament_progress SET 
-             round_reached = ?, 
-             is_eliminated = 0, 
-             is_final_four = 0, 
-             is_finalist = 0, 
-             is_champion = 0 
-             WHERE id = ?`,
-            [previousRound, loserId],
-            err => {
-                if (err) {
-                    db.run('ROLLBACK');
-                    return res.status(500).json({ error: 'Error updating team: ' + err.message });
-                }
-                
-                // Update the current "loser" (original winner) to their previous state
-                db.run(
-                    `UPDATE tournament_progress SET 
-                     round_reached = ?, 
-                     is_eliminated = 1, 
-                     is_final_four = 0, 
-                     is_finalist = 0, 
-                     is_champion = 0 
-                     WHERE id = ?`,
-                    [previousRound, winnerId],
-                    err => {
-                        if (err) {
-                            db.run('ROLLBACK');
-                            return res.status(500).json({ error: 'Error updating team: ' + err.message });
-                        }
-                        
-                        // Commit transaction
-                        db.run('COMMIT', err => {
-                            if (err) {
-                                db.run('ROLLBACK');
-                                return res.status(500).json({ error: 'Transaction error: ' + err.message });
-                            }
-                            
-                            res.json({ 
-                                message: 'Advancement undone successfully',
-                                previousWinnerId: winnerId,
-                                newWinnerId: loserId
-                            });
-                        });
-                    }
-                );
+    // Validate inputs
+    if (!semifinal1 || !semifinal2 || !Array.isArray(semifinal1) || 
+        !Array.isArray(semifinal2) || semifinal1.length !== 2 || semifinal2.length !== 2) {
+        return res.status(400).json({ 
+            error: 'Invalid matchup data. Each semifinal must have exactly two regions.' 
+        });
+    }
+    
+    // Validate that all regions are unique
+    const allRegions = [...semifinal1, ...semifinal2];
+    const uniqueRegions = new Set(allRegions);
+    if (uniqueRegions.size !== 4) {
+        return res.status(400).json({ 
+            error: 'Invalid matchup data. Each region must appear exactly once.' 
+        });
+    }
+    
+    // Create matchups object
+    const matchups = {
+        semifinal1,
+        semifinal2
+    };
+    
+    // Save to database
+    db.run(
+        "INSERT OR REPLACE INTO system_settings (key, value) VALUES (?, ?)",
+        ['final_four_matchups', JSON.stringify(matchups)],
+        function(err) {
+            if (err) {
+                console.error('Error updating Final Four matchups:', err);
+                return res.status(500).json({ error: 'Database error: ' + err.message });
             }
-        );
-    });
+            
+            res.json({ 
+                success: true,
+                message: 'Final Four matchups updated successfully',
+                matchups
+            });
+        }
+    );
 });
-
 // Reset the tournament
 router.post('/reset-tournament', (req, res) => {
     // Begin transaction
@@ -767,5 +752,34 @@ router.post('/toggle-team-visibility', (req, res) => {
         }
     );
 });
-
+// Get Final Four matchups
+router.get('/final-four-matchups', (req, res) => {
+    db.get(
+        "SELECT value FROM system_settings WHERE key = 'final_four_matchups'",
+        (err, row) => {
+            if (err) {
+                console.error('Error fetching Final Four matchups:', err);
+                return res.status(500).json({ error: 'Database error: ' + err.message });
+            }
+            
+            // Default matchups if none exist
+            const defaultMatchups = {
+                semifinal1: ['East', 'West'],
+                semifinal2: ['South', 'Midwest']
+            };
+            
+            // Parse the stored JSON value
+            let matchups = defaultMatchups;
+            if (row && row.value) {
+                try {
+                    matchups = JSON.parse(row.value);
+                } catch (e) {
+                    console.error('Error parsing stored matchups:', e);
+                }
+            }
+            
+            res.json({ matchups });
+        }
+    );
+});
 module.exports = router;
