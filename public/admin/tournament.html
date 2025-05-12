@@ -445,6 +445,7 @@
         <div class="admin-nav">
             <a href="/admin/tournament" class="active">Tournament Bracket</a>
             <a href="/admin/entries">Manage Entries</a>
+            <a href="/admin/communications">League Communications</a>
         </div>
         
         <div class="section-content">
@@ -565,13 +566,13 @@
         setupDropdownListeners();
     });
     
-    // Load tournament data from server
+     // Load tournament data from server
     function loadTournamentData() {
         console.log('Loading tournament data...');
         
-        // Clear the entire bracket content first
+        // Show loading indicator with a specific ID
         const bracketContent = document.getElementById('bracketContent');
-        bracketContent.innerHTML = '<div class="loading">Loading tournament data...</div>';
+        bracketContent.innerHTML = '<div id="loadingIndicator" class="loading">Loading tournament data...</div>';
         
         fetch('/api/admin/tournament')
             .then(response => {
@@ -582,7 +583,24 @@
             })
             .then(data => {
                 console.log('Tournament data loaded successfully');
+                
+                // First, try to remove just the loading indicator
+                const loadingIndicator = document.getElementById('loadingIndicator');
+                if (loadingIndicator) {
+                    loadingIndicator.remove();
+                }
+                
+                // Clear any remaining content
+                bracketContent.innerHTML = '';
+                
+                // Verify the content is empty before rendering
+                console.log('Content cleared, container is now:', bracketContent.innerHTML);
+                
+                // Then render the bracket
                 renderBracket(data.tournamentData);
+                
+                // Verify content was added
+                console.log('After rendering, is container empty?', bracketContent.innerHTML === '');
                 
                 // Re-enable click events
                 const allTeamDivs = document.querySelectorAll('.team');
@@ -611,6 +629,12 @@
         const bracketContent = document.getElementById('bracketContent');
         bracketContent.innerHTML = '';
         
+        // Make sure the bracket content element exists
+        if (!bracketContent) {
+            console.error('bracketContent element not found!');
+            return;
+        }
+
         // Group teams by region
         const regions = {};
         data.forEach(team => {

@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Scoonies - League Communications</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        .admin-section {
+            margin-bottom: 30px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .section-header {
+            background-color: #dc3545;
+            color: white;
+            padding: 12px 15px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        
+        .section-content {
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+        
+        .admin-nav {
+            display: flex;
+            background-color: #e9ecef;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .admin-nav a {
+            padding: 15px 25px;
+            text-decoration: none;
+            color: #495057;
+            font-weight: bold;
+            border-right: 1px solid #ddd;
+            transition: all 0.2s ease;
+        }
+        
+        .admin-nav a:last-child {
+            border-right: none;
+        }
+        
+        .admin-nav a.active {
+            background-color: #f8f9fa;
+            color: #dc3545;
+            border-bottom: 3px solid #dc3545;
+        }
+        
+        .admin-nav a:hover:not(.active) {
+            background-color: #dee2e6;
+        }
+        
+        .email-form {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+        
+        input[type="text"], textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-family: inherit;
+            font-size: 16px;
+        }
+        
+        textarea {
+            min-height: 300px;
+            resize: vertical;
+        }
+        
+        .button-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .send-button {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 4px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .send-button:hover {
+            background-color: #c82333;
+            transform: translateY(-2px);
+        }
+        
+        .send-button:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .email-status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 4px;
+            display: none;
+        }
+        
+        .email-status.success {
+            display: block;
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .email-status.error {
+            display: block;
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .recipients-preview {
+            margin-top: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 15px;
+            background-color: white;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+        
+        .recipients-count {
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        .recipients-list {
+            font-size: 14px;
+            color: #6c757d;
+        }
+        
+        .email-templates {
+            margin-bottom: 20px;
+        }
+        
+        .template-select {
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-top">
+            <img src="../Scoonies.jpg" alt="The Scoonies Logo">
+        </div>
+        <nav>
+            <a href="/">About</a>
+            <a href="/submit.html">Make a Scoonie</a>
+            <a href="/standings.html">Standings</a>
+            <a href="/admin" class="active">Admin</a>
+        </nav>
+    </header>
+    
+    <main>
+        <div class="admin-section">
+            <div class="section-header">Tournament Administration</div>
+            
+            <div class="admin-nav">
+                <a href="/admin/tournament">Tournament Bracket</a>
+                <a href="/admin/entries">Manage Entries</a>
+                <a href="/admin/communications" class="active">League Communications</a>
+            </div>
+            
+            <div class="section-content">
+                <h3>Send Email to All Players</h3>
+                <p>Use this form to send email communications to all players in the league. Each player will receive only one email, even if they have multiple entries.</p>
+                
+                <div class="email-form">
+                    <div class="form-group">
+                        <label for="recipientFilter">Recipients:</label>
+                        <select id="recipientFilter" class="template-select">
+                            <option value="all">All Players</option>
+                            <option value="paid">Paid Players Only</option>
+                            <option value="unpaid">Unpaid Players Only</option>
+                        </select>
+                        <div class="recipients-preview">
+                            <div class="recipients-count">Loading recipients...</div>
+                            <div class="recipients-list"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group email-templates">
+                        <label for="emailTemplate">Email Template:</label>
+                        <select id="emailTemplate" class="template-select">
+                            <option value="custom">Custom Message</option>
+                            <option value="welcome">Welcome Message</option>
+                            <option value="payment-reminder">Payment Reminder</option>
+                            <option value="tournament-start">Tournament Starting Soon</option>
+                            <option value="results-update">Results Update</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="emailSubject">Subject:</label>
+                        <input type="text" id="emailSubject" placeholder="Enter email subject">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="emailBody">Message:</label>
+                        <textarea id="emailBody" placeholder="Enter your message here..."></textarea>
+                    </div>
+                    
+                    <div class="button-container">
+                        <div>
+                            <input type="checkbox" id="confirmSend">
+                            <label for="confirmSend" style="display: inline;">I confirm I want to send this email to all recipients</label>
+                        </div>
+                        <button id="sendEmailBtn" class="send-button" disabled>Send Email</button>
+                    </div>
+                    
+                    <div id="emailStatus" class="email-status"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <footer>
+        <p>&copy; 2025 The Scoonies</p>
+    </footer>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const recipientFilterSelect = document.getElementById('recipientFilter');
+            const emailTemplateSelect = document.getElementById('emailTemplate');
+            const emailSubjectInput = document.getElementById('emailSubject');
+            const emailBodyInput = document.getElementById('emailBody');
+            const confirmSendCheckbox = document.getElementById('confirmSend');
+            const sendEmailBtn = document.getElementById('sendEmailBtn');
+            const emailStatusDiv = document.getElementById('emailStatus');
+            const recipientsCountDiv = document.querySelector('.recipients-count');
+            const recipientsListDiv = document.querySelector('.recipients-list');
+            
+            // Load recipients when page loads and when filter changes
+            loadRecipients();
+            recipientFilterSelect.addEventListener('change', loadRecipients);
+            
+            // Update button state when checkbox changes
+            confirmSendCheckbox.addEventListener('change', function() {
+                sendEmailBtn.disabled = !this.checked || !emailSubjectInput.value.trim() || !emailBodyInput.value.trim();
+            });
+            
+            // Update button state when inputs change
+            emailSubjectInput.addEventListener('input', updateSendButtonState);
+            emailBodyInput.addEventListener('input', updateSendButtonState);
+            
+            // Load email template when selected
+            emailTemplateSelect.addEventListener('change', function() {
+                loadEmailTemplate(this.value);
+            });
+            
+            // Send email when button is clicked
+            sendEmailBtn.addEventListener('click', sendEmail);
+            
+            function updateSendButtonState() {
+                sendEmailBtn.disabled = !confirmSendCheckbox.checked || 
+                                        !emailSubjectInput.value.trim() || 
+                                        !emailBodyInput.value.trim();
+            }
+            
+            function loadRecipients() {
+                const filterType = recipientFilterSelect.value;
+                
+                // Show loading state
+                recipientsCountDiv.textContent = 'Loading recipients...';
+                recipientsListDiv.innerHTML = '';
+                
+                // Fetch recipients based on filter
+                fetch(`/api/admin/email-recipients?filter=${filterType}`)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Failed to load recipients');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data.recipients && data.recipients.length > 0) {
+                            recipientsCountDiv.textContent = `${data.recipients.length} recipients`;
+                            
+                            // Show recipient list
+                            const recipientEmails = data.recipients.map(r => r.email).join(', ');
+                            recipientsListDiv.textContent = recipientEmails;
+                        } else {
+                            recipientsCountDiv.textContent = 'No recipients found';
+                            recipientsListDiv.textContent = '';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error loading recipients:', error);
+                        recipientsCountDiv.textContent = 'Error loading recipients';
+                        recipientsListDiv.textContent = error.message;
+                    });
+            }
+            
+            function loadEmailTemplate(templateId) {
+                // Define templates
+                const templates = {
+                    'custom': {
+                        subject: '',
+                        body: ''
+                    },
+                    'welcome': {
+                        subject: 'Welcome to The Scoonies 2025!',
+                        body: 'Dear Participant,\n\nThank you for joining The Scoonies for the 2025 NCAA Tournament! Your entry has been received.\n\nRemember to complete your payment if you haven\'t already done so.\n\nGood luck and enjoy the tournament!\n\nThe Scoonies Team'
+                    },
+                    'payment-reminder': {
+                        subject: 'Payment Reminder for The Scoonies 2025',
+                        body: 'Dear Participant,\n\nThis is a friendly reminder that we have not yet received payment for your Scoonies entry.\n\nPlease submit your payment as soon as possible to ensure your entry remains valid.\n\nThank you!\n\nThe Scoonies Team'
+                    },
+                    'tournament-start': {
+                        subject: 'The Scoonies 2025 - Tournament Starting Soon!',
+                        body: 'Dear Participant,\n\nThe 2025 NCAA Tournament is about to begin! All entries are now locked in.\n\nYou can check the standings page throughout the tournament to see how your entry is performing.\n\nMay the best bracket win!\n\nThe Scoonies Team'
+                    },
+                    'results-update': {
+                        subject: 'The Scoonies 2025 - Tournament Update',
+                        body: 'Dear Participant,\n\nThe tournament is progressing and scores have been updated on the standings page.\n\nCheck out how your entry is doing compared to others!\n\nGood luck for the remaining games!\n\nThe Scoonies Team'
+                    }
+                };
+                
+                // Load the selected template
+                if (templates[templateId]) {
+                    emailSubjectInput.value = templates[templateId].subject;
+                    emailBodyInput.value = templates[templateId].body;
+                    
+                    // Update button state
+                    updateSendButtonState();
+                }
+            }
+            
+            function sendEmail() {
+                // Disable button and show sending state
+                sendEmailBtn.disabled = true;
+                sendEmailBtn.textContent = 'Sending...';
+                
+                const filterType = recipientFilterSelect.value;
+                
+                // Prepare email data
+                const emailData = {
+                    filter: filterType,
+                    subject: emailSubjectInput.value.trim(),
+                    body: emailBodyInput.value.trim()
+                };
+                
+                // Send the request
+                fetch('/api/admin/send-email', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(emailData),
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(err => {
+                            throw new Error(err.error || 'Failed to send email');
+                        });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // Show success message
+                    emailStatusDiv.textContent = data.message || 'Email sent successfully to all recipients!';
+                    emailStatusDiv.className = 'email-status success';
+                    
+                    // Reset form
+                    confirmSendCheckbox.checked = false;
+                    sendEmailBtn.textContent = 'Send Email';
+                    sendEmailBtn.disabled = true;
+                })
+                .catch(error => {
+                    console.error('Error sending email:', error);
+                    
+                    // Show error message
+                    emailStatusDiv.textContent = error.message || 'Error sending email. Please try again.';
+                    emailStatusDiv.className = 'email-status error';
+                    
+                    // Reset button
+                    sendEmailBtn.textContent = 'Send Email';
+                    updateSendButtonState();
+                });
+            }
+        });
+    </script>
+</body>
+</html>

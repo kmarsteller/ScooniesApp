@@ -7,6 +7,7 @@ const { initializeDatabase } = require('./db/database');
 const entriesRoutes = require('./routes/entries');
 const standingsRoutes = require('./routes/standings');
 const adminRoutes = require('./routes/admin');
+const emailRoutes = require('./routes/email');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -38,6 +39,7 @@ if (!fs.existsSync(logoDir)) {
 app.use('/api/admin', adminRoutes);  // Admin routes first (most specific)
 app.use('/api/entries', entriesRoutes);
 app.use('/api/standings', standingsRoutes);
+app.use('/api/admin', emailRoutes);
 
 // Serve static files
 app.use(express.static(path.join(__dirname, 'public')));
@@ -59,6 +61,10 @@ app.get('/admin/tournament', (req, res) => {
 
 app.get('/admin/entries', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'admin', 'entries.html'));
+});
+
+app.get('/admin/communications', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'admin', 'communications.html'));
 });
 
 // Main pages
