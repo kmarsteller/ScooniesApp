@@ -1,4 +1,7 @@
 // scripts/download-logos.js
+// make sure teams.csv is ready, then run
+// run with "node download-logos.js"
+
 const fs = require('fs');
 const path = require('path');
 const https = require('https');

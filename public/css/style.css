@@ -86,7 +86,7 @@ h1, h2, h3, h4, h5, h6 {
 .main-title {
   text-align: center;
   font-size: 36px;
-  color: #dc3545; /* Red instead of blue */
+  color: #dc3545;
   margin-bottom: 30px;
   text-transform: uppercase;
   font-weight: bold;
@@ -125,7 +125,7 @@ button {
 }
 
 button:hover {
-  background-color: #c82333; /* Darker Red */
+  background-color: #c82333;
 }
 
 table {
@@ -171,8 +171,8 @@ table tr:nth-child(even) {
   text-align: center;
   padding-bottom: 10px;
   margin-bottom: 15px;
-  border-bottom: 2px solid #dc3545; /* Red instead of blue */
-  color: #dc3545; /* Red instead of blue */
+  border-bottom: 2px solid #dc3545; 
+  color: #dc3545; 
   font-weight: bold;
 }
 
@@ -234,8 +234,8 @@ table tr:nth-child(even) {
   margin: 20px 0;
   padding: 10px;
   border-radius: 8px;
-  background-color: #f8f9fa; /* Light gray instead of light blue */
-  border: 2px solid #dc3545; /* Red border */
+  background-color: #f8f9fa;
+  border: 2px solid #dc3545;
   color: #dc3545;
 }
 
@@ -279,31 +279,29 @@ table tr:nth-child(even) {
   max-width: 600px;
   margin: 0 auto 30px;
   padding: 20px;
-  background-color: #f8f9fa; /* Light gray instead of light blue */
+  background-color: #f8f9fa;
   border-radius: 8px;
-  border: 1px solid #6c757d; /* Gray border */
+  border: 1px solid #6c757d;
 }
 
-/* Replace any blue button styling */
 .edit-btn {
-  background-color: #6c757d; /* Gray instead of blue */
+  background-color: #6c757d;
   color: white;
 }
 
 .edit-btn:hover {
-  background-color: #5a6268; /* Darker gray */
+  background-color: #5a6268;
 }
 
-/* Final Four section in tournament.html */
 .final-four-section {
   margin: 40px 0;
-  border: 1px solid #dc3545; /* Red instead of blue */
+  border: 1px solid #dc3545;
   border-radius: 8px;
   overflow: hidden;
 }
 
 .final-four-title {
-  background-color: #dc3545; /* Red instead of blue */
+  background-color: #dc3545;
   color: white;
   padding: 15px;
   font-size: 28px;

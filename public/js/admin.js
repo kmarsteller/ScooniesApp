@@ -1,8 +1,5 @@
-
-// Update scores based on NCAA tournament results
-router.post('/update-scores', (req, res) => {
-    // In a real app, verify admin JWT token here
-    
+// Update Scoonies scores based on NCAA tournament winners
+router.post('/update-scores', (req, res) => {    
     const { advancingTeams } = req.body;
     
     if (!advancingTeams || !Array.isArray(advancingTeams)) {
@@ -41,7 +38,6 @@ router.post('/update-scores', (req, res) => {
                     const { teamName, region, seed, roundReached } = team;
                     
                     // Calculate points based on seed and round reached
-                    // Round multipliers: 1 (Round of 32), 2 (Sweet 16), 4 (Elite 8), 8 (Final 4), 16 (Championship)
                     const roundMultiplier = Math.pow(2, roundReached - 1);
                     const pointsEarned = seed * roundMultiplier;
                     

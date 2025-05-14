@@ -80,7 +80,7 @@ function initializeDatabase() {
                     });
             }
         });
-        // Check for Final Four matchup configuration
+        // Check for Final Four matchup configuration--it's not the same every year!
         db.get("SELECT COUNT(*) as count FROM system_settings WHERE key = 'final_four_matchups'", (err, row) => {
             if (err) {
                 console.error('Error checking Final Four matchup setting:', err);
@@ -92,7 +92,7 @@ function initializeDatabase() {
                 const defaultMatchups = JSON.stringify({
                     semifinal1: ['East', 'West'],
                     semifinal2: ['South', 'Midwest']
-                });
+            });
                 
                 db.run("INSERT INTO system_settings (key, value) VALUES (?, ?)", 
                     ["final_four_matchups", defaultMatchups], err => {
