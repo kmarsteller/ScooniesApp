@@ -183,8 +183,8 @@ function initializeDatabase() {
                 password_hash TEXT NOT NULL
             )
         `);
-        
-        // Insert default admin if none exists
+
+        // Check if any admin exists
         db.get("SELECT COUNT(*) as count FROM admin_users", (err, row) => {
             if (err) {
                 console.error("Error checking admin users:", err);
@@ -192,13 +192,12 @@ function initializeDatabase() {
             }
             
             if (row.count === 0) {
-                // Insert default admin (username: admin, password: admin123)
-                // NOTE: In a real app, NEVER store plain text passwords
-                db.run("INSERT INTO admin_users (username, password_hash) VALUES (?, ?)", 
-                    ["keith", "6969"]);
+                console.log("No admin users found. Please use the admin-manager.js script to create an admin.");
+                console.log("Example: node scripts/admin-manager.js add admin yourpassword");
+            } else {
+                console.log(`Found ${row.count} admin users in the database.`);
             }
         });
-        
         // Entry status table
         db.run(`
             CREATE TABLE IF NOT EXISTS system_settings (

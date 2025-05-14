@@ -104,25 +104,25 @@ app.use((err, req, res, next) => {
     }
 });
 
-// Debug admin users if needed
-const { db } = require('./db/database');
-db.get("SELECT * FROM admin_users", (err, row) => {
-    if (err) {
-        console.error("Error checking admin users:", err);
-    } else if (!row) {
-        console.log("No admin users found, creating default admin");
-        db.run("INSERT INTO admin_users (username, password_hash) VALUES (?, ?)", 
-            ["Keith", "5150"], (err) => {
-                if (err) {
-                    console.error("Error creating admin user:", err);
-                } else {
-                    console.log("Admin user 'Keith' created successfully");
-                }
-            });
-    } else {
-        console.log("Admin user found:", row.username);
-    }
-});
+// // Debug admin users if needed
+// const { db } = require('./db/database');
+// db.get("SELECT * FROM admin_users", (err, row) => {
+//     if (err) {
+//         console.error("Error checking admin users:", err);
+//     } else if (!row) {
+//         console.log("No admin users found, creating default admin");
+//         db.run("INSERT INTO admin_users (username, password_hash) VALUES (?, ?)", 
+//             ["Keith", "5150"], (err) => {
+//                 if (err) {
+//                     console.error("Error creating admin user:", err);
+//                 } else {
+//                     console.log("Admin user 'Keith' created successfully");
+//                 }
+//             });
+//     } else {
+//         console.log("Admin user found:", row.username);
+//     }
+// });
 
 // Start server
 app.listen(PORT, () => {

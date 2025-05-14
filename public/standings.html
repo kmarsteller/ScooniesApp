@@ -263,10 +263,26 @@
                 entryNickname.className = 'entry-nickname';
                 entryNickname.textContent = entry.nickname;
                 
+                function maskEmail(email) {
+                    if (!email || email.length <= 10) return "email hidden"; // Return as is if too short
+                    
+                    const atIndex = email.indexOf('@');
+                    if (atIndex <= 4) {
+                        // Handle short usernames (before @)
+                        const firstPart = email.substring(0, atIndex);
+                        const domain = email.substring(atIndex);
+                        return firstPart + '...' + '@' + '...' + domain;
+                    } else {
+                        // Normal case
+                        const first4 = email.substring(0, 4);
+                        const last6 = email.substring(email.length - 6);
+                        return `${first4}...@...${last6}`;
+                    }
+                }
                 const entryPlayer = document.createElement('div');
                 entryPlayer.className = 'entry-player';
-                entryPlayer.textContent = `${entry.player_name} (${entry.email})`;
-                
+                entryPlayer.textContent = `${entry.player_name} (${maskEmail(entry.email)})`;
+
                 entryInfo.appendChild(entryNickname);
                 entryInfo.appendChild(entryPlayer);
                 

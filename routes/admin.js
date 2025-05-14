@@ -1,3 +1,4 @@
+const bcrypt = require('bcrypt');
 const express = require('express');
 const router = express.Router();
 const { db } = require('../db/database');
@@ -19,17 +20,24 @@ router.post('/login', (req, res) => {
     
     console.log('Login attempt:', username); // For debugging
     
-    db.get(
-        'SELECT id FROM admin_users WHERE username = ? AND password_hash = ?',
-        [username, password],
-        (err, row) => {
-            if (err) {
-                console.error('Database error during login:', err);
-                return res.status(500).json({ error: 'Database error' });
-            }
+    // First, get the admin user by username
+    db.get('SELECT id, password_hash FROM admin_users WHERE username = ?', [username], async (err, row) => {
+        if (err) {
+            console.error('Database error during login:', err);
+            return res.status(500).json({ error: 'Database error' });
+        }
+        
+        if (!row) {
+            console.log('Invalid credentials for user:', username);
+            return res.status(401).json({ error: 'Invalid credentials' });
+        }
+        
+        try {
+            // Compare the provided password with the stored hash
+            const passwordMatch = await bcrypt.compare(password, row.password_hash);
             
-            if (!row) {
-                console.log('Invalid credentials for user:', username);
+            if (!passwordMatch) {
+                console.log('Invalid password for user:', username);
                 return res.status(401).json({ error: 'Invalid credentials' });
             }
             
@@ -40,8 +48,11 @@ router.post('/login', (req, res) => {
                 success: true,
                 message: 'Login successful'
             });
+        } catch (error) {
+            console.error('Error comparing passwords:', error);
+            return res.status(500).json({ error: 'Authentication error' });
         }
-    );
+    });
 });
 
 // Possible fix for admin.js entry update route
