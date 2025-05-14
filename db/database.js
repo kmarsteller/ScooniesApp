@@ -80,6 +80,30 @@ function initializeDatabase() {
                     });
             }
         });
+        // Check for Final Four matchup configuration
+        db.get("SELECT COUNT(*) as count FROM system_settings WHERE key = 'final_four_matchups'", (err, row) => {
+            if (err) {
+                console.error('Error checking Final Four matchup setting:', err);
+                return;
+            }
+            
+            if (row.count === 0) {
+                // Set default matchups (East vs West, South vs Midwest)
+                const defaultMatchups = JSON.stringify({
+                    semifinal1: ['East', 'West'],
+                    semifinal2: ['South', 'Midwest']
+                });
+                
+                db.run("INSERT INTO system_settings (key, value) VALUES (?, ?)", 
+                    ["final_four_matchups", defaultMatchups], err => {
+                        if (err) {
+                            console.error('Error inserting Final Four matchup setting:', err);
+                            return;
+                        }
+                        console.log('Default Final Four matchup configuration created');
+                    });
+            }
+        });
         // Check if tournament_progress table is empty
         db.get("SELECT COUNT(*) as count FROM tournament_progress", (err, row) => {
             if (err) {

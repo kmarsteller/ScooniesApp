@@ -780,24 +780,98 @@
                 closeEditForm();
             });
             
+            // Fixed form submission handler
+            // Replace your existing form submission code in admin/entries.html
+
             // Handle form submission
             editFormElement.addEventListener('submit', function(event) {
                 event.preventDefault();
                 
-                const entryId = document.getElementById('editEntryId').value;
+                // Get form values - convert entryId to number
+                const entryId = parseInt(document.getElementById('editEntryId').value, 10);
                 const playerName = document.getElementById('editPlayerName').value.trim();
                 const nickname = document.getElementById('editNickname').value.trim();
                 const email = document.getElementById('editEmail').value.trim();
-                const has_paid = document.getElementById('')
+                const hasPaid = document.getElementById('editHasPaid').checked;
+                
+                console.log('Form submission values:', {
+                    entryId,
+                    playerName,
+                    nickname,
+                    email,
+                    hasPaid
+                });
+                
+                // Validate required fields
                 if (!playerName || !nickname || !email) {
-                    alert('Please fill in all fields');
+                    alert('Please fill in all required fields');
                     return;
                 }
                 
-                updateEntry(entryId, {
-                    player_name: playerName,
+                // Show a loading indicator
+                const saveBtn = document.getElementById('saveEditBtn');
+                if (saveBtn) {
+                    saveBtn.disabled = true;
+                    saveBtn.textContent = 'Saving...';
+                }
+                
+                // Form data with correct field names and ensuring entryId is numeric
+                const formData = {
+                    player_name: playerName, 
                     nickname: nickname,
-                    email: email
+                    email: email,
+                    has_paid: hasPaid
+                };
+                
+                console.log('Sending update request to /api/admin/entry/' + entryId);
+                console.log('Request data:', formData);
+                
+                // Send update request
+                fetch(`/api/admin/entry/${entryId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData),
+                })
+                .then(response => {
+                    console.log('Response status:', response.status);
+                    
+                    // Parse JSON even for error responses
+                    return response.json().then(data => {
+                        if (!response.ok) {
+                            // Add status to error data
+                            data.status = response.status;
+                            throw data;
+                        }
+                        return data;
+                    });
+                })
+                .then(data => {
+                    console.log('Update successful:', data);
+                    showStatusMessage('Entry updated successfully', 'success');
+                    
+                    // Reset form and UI
+                    closeEditForm();
+                    loadEntries();
+                })
+                .catch(error => {
+                    console.error('Error updating entry:', error);
+                    
+                    // Format error message
+                    let errorMsg = 'Error updating entry';
+                    if (error.error) {
+                        errorMsg += ': ' + error.error;
+                    }
+                    
+                    showStatusMessage(errorMsg, 'error');
+                })
+                .finally(() => {
+                    // Re-enable save button
+                    if (saveBtn) {
+                        saveBtn.disabled = false;
+                        saveBtn.textContent = 'Save Changes';
+                    }
                 });
             });
         }

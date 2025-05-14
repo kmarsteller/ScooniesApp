@@ -44,51 +44,87 @@ router.post('/login', (req, res) => {
     );
 });
 
-// Update an entry
+// Possible fix for admin.js entry update route
+// Replace your existing router.put('/entry/:id', ...) function with this one:
+
 router.put('/entry/:id', (req, res) => {
-    const entryId = req.params.id;
+    const entryId = parseInt(req.params.id, 10); // Convert to number explicitly
     const { player_name, nickname, email, has_paid } = req.body;
     
+    console.log('Update request received:');
+    console.log('Entry ID:', entryId, '(type:', typeof entryId, ')');
+    console.log('Request body:', req.body);
+    
+    // Validate required fields
     if (!entryId || !player_name || !nickname || !email) {
         return res.status(400).json({ error: 'All fields are required' });
     }
     
     // Convert has_paid to 0 or 1 for SQLite boolean
     const hasPaidValue = has_paid ? 1 : 0;
-
-    // Begin transaction
-    db.serialize(() => {
-        db.run('BEGIN TRANSACTION');
+    
+    // First check if entry exists
+    db.get('SELECT * FROM entries WHERE id = ?', [entryId], (err, entry) => {
+        if (err) {
+            console.error('Error checking entry:', err);
+            return res.status(500).json({ error: 'Database error: ' + err.message });
+        }
         
-        // Update the entry
-        db.run(
-            'UPDATE entries SET player_name = ?, nickname = ?, email = ? has_paid = ? WHERE id = ?',
-            [player_name, nickname, email, entryId],
-            function(err) {
+        if (!entry) {
+            console.error('Entry not found with ID:', entryId);
+            return res.status(404).json({ error: 'Entry not found' });
+        }
+        
+        console.log('Found entry before update:', entry);
+        
+        // Update fields one at a time for safety
+        
+        // Update player_name
+        db.run('UPDATE entries SET player_name = ? WHERE id = ?', [player_name, entryId], function(err) {
+            if (err) {
+                console.error('Error updating player_name:', err);
+                return res.status(500).json({ error: 'Error updating player name: ' + err.message });
+            }
+            
+            // Update nickname
+            db.run('UPDATE entries SET nickname = ? WHERE id = ?', [nickname, entryId], function(err) {
                 if (err) {
-                    db.run('ROLLBACK');
-                    return res.status(500).json({ error: 'Error updating entry: ' + err.message });
+                    console.error('Error updating nickname:', err);
+                    return res.status(500).json({ error: 'Error updating nickname: ' + err.message });
                 }
                 
-                if (this.changes === 0) {
-                    db.run('ROLLBACK');
-                    return res.status(404).json({ error: 'Entry not found' });
-                }
-                
-                // Commit transaction
-                db.run('COMMIT', err => {
+                // Update email
+                db.run('UPDATE entries SET email = ? WHERE id = ?', [email, entryId], function(err) {
                     if (err) {
-                        db.run('ROLLBACK');
-                        return res.status(500).json({ error: 'Transaction error: ' + err.message });
+                        console.error('Error updating email:', err);
+                        return res.status(500).json({ error: 'Error updating email: ' + err.message });
                     }
                     
-                    res.json({ 
-                        message: 'Entry updated successfully',
-                        entryId
+                    // Update has_paid
+                    db.run('UPDATE entries SET has_paid = ? WHERE id = ?', [hasPaidValue, entryId], function(err) {
+                        if (err) {
+                            console.error('Error updating has_paid:', err);
+                            return res.status(500).json({ error: 'Error updating payment status: ' + err.message });
+                        }
+                        
+                        // Success! Get the updated entry to verify
+                        db.get('SELECT * FROM entries WHERE id = ?', [entryId], (err, updatedEntry) => {
+                            if (err) {
+                                console.error('Error fetching updated entry:', err);
+                            } else {
+                                console.log('Entry after update:', updatedEntry);
+                            }
+                            
+                            // Return success response
+                            res.json({ 
+                                message: 'Entry updated successfully',
+                                entryId
+                            });
+                        });
                     });
                 });
-            }
-        );
+            });
+        });
     });
 });
 // Update payment status for an entry
