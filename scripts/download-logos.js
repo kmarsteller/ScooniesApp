@@ -1,5 +1,5 @@
 // scripts/download-logos.js
-// make sure teams.csv is ready, then run
+// make sure teams.csv is ready, then run to pull team logos into public/images/logos
 // run with "node download-logos.js"
 
 const fs = require('fs');

@@ -1,3 +1,4 @@
+//The server, run with "node server.js" or "npm run dev"
 const express = require('express');
 const path = require('path');
 const fs = require('fs');
