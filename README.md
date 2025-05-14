@@ -15,6 +15,156 @@ Once teams.csv is in place, THEN, from the top-level directory,  run 'node scrip
 
 Finally, from the top-level directory, run the server with this command: "npm start" OR "npm run dev" if you need to run it to ripple through code changes.
 
+Scoonies Project Overview
+"The Scoonies" is a fantasy sports game based on the NCAA Basketball Tournament, where participants select teams using a points-based budget system and earn points based on their teams' tournament performance.
+Core Components
+Server-Side Components
+
+Server (server.js)
+
+Express.js application serving the website
+Routes for API endpoints and static files
+Error handling and middleware configuration
+
+
+Database (db/database.js)
+
+SQLite database setup and connection management
+Table schema creation for entries, team selections, tournament progress
+System settings management (entries open/closed, team visibility)
+
+
+Route Handlers
+
+entries.js: Manages user entry submissions
+standings.js: Provides current tournament standings with team visibility control
+admin.js: Admin authentication and tournament management functions
+
+
+Admin Management (scripts/admin-manager.js)
+
+Secure administrator account management
+Password hashing with bcrypt
+Command-line interface for admin CRUD operations
+
+
+
+Client-Side Components
+
+Public Pages
+
+index.html: Welcome page and game overview
+submit.html: Team selection interface with 200-point budget system
+standings.html: Current participant rankings and team selections
+404.html & 500.html: Error pages
+
+
+Admin Interface
+
+admin/index.html: Admin login
+admin/tournament.html: Tournament bracket management
+admin/entries.html: Entry management and control panel
+
+
+JavaScript
+
+submit.js: Team selection and submission logic
+standings.js: Rankings display and team visibility handling
+Various embedded scripts for admin functionality
+
+
+CSS
+
+style.css: Global styling for the application
+
+
+
+Utility Scripts
+
+download-logos.js
+
+Downloads team logos from ESPN based on teams.csv data
+
+
+
+Database Structure
+
+entries: User entry information including name, email, nickname, score
+team_selections: Teams selected by users with cost and points earned
+tournament_progress: Tournament teams with advancement status
+admin_users: Administrator credentials with secure password hashing
+system_settings: Application configuration (entries open/closed, team visibility)
+
+Game Mechanics
+
+Team Selection
+
+200 total points to spend
+Team costs based on seed (1 seed = 80 points, decreasing by 5 for each lower seed)
+Points must be exactly spent (no leftover points)
+
+
+Scoring System
+
+Points earned = team seed × round advancement multiplier
+Round multipliers increase as teams advance
+Bonus points for Final Four (+5), Championship game (+10), and Champion (+15)
+
+
+Admin Controls
+
+Tournament bracket management
+Entry submission control (open/close registrations)
+Team visibility control (hide/show selections)
+Score calculation and updates
+
+
+
+Security Features
+
+Password Protection
+
+Admin credentials stored with bcrypt hashing
+Login-protected admin area
+
+
+Privacy Controls
+
+Email masking in public standings (first 4 chars...last 6 chars)
+Option to hide team selections until tournament begins
+
+
+
+User Experience
+
+Team Selection Interface
+
+Real-time points calculation
+Team filtering by region
+Visual feedback for selected teams and affordability
+
+
+Standings Display
+
+Live score updates
+Payment status indicators
+Team performance tracking
+
+
+
+Payment Integration
+
+Entry fee collection via Venmo and PayPal
+Payment tracking in admin interface
+
+Deployment
+
+Node.js runtime environment
+SQLite database for data persistence
+Local image storage for team logos
+
+This outline represents the current state of the Scoonies application after recent updates and improvements to security, user interface, and privacy controls.
+
 Project Structure Outline:
 
 ScooniesApp/
@@ -50,6 +200,4 @@ ScooniesApp/
 └── package.json        # Project dependencies
 
 
---Keith Marsteller, May 7, 2025
-
-
+--Keith Marsteller, May 14, 2025
