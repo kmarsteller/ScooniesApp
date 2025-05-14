@@ -56,15 +56,18 @@
         
         .team-name {
             flex-grow: 1;
+            margin-right: 10px; 
         }
         
         .team-button {
-            padding: 5px 10px;
+            padding: 2px 6px;
             border: none;
-            border-radius: 4px;
+            border-radius: 8px;
             cursor: pointer;
             background-color: #28a745;
             color: white;
+            font-size: 14px;
+            margin-left: 10px;
         }
         
         .team-button.unpurchase {
@@ -674,7 +677,7 @@
                             
                             const button = document.createElement('button');
                             button.className = affordable ? 'team-button' : 'team-button disabled';
-                            button.textContent = affordable ? `Purchase (${cost} pts)` : 'Can\'t Afford';
+                            button.textContent = affordable ? `Purchase\n(-${cost} pts)` : 'Can\'t\n Afford';
                             button.type = 'button'; // Ensure it's a button, not submit
                             
                             if (affordable) {
@@ -811,7 +814,7 @@
                 if (isSelected) {
                     // Remove team from selection
                     teamRow.classList.remove('selected');
-                    button.textContent = `Purchase (${cost} pts)`;
+                    button.textContent = `Purchase\n(-${cost} pts)`;
                     button.classList.remove('unpurchase');
                     
                     // Update balance
@@ -831,7 +834,7 @@
                     
                     // Add team to selection
                     teamRow.classList.add('selected');
-                    button.textContent = `Remove (${cost} pts)`;
+                    button.textContent = `Sell Back\n(+${cost} pts)`;
                     button.classList.add('unpurchase');
                     
                     // Update balance
@@ -923,12 +926,12 @@
                     
                     if (cost > balance) {
                         row.classList.add('unaffordable');
-                        button.textContent = 'Can\'t Afford';
+                        button.textContent = 'Can\'t\nAfford';
                         button.classList.add('disabled');
                         button.disabled = true;
                     } else {
                         row.classList.remove('unaffordable');
-                        button.textContent = `Purchase (${cost} pts)`;
+                        button.textContent = `Purchase\n(-${cost} pts)`;
                         button.classList.remove('disabled');
                         button.disabled = false;
                     }
