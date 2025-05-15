@@ -13,7 +13,9 @@ this file should live at the address: ./public/teams.csv
 
 Once teams.csv is in place, THEN, from the top-level directory, run 'node scripts/download-logos.js' to go out and download all the team logos and keep them local.
 
-Finally, from the top-level directory, run the server with this command: "npm start" OR "npm run dev" if you need to run it to ripple through code changes.
+Next, get a .env file created, as described at the bottom of this page. This will allow for the email functions to work.
+
+Finally, from the top-level directory, run the server with this command: "npm start" OR "npm run dev" if you need to run it to restart to ripple through development code changes.
 
 Scoonies Project Overview
 "The Scoonies" is a fantasy sports game based on the NCAA Basketball Tournament, where participants select teams using a points-based budget system and earn points based on their teams' tournament performance.
@@ -57,6 +59,18 @@ Server-Side Components
 
 	Utility Scripts
 		download-logos.js: Downloads team logos from ESPN based on teams.csv data
+
+	EMAIL
+
+		For the email services in the admin panel to work, you need to make a .env file in the ScooniesApp/ directory.
+		That file will look like this:
+
+		# Email Configuration
+		EMAIL_SERVICE=gmail
+		EMAIL_USER=thescoonies.basketball@gmail.com
+		EMAIL_PASS=yfjxmqgcvwrsrzzh
+
+		(In this case, I have created a free basketball gmail account, set it up with 2FA, and gotten a 16-character "app password" for it. (The thing displayed here is not the real password.))
 
 -----------------------------
 Client-Side Components
@@ -148,6 +162,7 @@ API Routes
 	routes/admin.js: Admin API endpoints (authentication, tournament management)
 	routes/entries.js: Entry submission and management endpoints
 	routes/standings.js: Standings data endpoints and team visibility management
+	routes/communications.js: Email communication endpoints
 
 Public HTML
 	public/index.html: Homepage with game description
@@ -167,6 +182,9 @@ Utility Scripts
 	scripts/admin-manager.js: CLI tool for secure admin user management
 	scripts/download-logos.js: Script to download team logos from ESPN
 
+Services
+	email-service.js:  Provides e-mail sending functionality
+	
 Data Files
 	public/teams.csv: List of NCAA tournament teams with seed, region, and logo URL
 
@@ -193,37 +211,62 @@ Project Structure Outline
 -----------------------------
 This outline represents the current state of the Scoonies application after recent updates and improvements to security, user interface, and privacy controls.
 
-ScooniesApp/
+Scoonies/
 ├── db/
-│   ├── database.js     # SQLite database setup and connection
-│   └── game.db         # SQLite database file
-├── public/             # Static files served to users
+│   ├── database.js         # SQLite database setup and connection
+│   └── game.db             # SQLite database file (generated)
+│
+├── node_modules/           # Dependencies (generated)
+│
+├── public/                 # Static files served to users
 │   ├── css/
-│   │   └── style.css   # Main stylesheet
+│   │   └── style.css       # Main stylesheet
+│   │
 │   ├── images/
-│   │   └── logos/      # Team logo images
+│   │   ├── logos/          # Team logo images downloaded from ESPN
+│   │   │   └── ...         # Individual team logo PNG files
+│   │   └── Scoonies.jpg    # Website logo
+│   │
+│   ├── js/
+│   │   ├── admin.js        # Admin interface functionality
+│   │   ├── standings.js    # Standings page functionality
+│   │   └── submit.js       # Team submission functionality
+│   │
 │   ├── admin/
-│   │   ├── index.html  # Admin login page
-│   │   ├── tournament.html # Tournament management
-│   │   └── entries.html # Entries management
-│   ├── index.html      # Homepage
-│   ├── submit.html     # Bracket submission page
-│   ├── standings.html  # Tournament standings page
-│   ├── 404.html        # Error page for 404
-│   ├── 500.html        # Error page for server errors
-│   └── teams.csv       # CSV file with team data
-├── routes/             # API route handlers
-│   ├── admin.js        # Admin tournament management
-│   ├── admin-logos.js  # Admin logo download
-│   ├── auth.js         # User authentication
-│   ├── entries.js      # Entry submission endpoints
-│   ├── standings.js    # Standings data endpoints
-│   └── teams.js        # Team data endpoints
+│   │   ├── index.html      # Admin login page
+│   │   ├── tournament.html # Tournament bracket management
+│   │   ├── entries.html    # Entries management page
+│   │   └── communications.html # League communications interface
+│   │
+│   ├── index.html          # Homepage with game description
+│   ├── submit.html         # Team selection/entry submission page
+│   ├── standings.html      # Tournament standings page
+│   ├── 404.html            # Error page for 404 not found
+│   ├── 500.html            # Error page for server errors
+│   └── teams.csv           # CSV file with team data
+│
+├── routes/                 # API route handlers
+│   ├── admin.js            # Admin routes (tournament management, entries)
+│   ├── entries.js          # Entry submission endpoints
+│   ├── standings.js        # Standings data endpoints
+│   └── communications.js   # Email communication endpoints
+│
+├── services/               # Business logic services
+│   └── email-service.js    # Email sending functionality
+│
 ├── scripts/
-│   ├── download-logos.js # Script to download team logos
-│   └── init-db.js      # Database initialization script
-├── server.js           # Main Express server file
-└── package.json        # Project dependencies
+│   ├── admin-manager.js    # Admin user management utility
+│   └── download-logos.js   # Script to download team logos from ESPN
+│
+├── .env                    # Environment variables (email credentials, etc.)
+├── .gitignore              # Git ignore file
+├── package.json            # Project dependencies
+├── package-lock.json       # Dependency lock file
+├── README.md               # Project documentation
+└── server.js               # Main Express server file
+
+
+
 
 
 --Keith Marsteller, May 14, 2025
