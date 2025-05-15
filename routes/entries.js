@@ -1,7 +1,7 @@
 // Update the entries.js route handler
 const express = require('express');
 const router = express.Router();
-const { db } = require('../db/database');
+const { db, getCurrentEasternTime } = require('../db/database');
 
 // Check if entries are open
 router.get('/status', (req, res) => {
@@ -26,6 +26,7 @@ router.get('/status', (req, res) => {
 /// Submit a new entry (routes/entries.js)
 router.post('/', (req, res) => {
     // First, check if entries are open
+    const currentEasternTime = getCurrentEasternTime();
     db.get(
         "SELECT value FROM system_settings WHERE key = 'entries_open'",
         (err, row) => {
@@ -63,8 +64,8 @@ router.post('/', (req, res) => {
                 
                 // Insert new entry with all required fields
                 db.run(
-                    'INSERT INTO entries (player_name, email, nickname) VALUES (?, ?, ?)',
-                    [playerName, email, nickname],
+                    'INSERT INTO entries (player_name, email, nickname, score, submission_date, has_paid) VALUES (?, ?, ?, ?, ?, ?)',
+                     [playerName, email, nickname, 0, currentEasternTime, 0],
                     function(err) {
                         if (err) {
                             console.error("Database error inserting entry:", err);

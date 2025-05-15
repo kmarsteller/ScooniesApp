@@ -55,121 +55,152 @@
             background-color: #dee2e6;
         }
         
-        .email-form {
-            max-width: 800px;
-            margin: 0 auto;
-        }
-        
         .form-group {
             margin-bottom: 20px;
         }
         
-        label {
+        .form-group label {
             display: block;
-            margin-bottom: 8px;
+            margin-bottom: 5px;
             font-weight: bold;
         }
         
-        input[type="text"], textarea {
+        .form-control {
             width: 100%;
             padding: 10px;
             border: 1px solid #ddd;
             border-radius: 4px;
-            font-family: inherit;
             font-size: 16px;
         }
         
-        textarea {
-            min-height: 300px;
-            resize: vertical;
+        textarea.form-control {
+            min-height: 150px;
         }
         
-        .button-container {
+        .recipient-list {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 10px;
+            background-color: white;
+        }
+        
+        .recipient-item {
+            display: flex;
+            align-items: center;
+            padding: 8px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .recipient-item:last-child {
+            border-bottom: none;
+        }
+        
+        .recipient-check {
+            margin-right: 10px;
+        }
+        
+        .recipient-info {
+            flex-grow: 1;
+        }
+        
+        .recipient-name {
+            font-weight: bold;
+        }
+        
+        .recipient-email {
+            color: #6c757d;
+            font-size: 0.9em;
+        }
+        
+        .action-buttons {
             display: flex;
             justify-content: space-between;
-            align-items: center;
+            margin-top: 20px;
         }
         
-        .send-button {
-            background-color: #dc3545;
-            color: white;
-            border: none;
+        .action-button {
             padding: 12px 24px;
+            border: none;
             border-radius: 4px;
-            font-size: 16px;
-            font-weight: bold;
             cursor: pointer;
+            font-weight: bold;
             transition: all 0.2s ease;
         }
         
-        .send-button:hover {
-            background-color: #c82333;
+        .primary-button {
+            background-color: #dc3545;
+            color: white;
+        }
+        
+        .secondary-button {
+            background-color: #6c757d;
+            color: white;
+        }
+        
+        .action-button:hover {
+            opacity: 0.9;
             transform: translateY(-2px);
         }
         
-        .send-button:disabled {
-            background-color: #6c757d;
-            cursor: not-allowed;
-            transform: none;
-        }
-        
-        .email-status {
+        .status-message {
             margin-top: 20px;
             padding: 15px;
             border-radius: 4px;
             display: none;
         }
         
-        .email-status.success {
-            display: block;
+        .status-message.success {
             background-color: #d4edda;
             color: #155724;
-            border: 1px solid #c3e6cb;
+            display: block;
         }
         
-        .email-status.error {
-            display: block;
+        .status-message.error {
             background-color: #f8d7da;
             color: #721c24;
-            border: 1px solid #f5c6cb;
+            display: block;
         }
         
-        .recipients-preview {
-            margin-top: 15px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            padding: 15px;
-            background-color: white;
-            max-height: 150px;
-            overflow-y: auto;
-        }
-        
-        .recipients-count {
-            font-weight: bold;
+        .selection-controls {
             margin-bottom: 10px;
         }
         
-        .recipients-list {
-            font-size: 14px;
-            color: #6c757d;
+        .tab-content {
+            display: none;
         }
         
-        .email-templates {
+        .tab-content.active {
+            display: block;
+        }
+        
+        .template-selector {
             margin-bottom: 20px;
         }
         
-        .template-select {
-            padding: 8px;
-            border-radius: 4px;
+        .message-preview {
+            margin-top: 20px;
+            padding: 15px;
             border: 1px solid #ddd;
-            margin-right: 10px;
+            border-radius: 4px;
+            background-color: white;
+        }
+        
+        .preview-header {
+            font-weight: bold;
+            margin-bottom: 10px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid #eee;
         }
     </style>
 </head>
 <body>
     <header>
         <div class="header-top">
-            <a href="/"><img src="../../images/Scoonies.jpg" alt="The Scoonies Logo"></a>
+            <a href="/">
+                <img src="/images/Scoonies.jpg" alt="The Scoonies Logo">
+            </a>
         </div>
         <nav>
             <a href="/">About</a>
@@ -190,54 +221,129 @@
             </div>
             
             <div class="section-content">
-                <h3>Send Email to All Players</h3>
-                <p>Use this form to send email communications to all players in the league. Each player will receive only one email, even if they have multiple entries.</p>
+                <h3>League Communications</h3>
+                <p>Send emails to league participants. Use this tool to send announcements, payment reminders, or other important communications.</p>
                 
-                <div class="email-form">
-                    <div class="form-group">
-                        <label for="recipientFilter">Recipients:</label>
-                        <select id="recipientFilter" class="template-select">
-                            <option value="all">All Players</option>
-                            <option value="paid">Paid Players Only</option>
-                            <option value="unpaid">Unpaid Players Only</option>
-                        </select>
-                        <div class="recipients-preview">
-                            <div class="recipients-count">Loading recipients...</div>
-                            <div class="recipients-list"></div>
-                        </div>
+                <div class="tab-controls">
+                    <div class="admin-nav" style="margin: 20px 0;">
+                        <a href="#" class="tab-link active" data-tab="specific">Specific Recipients</a>
+                        <a href="#" class="tab-link" data-tab="all">All Participants</a>
+                        <a href="#" class="tab-link" data-tab="reminders">Payment Reminders</a>
                     </div>
-                    
-                    <div class="form-group email-templates">
-                        <label for="emailTemplate">Email Template:</label>
-                        <select id="emailTemplate" class="template-select">
-                            <option value="custom">Custom Message</option>
-                            <option value="welcome">Welcome Message</option>
-                            <option value="payment-reminder">Payment Reminder</option>
-                            <option value="tournament-start">Tournament Starting Soon</option>
-                            <option value="results-update">Results Update</option>
-                        </select>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="emailSubject">Subject:</label>
-                        <input type="text" id="emailSubject" placeholder="Enter email subject">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="emailBody">Message:</label>
-                        <textarea id="emailBody" placeholder="Enter your message here..."></textarea>
-                    </div>
-                    
-                    <div class="button-container">
-                        <div>
-                            <input type="checkbox" id="confirmSend">
-                            <label for="confirmSend" style="display: inline;">I confirm I want to send this email to all recipients</label>
-                        </div>
-                        <button id="sendEmailBtn" class="send-button" disabled>Send Email</button>
-                    </div>
-                    
-                    <div id="emailStatus" class="email-status"></div>
                 </div>
+                
+                <!-- Specific Recipients Tab -->
+                <div id="specific-tab" class="tab-content active">
+                    <h4>Send to Specific Recipients</h4>
+                    
+                    <div class="form-group">
+                        <div class="selection-controls">
+                            <button id="selectAllBtn" class="secondary-button action-button" style="padding: 5px 10px; font-size: 14px;">Select All</button>
+                            <button id="selectNoneBtn" class="secondary-button action-button" style="padding: 5px 10px; font-size: 14px;">Select None</button>
+                            <button id="selectUnpaidBtn" class="secondary-button action-button" style="padding: 5px 10px; font-size: 14px;">Select Unpaid</button>
+                        </div>
+                        
+                        <label>Recipients:</label>
+                        <div id="recipientList" class="recipient-list">
+                            <div class="loading">Loading recipients...</div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="specificSubject">Subject:</label>
+                        <input type="text" id="specificSubject" class="form-control" placeholder="Email subject">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="specificMessage">Message:</label>
+                        <textarea id="specificMessage" class="form-control" placeholder="Enter your message here. Use {name}, {nickname}, and {email} as placeholders for personalization."></textarea>
+                    </div>
+                    
+                    <div class="action-buttons">
+                        <button id="previewSpecificBtn" class="secondary-button action-button">Preview</button>
+                        <button id="sendSpecificBtn" class="primary-button action-button">Send Email</button>
+                    </div>
+                    
+                    <div id="specificPreview" class="message-preview" style="display: none;">
+                        <div class="preview-header">Message Preview</div>
+                        <div id="specificPreviewContent"></div>
+                    </div>
+                </div>
+                
+                <!-- All Participants Tab -->
+                <div id="all-tab" class="tab-content">
+                    <h4>Send to All Participants</h4>
+                    
+                    <div class="form-group">
+                        <label for="filterAll">Filter:</label>
+                        <select id="filterAll" class="form-control">
+                            <option value="all">All Participants</option>
+                            <option value="paid">Paid Participants Only</option>
+                            <option value="unpaid">Unpaid Participants Only</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="allSubject">Subject:</label>
+                        <input type="text" id="allSubject" class="form-control" placeholder="Email subject">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="allMessage">Message:</label>
+                        <textarea id="allMessage" class="form-control" placeholder="Enter your message here. Use {name}, {nickname}, and {email} as placeholders for personalization."></textarea>
+                    </div>
+                    
+                    <div class="action-buttons">
+                        <button id="previewAllBtn" class="secondary-button action-button">Preview</button>
+                        <button id="sendAllBtn" class="primary-button action-button">Send to All</button>
+                    </div>
+                    
+                    <div id="allPreview" class="message-preview" style="display: none;">
+                        <div class="preview-header">Message Preview</div>
+                        <div id="allPreviewContent"></div>
+                    </div>
+                </div>
+                
+                <!-- Payment Reminders Tab -->
+                <div id="reminders-tab" class="tab-content">
+                    <h4>Send Payment Reminders</h4>
+                    
+                    <div class="form-group">
+                        <p>This will send payment reminder emails to all participants who have not yet paid for their entries.</p>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="reminderTemplate">Template:</label>
+                        <select id="reminderTemplate" class="form-control template-selector">
+                            <option value="default">Default Payment Reminder</option>
+                            <option value="gentle">Gentle Reminder</option>
+                            <option value="firm">Firm Reminder</option>
+                            <option value="custom">Custom Message</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="reminderSubject">Subject:</label>
+                        <input type="text" id="reminderSubject" class="form-control" value="Reminder: Payment Required for Your Scoonies Entry">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="reminderMessage">Message:</label>
+                        <textarea id="reminderMessage" class="form-control" disabled></textarea>
+                    </div>
+                    
+                    <div class="action-buttons">
+                        <button id="previewReminderBtn" class="secondary-button action-button">Preview</button>
+                        <button id="sendReminderBtn" class="primary-button action-button">Send Reminders</button>
+                    </div>
+                    
+                    <div id="reminderPreview" class="message-preview" style="display: none;">
+                        <div class="preview-header">Message Preview</div>
+                        <div id="reminderPreviewContent"></div>
+                    </div>
+                </div>
+                
+                <div id="statusMessage" class="status-message"></div>
             </div>
         </div>
     </main>
@@ -247,166 +353,631 @@
     </footer>
     
     <script>
+        // Templates for payment reminders
+        const reminderTemplates = {
+            default: `Hi {name},\n\nThis is a friendly reminder that payment is required for your Scoonies entry "{nickname}". Please submit your payment as soon as possible to ensure your entry is included in the competition.\n\nYou can pay via Venmo (@Brian-Swarts) or PayPal.\n\nThank you,\nThe Scoonies Team`,
+            
+            gentle: `Hi {name},\n\nWe hope you're excited about the upcoming tournament! We noticed that we haven't received payment yet for your Scoonies entry "{nickname}".\n\nTo complete your registration, please send your payment via Venmo (@Brian-Swarts) or PayPal at your earliest convenience.\n\nThank you for participating!\n\nBest regards,\nThe Scoonies Team`,
+            
+            firm: `Hi {name},\n\nIMPORTANT: Your Scoonies entry "{nickname}" requires immediate payment.\n\nThe tournament is starting soon, and all unpaid entries will be removed from the competition. Please submit your payment immediately via Venmo (@Brian-Swarts) or PayPal to secure your spot.\n\nIf you have any issues with payment, please contact us immediately.\n\nThank you,\nThe Scoonies Team`
+        };
+        
+        // Store participant data
+        let participants = [];
+        
         document.addEventListener('DOMContentLoaded', function() {
-            const recipientFilterSelect = document.getElementById('recipientFilter');
-            const emailTemplateSelect = document.getElementById('emailTemplate');
-            const emailSubjectInput = document.getElementById('emailSubject');
-            const emailBodyInput = document.getElementById('emailBody');
-            const confirmSendCheckbox = document.getElementById('confirmSend');
-            const sendEmailBtn = document.getElementById('sendEmailBtn');
-            const emailStatusDiv = document.getElementById('emailStatus');
-            const recipientsCountDiv = document.querySelector('.recipients-count');
-            const recipientsListDiv = document.querySelector('.recipients-list');
-            
-            // Load recipients when page loads and when filter changes
+            // Load recipients on page load
             loadRecipients();
-            recipientFilterSelect.addEventListener('change', loadRecipients);
             
-            // Update button state when checkbox changes
-            confirmSendCheckbox.addEventListener('change', function() {
-                sendEmailBtn.disabled = !this.checked || !emailSubjectInput.value.trim() || !emailBodyInput.value.trim();
+            // Setup template selector
+            setupReminderTemplates();
+            
+            // Initialize tab navigation
+            setupTabs();
+            
+            // Setup buttons
+            document.getElementById('selectAllBtn').addEventListener('click', selectAll);
+            document.getElementById('selectNoneBtn').addEventListener('click', selectNone);
+            document.getElementById('selectUnpaidBtn').addEventListener('click', selectUnpaid);
+            
+            document.getElementById('previewSpecificBtn').addEventListener('click', previewSpecific);
+            document.getElementById('sendSpecificBtn').addEventListener('click', sendSpecific);
+            
+            document.getElementById('previewAllBtn').addEventListener('click', previewAll);
+            document.getElementById('sendAllBtn').addEventListener('click', sendAll);
+            
+            document.getElementById('previewReminderBtn').addEventListener('click', previewReminder);
+            document.getElementById('sendReminderBtn').addEventListener('click', sendReminder);
+        });
+
+        // Add placeholder help text under message fields
+        function addPlaceholderHelp() {
+            const helpText = document.createElement('div');
+            helpText.className = 'placeholder-help';
+            helpText.style.fontSize = '0.85em';
+            helpText.style.color = '#6c757d';
+            helpText.style.marginTop = '5px';
+            helpText.innerHTML = 'Available placeholders: <code>{name}</code>, <code>{nickname}</code>, <code>{email}</code>, <code>{all_nicknames}</code>';
+            
+            // Add to all message fields
+            const messageFields = [
+                document.getElementById('specificMessage').parentNode,
+                document.getElementById('allMessage').parentNode,
+                document.getElementById('reminderMessage').parentNode
+            ];
+            
+            messageFields.forEach(field => {
+                const helpClone = helpText.cloneNode(true);
+                field.appendChild(helpClone);
             });
+        }
+
+// Call this function after loadRecipients() in the DOMContentLoaded handler
+document.addEventListener('DOMContentLoaded', function() {
+    // Load recipients on page load
+    loadRecipients();
+    
+    // Setup template selector
+    setupReminderTemplates();
+    
+    // Initialize tab navigation
+    setupTabs();
+    
+    // Add placeholder help text
+    addPlaceholderHelp();
+    
+    // Setup buttons
+    // ... rest of your initialization code
+});
+        
+        // Setup tab navigation
+        function setupTabs() {
+            const tabLinks = document.querySelectorAll('.tab-link');
             
-            // Update button state when inputs change
-            emailSubjectInput.addEventListener('input', updateSendButtonState);
-            emailBodyInput.addEventListener('input', updateSendButtonState);
-            
-            // Load email template when selected
-            emailTemplateSelect.addEventListener('change', function() {
-                loadEmailTemplate(this.value);
-            });
-            
-            // Send email when button is clicked
-            sendEmailBtn.addEventListener('click', sendEmail);
-            
-            function updateSendButtonState() {
-                sendEmailBtn.disabled = !confirmSendCheckbox.checked || 
-                                        !emailSubjectInput.value.trim() || 
-                                        !emailBodyInput.value.trim();
-            }
-            
-            function loadRecipients() {
-                const filterType = recipientFilterSelect.value;
-                
-                // Show loading state
-                recipientsCountDiv.textContent = 'Loading recipients...';
-                recipientsListDiv.innerHTML = '';
-                
-                // Fetch recipients based on filter
-                fetch(`/api/admin/email-recipients?filter=${filterType}`)
-                    .then(response => {
-                        if (!response.ok) {
-                            throw new Error('Failed to load recipients');
-                        }
-                        return response.json();
-                    })
-                    .then(data => {
-                        if (data.recipients && data.recipients.length > 0) {
-                            recipientsCountDiv.textContent = `${data.recipients.length} recipients`;
-                            
-                            // Show recipient list
-                            const recipientEmails = data.recipients.map(r => r.email).join(', ');
-                            recipientsListDiv.textContent = recipientEmails;
-                        } else {
-                            recipientsCountDiv.textContent = 'No recipients found';
-                            recipientsListDiv.textContent = '';
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error loading recipients:', error);
-                        recipientsCountDiv.textContent = 'Error loading recipients';
-                        recipientsListDiv.textContent = error.message;
-                    });
-            }
-            
-            function loadEmailTemplate(templateId) {
-                // Define templates
-                const templates = {
-                    'custom': {
-                        subject: '',
-                        body: ''
-                    },
-                    'welcome': {
-                        subject: 'Welcome to The Scoonies 2025!',
-                        body: 'Dear Participant,\n\nThank you for joining The Scoonies for the 2025 NCAA Tournament! Your entry has been received.\n\nRemember to complete your payment if you haven\'t already done so.\n\nGood luck and enjoy the tournament!\n\nThe Scoonies Team'
-                    },
-                    'payment-reminder': {
-                        subject: 'Payment Reminder for The Scoonies 2025',
-                        body: 'Dear Participant,\n\nThis is a friendly reminder that we have not yet received payment for your Scoonies entry.\n\nPlease submit your payment as soon as possible to ensure your entry remains valid.\n\nThank you!\n\nThe Scoonies Team'
-                    },
-                    'tournament-start': {
-                        subject: 'The Scoonies 2025 - Tournament Starting Soon!',
-                        body: 'Dear Participant,\n\nThe 2025 NCAA Tournament is about to begin! All entries are now locked in.\n\nYou can check the standings page throughout the tournament to see how your entry is performing.\n\nMay the best bracket win!\n\nThe Scoonies Team'
-                    },
-                    'results-update': {
-                        subject: 'The Scoonies 2025 - Tournament Update',
-                        body: 'Dear Participant,\n\nThe tournament is progressing and scores have been updated on the standings page.\n\nCheck out how your entry is doing compared to others!\n\nGood luck for the remaining games!\n\nThe Scoonies Team'
-                    }
-                };
-                
-                // Load the selected template
-                if (templates[templateId]) {
-                    emailSubjectInput.value = templates[templateId].subject;
-                    emailBodyInput.value = templates[templateId].body;
+            tabLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
                     
-                    // Update button state
-                    updateSendButtonState();
-                }
-            }
+                    // Remove active class from all tabs
+                    tabLinks.forEach(l => l.classList.remove('active'));
+                    document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+                    
+                    // Add active class to clicked tab
+                    this.classList.add('active');
+                    const tabId = this.dataset.tab + '-tab';
+                    document.getElementById(tabId).classList.add('active');
+                });
+            });
+        }
+        
+        // Setup reminder templates
+        function setupReminderTemplates() {
+            const templateSelector = document.getElementById('reminderTemplate');
+            const messageTextarea = document.getElementById('reminderMessage');
             
-            function sendEmail() {
-                // Disable button and show sending state
-                sendEmailBtn.disabled = true;
-                sendEmailBtn.textContent = 'Sending...';
+            // Set default template
+            messageTextarea.value = reminderTemplates.default;
+            
+            templateSelector.addEventListener('change', function() {
+                const selectedTemplate = this.value;
                 
-                const filterType = recipientFilterSelect.value;
-                
-                // Prepare email data
-                const emailData = {
-                    filter: filterType,
-                    subject: emailSubjectInput.value.trim(),
-                    body: emailBodyInput.value.trim()
-                };
-                
-                // Send the request
-                fetch('/api/admin/send-email', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(emailData),
-                })
+                if (selectedTemplate === 'custom') {
+                    messageTextarea.value = '';
+                    messageTextarea.disabled = false;
+                } else {
+                    messageTextarea.value = reminderTemplates[selectedTemplate];
+                    messageTextarea.disabled = true;
+                }
+            });
+        }
+        
+        // Load recipients from server
+        function loadRecipients() {
+            const recipientList = document.getElementById('recipientList');
+            recipientList.innerHTML = '<div class="loading">Loading recipients...</div>';
+            
+            fetch('/api/communications/recipients')
                 .then(response => {
                     if (!response.ok) {
-                        return response.json().then(err => {
-                            throw new Error(err.error || 'Failed to send email');
-                        });
+                        throw new Error('Failed to load recipients');
                     }
                     return response.json();
                 })
                 .then(data => {
-                    // Show success message
-                    emailStatusDiv.textContent = data.message || 'Email sent successfully to all recipients!';
-                    emailStatusDiv.className = 'email-status success';
-                    
-                    // Reset form
-                    confirmSendCheckbox.checked = false;
-                    sendEmailBtn.textContent = 'Send Email';
-                    sendEmailBtn.disabled = true;
+                    participants = data.entries;
+                    renderRecipients();
                 })
                 .catch(error => {
-                    console.error('Error sending email:', error);
-                    
-                    // Show error message
-                    emailStatusDiv.textContent = error.message || 'Error sending email. Please try again.';
-                    emailStatusDiv.className = 'email-status error';
-                    
-                    // Reset button
-                    sendEmailBtn.textContent = 'Send Email';
-                    updateSendButtonState();
+                    console.error('Error loading recipients:', error);
+                    recipientList.innerHTML = 
+                        `<div class="error">Error loading recipients: ${error.message}</div>`;
                 });
+        }
+        
+        // In the renderRecipients function, add a count of entries for each email address
+        function renderRecipients() {
+            const recipientList = document.getElementById('recipientList');
+            
+            if (!participants || participants.length === 0) {
+                recipientList.innerHTML = '<div class="empty">No recipients found</div>';
+                return;
             }
-        });
+            
+            recipientList.innerHTML = '';
+            
+            // Count entries per email
+            const entryCounts = {};
+            participants.forEach(p => {
+                entryCounts[p.email] = (entryCounts[p.email] || 0) + 1;
+            });
+            
+            // Create a map to deduplicate by email
+            const uniqueEmails = new Map();
+            participants.forEach(participant => {
+                if (!uniqueEmails.has(participant.email)) {
+                    uniqueEmails.set(participant.email, participant);
+                }
+            });
+            
+            // Use the unique participants
+            Array.from(uniqueEmails.values()).forEach(participant => {
+                const item = document.createElement('div');
+                item.className = 'recipient-item';
+                
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.className = 'recipient-check';
+                checkbox.value = participant.email;
+                checkbox.dataset.id = participant.id;
+                checkbox.dataset.name = participant.player_name;
+                checkbox.dataset.nickname = participant.nickname;
+                
+                const info = document.createElement('div');
+                info.className = 'recipient-info';
+                
+                const name = document.createElement('div');
+                name.className = 'recipient-name';
+                name.textContent = participant.player_name;
+                
+                // Add entry count if more than 1
+                if (entryCounts[participant.email] > 1) {
+                    const entryCount = document.createElement('span');
+                    entryCount.style.marginLeft = '10px';
+                    entryCount.style.padding = '2px 5px';
+                    entryCount.style.borderRadius = '3px';
+                    entryCount.style.fontSize = '0.8em';
+                    entryCount.style.backgroundColor = '#e9ecef';
+                    entryCount.style.color = '#495057';
+                    entryCount.textContent = `${entryCounts[participant.email]} entries`;
+                    name.appendChild(entryCount);
+                }
+                
+                const email = document.createElement('div');
+                email.className = 'recipient-email';
+                email.textContent = participant.email;
+                
+                // Add payment indicator
+                if (participant.has_paid !== undefined) {
+                    const paymentStatus = document.createElement('span');
+                    paymentStatus.style.marginLeft = '10px';
+                    paymentStatus.style.padding = '2px 5px';
+                    paymentStatus.style.borderRadius = '3px';
+                    paymentStatus.style.fontSize = '0.8em';
+                    
+                    if (participant.has_paid === 1) {
+                        paymentStatus.textContent = 'Paid';
+                        paymentStatus.style.backgroundColor = '#d4edda';
+                        paymentStatus.style.color = '#155724';
+                    } else {
+                        paymentStatus.textContent = 'Unpaid';
+                        paymentStatus.style.backgroundColor = '#f8d7da';
+                        paymentStatus.style.color = '#721c24';
+                    }
+                    
+                    name.appendChild(paymentStatus);
+                }
+                
+                info.appendChild(name);
+                info.appendChild(email);
+                
+                item.appendChild(checkbox);
+                item.appendChild(info);
+                
+                recipientList.appendChild(item);
+            });
+        }
+        
+        // Select all recipients
+        function selectAll() {
+            const checkboxes = document.querySelectorAll('.recipient-check');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = true;
+            });
+        }
+        
+        // Select no recipients
+        function selectNone() {
+            const checkboxes = document.querySelectorAll('.recipient-check');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = false;
+            });
+        }
+        
+        // Select only unpaid participants
+        function selectUnpaid() {
+            const checkboxes = document.querySelectorAll('.recipient-check');
+            
+            checkboxes.forEach(checkbox => {
+                const participantId = parseInt(checkbox.dataset.id);
+                const participant = participants.find(p => p.id === participantId);
+                
+                if (participant && participant.has_paid === 0) {
+                    checkbox.checked = true;
+                } else {
+                    checkbox.checked = false;
+                }
+            });
+        }
+        
+        // Get selected recipients
+        function getSelectedRecipients() {
+            const checkboxes = document.querySelectorAll('.recipient-check:checked');
+            return Array.from(checkboxes).map(checkbox => checkbox.value);
+        }
+        
+        // Preview specific recipients message
+        function previewSpecific() {
+            const subject = document.getElementById('specificSubject').value;
+            const message = document.getElementById('specificMessage').value;
+            
+            if (!subject || !message) {
+                showStatus('Please enter a subject and message', 'error');
+                return;
+            }
+            
+            // Get a sample recipient for preview
+            const checkboxes = document.querySelectorAll('.recipient-check:checked');
+            let sampleMessage = message;
+            
+            if (checkboxes.length > 0) {
+                const checkbox = checkboxes[0];
+                const name = checkbox.dataset.name || '[Name]';
+                const nickname = checkbox.dataset.nickname || '[Nickname]';
+                const email = checkbox.value || '[Email]';
+                
+                sampleMessage = message
+                    .replace(/\{name\}/g, name)
+                    .replace(/\{nickname\}/g, nickname)
+                    .replace(/\{email\}/g, email)
+                    .replace(/\{all_nicknames\}/g, `"${nickname}"`);
+            } else {
+                sampleMessage = message
+                    .replace(/\{name\}/g, '[Name]')
+                    .replace(/\{nickname\}/g, '[Nickname]')
+                    .replace(/\{email\}/g, '[Email]')
+                    .replace(/\{all_nicknames\}/g, '"[Nickname(s)]"');
+            }
+            
+            const previewContent = document.getElementById('specificPreviewContent');
+            previewContent.innerHTML = `
+                <strong>Subject:</strong> ${subject}<br><br>
+                <strong>Message:</strong><br>
+                ${sampleMessage.replace(/\n/g, '<br>')}
+            `;
+            
+            document.getElementById('specificPreview').style.display = 'block';
+        }
+ 
+        // Send to specific recipients
+        function sendSpecific() {
+            const recipients = getSelectedRecipients();
+            const subject = document.getElementById('specificSubject').value;
+            const message = document.getElementById('specificMessage').value;
+            
+            if (recipients.length === 0) {
+                showStatus('Please select at least one recipient', 'error');
+                return;
+            }
+            
+            if (!subject || !message) {
+                showStatus('Please enter a subject and message', 'error');
+                return;
+            }
+            
+            if (!confirm(`Are you sure you want to send this email to ${recipients.length} recipients?`)) {
+                return;
+            }
+            
+            // Disable buttons
+            document.getElementById('sendSpecificBtn').disabled = true;
+            document.getElementById('previewSpecificBtn').disabled = true;
+            
+            // Show loading status
+            showStatus('Sending emails...', 'info');
+            
+            // Send request to server
+            fetch('/api/communications/send', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    recipients,
+                    subject,
+                    message,
+                    messageType: 'text'
+                }),
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(err => {
+                        throw new Error(err.error || 'Failed to send emails');
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                const successCount = data.results.successful.length;
+                const failCount = data.results.failed.length;
+                
+                if (failCount > 0) {
+                    showStatus(`Sent ${successCount} emails successfully, but ${failCount} failed.`, 'warning');
+                    console.error('Failed emails:', data.results.failed);
+                } else {
+                    showStatus(`Successfully sent emails to ${successCount} recipients!`, 'success');
+                }
+                
+                // Re-enable buttons
+                document.getElementById('sendSpecificBtn').disabled = false;
+                document.getElementById('previewSpecificBtn').disabled = false;
+            })
+            .catch(error => {
+                console.error('Error sending emails:', error);
+                showStatus(`Error sending emails: ${error.message}`, 'error');
+                
+                // Re-enable buttons
+                document.getElementById('sendSpecificBtn').disabled = false;
+                document.getElementById('previewSpecificBtn').disabled = false;
+            });
+        }
+        
+        // Preview all participants message
+        function previewAll() {
+            const subject = document.getElementById('allSubject').value;
+            const message = document.getElementById('allMessage').value;
+            const filter = document.getElementById('filterAll').value;
+            
+            if (!subject || !message) {
+                showStatus('Please enter a subject and message', 'error');
+                return;
+            }
+            
+            // Example personalization
+            let sampleMessage = message
+                .replace(/\{name\}/g, '[Sample Name]')
+                .replace(/\{nickname\}/g, '[Sample Nickname]')
+                .replace(/\{email\}/g, '[sample@email.com]')
+                .replace(/\{all_nicknames\}/g, '"[Sample Nickname(s)]"');
+            
+            const previewContent = document.getElementById('allPreviewContent');
+            
+            let recipients = 'all participants';
+            if (filter === 'paid') {
+                recipients = 'all paid participants';
+            } else if (filter === 'unpaid') {
+                recipients = 'all unpaid participants';
+            }
+            
+            previewContent.innerHTML = `
+                <strong>Recipients:</strong> ${recipients}<br>
+                <strong>Subject:</strong> ${subject}<br><br>
+                <strong>Message:</strong><br>
+                ${sampleMessage.replace(/\n/g, '<br>')}
+                <br><br>
+                <em>Note: Placeholders like {name}, {nickname}, {email}, and {all_nicknames} will be replaced with actual values for each recipient.</em>
+            `;
+            
+            document.getElementById('allPreview').style.display = 'block';
+        }
+        
+        // Send to all participants
+        function sendAll() {
+            const subject = document.getElementById('allSubject').value;
+            const message = document.getElementById('allMessage').value;
+            const filter = document.getElementById('filterAll').value;
+            
+            if (!subject || !message) {
+                showStatus('Please enter a subject and message', 'error');
+                return;
+            }
+            
+            let confirmMessage = 'Are you sure you want to send this email to ALL participants?';
+            if (filter === 'paid') {
+                confirmMessage = 'Are you sure you want to send this email to all PAID participants?';
+            } else if (filter === 'unpaid') {
+                confirmMessage = 'Are you sure you want to send this email to all UNPAID participants?';
+            }
+            
+            if (!confirm(confirmMessage)) {
+                return;
+            }
+            
+            // Disable buttons
+            document.getElementById('sendAllBtn').disabled = true;
+            document.getElementById('previewAllBtn').disabled = true;
+            
+            // Show loading status
+            showStatus('Sending emails...', 'info');
+            
+            // Send request to server
+            fetch('/api/communications/send-all', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    subject,
+                    message,
+                    messageType: 'text',
+                    filter
+                }),
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(err => {
+                        throw new Error(err.error || 'Failed to send emails');
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                const successCount = data.results.successful.length;
+                const failCount = data.results.failed.length;
+                
+                if (successCount === 0 && failCount === 0) {
+                    showStatus('No recipients found matching your criteria.', 'warning');
+                    return;
+                }
+                
+                if (failCount > 0) {
+                    showStatus(`Sent ${successCount} emails successfully, but ${failCount} failed.`, 'warning');
+                    console.error('Failed emails:', data.results.failed);
+                } else {
+                    showStatus(`Successfully sent emails to ${successCount} recipients!`, 'success');
+                }
+                
+                // Re-enable buttons
+                document.getElementById('sendAllBtn').disabled = false;
+                document.getElementById('previewAllBtn').disabled = false;
+            })
+            .catch(error => {
+                console.error('Error sending emails:', error);
+                showStatus(`Error sending emails: ${error.message}`, 'error');
+                
+                // Re-enable buttons
+                document.getElementById('sendAllBtn').disabled = false;
+                document.getElementById('previewAllBtn').disabled = false;
+            });
+        }
+        
+        // Preview payment reminder
+        function previewReminder() {
+            const subject = document.getElementById('reminderSubject').value;
+            const message = document.getElementById('reminderMessage').value;
+            
+            if (!subject || !message) {
+                showStatus('Please enter a subject and message', 'error');
+                return;
+            }
+            
+            // Example personalization with multiple entries
+            let sampleMessage = message
+                .replace(/\{name\}/g, 'John Doe')
+                .replace(/\{nickname\}/g, 'JD Squad')
+                .replace(/\{email\}/g, 'john.doe@example.com')
+                .replace(/\{all_nicknames\}/g, '"JD Squad", "John\'s Team", "Doe Dynasty"');
+            
+            const previewContent = document.getElementById('reminderPreviewContent');
+            
+            previewContent.innerHTML = `
+                <strong>Recipients:</strong> All unpaid participants<br>
+                <strong>Subject:</strong> ${subject}<br><br>
+                <strong>Message Sample (participant with multiple entries):</strong><br>
+                ${sampleMessage.replace(/\n/g, '<br>')}
+                <br><br>
+                <strong>Note:</strong> Actual emails will include the participant's name, email, and all their entry nicknames. The {all_nicknames} placeholder will list all entries for recipients with multiple entries.
+            `;
+            
+            document.getElementById('reminderPreview').style.display = 'block';
+        }
+        
+        // Send payment reminders
+        function sendReminder() {
+            const subject = document.getElementById('reminderSubject').value;
+            const message = document.getElementById('reminderMessage').value;
+            
+            if (!subject || !message) {
+                showStatus('Please enter a subject and message', 'error');
+                return;
+            }
+            
+            if (!confirm('Are you sure you want to send payment reminders to all unpaid participants?')) {
+                return;
+            }
+            
+            // Disable buttons
+            document.getElementById('sendReminderBtn').disabled = true;
+            document.getElementById('previewReminderBtn').disabled = true;
+            
+            // Show loading status
+            showStatus('Sending payment reminders...', 'info');
+            
+            // Send request to server
+            fetch('/api/communications/send-payment-reminders', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    subject,
+                    message
+                }),
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(err => {
+                        throw new Error(err.error || 'Failed to send payment reminders');
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                const successCount = data.results.successful.length;
+                const failCount = data.results.failed.length;
+                
+                if (successCount === 0 && failCount === 0) {
+                    showStatus('No unpaid participants found.', 'warning');
+                    return;
+                }
+                
+                if (failCount > 0) {
+                    showStatus(`Sent ${successCount} reminders successfully, but ${failCount} failed.`, 'warning');
+                    console.error('Failed emails:', data.results.failed);
+                } else {
+                    showStatus(`Successfully sent payment reminders to ${successCount} participants!`, 'success');
+                }
+                
+                // Re-enable buttons
+                document.getElementById('sendReminderBtn').disabled = false;
+                document.getElementById('previewReminderBtn').disabled = false;
+            })
+            .catch(error => {
+                console.error('Error sending payment reminders:', error);
+                showStatus(`Error sending payment reminders: ${error.message}`, 'error');
+                
+                // Re-enable buttons
+                document.getElementById('sendReminderBtn').disabled = false;
+                document.getElementById('previewReminderBtn').disabled = false;
+            });
+        }
+        
+        // Show status message
+        function showStatus(message, type) {
+            const statusDiv = document.getElementById('statusMessage');
+            statusDiv.textContent = message;
+            statusDiv.className = `status-message ${type}`;
+            
+            // Scroll to status message
+            statusDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            
+            // Clear message after delay (except for errors)
+            if (type !== 'error') {
+                setTimeout(() => {
+                    statusDiv.textContent = '';
+                    statusDiv.className = 'status-message';
+                }, 10000);
+            }
+        }
     </script>
 </body>
 </html>

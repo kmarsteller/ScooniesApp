@@ -458,9 +458,26 @@
     <script>
         console.log('Entries page loading...');
 
+        function formatDate(dateStr) {
+            try {
+                const date = new Date(dateStr);
+                return date.toLocaleString('en-US', {
+                    year: 'numeric',
+                    month: 'numeric',
+                    day: 'numeric',
+                    hour: 'numeric',
+                    minute: 'numeric',
+                    hour12: true
+                }) + ' UTC';  // Add ET to explicitly indicate Eastern Time
+            } catch (e) {
+                console.error('Error formatting date:', e);
+                return dateStr || 'Unknown date';
+            }
+        }
+
         let retryCount = 0;
         const MAX_RETRIES = 3;
-
+        
         function loadEntriesWithRetry() {
             retryCount = 0;
             loadEntries();
@@ -612,10 +629,14 @@
                 
                 // Submission Date
                 const dateCell = document.createElement('td');
-                const date = new Date(entry.submission_date);
-                dateCell.textContent = date.toLocaleString();
+                dateCell.textContent = formatDate(entry.submission_date);
                 row.appendChild(dateCell);
-                
+                // const dateCell = document.createElement('td');
+                // const utcDate = new Date(entry.submission_date);
+                // // Format in Eastern Time
+                // dateCell.textContent = formatDateInET(utcDate);
+                // row.appendChild(dateCell);
+
                 // Payment Status
                 const paymentCell = document.createElement('td');
                 const paymentCheckbox = document.createElement('input');

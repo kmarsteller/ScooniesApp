@@ -9,9 +9,19 @@ const entriesRoutes = require('./routes/entries');
 const standingsRoutes = require('./routes/standings');
 const adminRoutes = require('./routes/admin');
 const emailRoutes = require('./routes/email');
+const communicationsRoutes = require('./routes/communications'); // Add this line
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Set server timezone to Eastern Time
+process.env.TZ = 'America/New_York';
+// Add this to confirm the timezone is working correctly
+const now = new Date();
+console.log(`Server timezone: ${process.env.TZ}`);
+console.log(`Current server time: ${now.toString()}`);
+console.log(`ISO time: ${now.toISOString()}`);
+console.log(`Locale time: ${now.toLocaleString('en-US', { timeZone: 'America/New_York' })}`);
 
 // Initialize database
 initializeDatabase();
@@ -41,6 +51,7 @@ app.use('/api/admin', adminRoutes);  // Admin routes first (most specific)
 app.use('/api/entries', entriesRoutes);
 app.use('/api/standings', standingsRoutes);
 app.use('/api/admin', emailRoutes);
+app.use('/api/communications', communicationsRoutes); // Add this line
 
 // Serve static files
 app.use(express.static(path.join(__dirname, 'public')));

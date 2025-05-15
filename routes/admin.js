@@ -710,6 +710,26 @@ router.get('/entry-status', (req, res) => {
     );
 });
 
+router.get('/check-times', (req, res) => {
+    db.all('SELECT id, player_name, submission_date FROM entries LIMIT 10', (err, rows) => {
+        if (err) {
+            return res.status(500).json({ error: 'Database error: ' + err.message });
+        }
+        
+        // Get current server time
+        const serverTime = new Date();
+        const easternTime = new Date(serverTime.toLocaleString('en-US', {
+            timeZone: 'America/New_York'
+        }));
+        
+        res.json({
+            serverTimeUTC: serverTime.toISOString(),
+            serverTimeLocal: serverTime.toString(),
+            easternTime: easternTime.toString(),
+            entries: rows
+        });
+    });
+});
 // Toggle entry status
 router.post('/toggle-entry-status', (req, res) => {
     // First, get current status

@@ -6,7 +6,7 @@ const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 
 // Open the database
-const db = new sqlite3.Database(path.join(__dirname, 'db', 'game.db'));
+const db = new sqlite3.Database(path.join(__dirname, '..', 'db', 'game.db'));
 
 console.log("Database check and fix utility");
 

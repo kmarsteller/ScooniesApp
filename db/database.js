@@ -13,6 +13,18 @@ if (!fs.existsSync(dbDir)) {
 const dbPath = path.join(__dirname, 'game.db');
 const db = new sqlite3.Database(dbPath);
 
+//Get the local time for the timestamp.
+function getCurrentEasternTime() {
+    // Create a date object
+    const now = new Date();
+    
+    // Format it in Eastern Time
+    return new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }))
+        .toISOString()
+        .replace('T', ' ')
+        .substr(0, 19); // Format as 'YYYY-MM-DD HH:MM:SS'
+}
+
 // Initialize database tables
 function initializeDatabase() {
     db.serialize(() => {
@@ -238,5 +250,6 @@ function initializeDatabase() {
 
 module.exports = {
     db,
-    initializeDatabase
+    initializeDatabase, 
+    getCurrentEasternTime
 };
