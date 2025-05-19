@@ -12,5 +12,5 @@ db/game.db
 # Build artifacts
 
 # Environment files
-
+.env
 # IDE-specific files
