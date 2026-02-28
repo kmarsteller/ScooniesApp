@@ -947,7 +947,7 @@
                 const skipDonationBtn = document.getElementById('skipDonation');
                 const paypalDonateBtn = document.getElementById('paypalDonateBtn');
                 const amountBtns = document.querySelectorAll('.amount-btn');
-                let selectedAmount = 5; // Default amount
+                let selectedAmount = 10; // Default amount
                 
                 // Set your PayPal details
                 const paypalUsername = 'bswarts2@gmail.com'; // Replace with your actual PayPal email/username
@@ -958,11 +958,18 @@
                     window.location.href = '/standings.html';
                 }
                 
+		 // Update PayPal payment link when amount changes
+		function updatePayPalLink() {
+    			// Note: Direct py.pl links may not support dynamic amounts
+    			// So we'll use the business email format for flexibility
+    			paypalDonateBtn.href = `https://www.paypal.com/cgi-bin/webscr?cmd=_xclick&business=bswarts2@gmail.com&amount=${selectedAmount}&currency_code=USD&item_name=Payment`;
+    			debug(`Updated PayPal link with amount: ${selectedAmount}`);
+		}
                 // Update PayPal donation link when amount changes
-                function updatePayPalLink() {
-                    paypalDonateBtn.href = `https://www.paypal.com/donate/?business=${encodeURIComponent(paypalUsername)}&amount=${selectedAmount}&currency_code=USD&no_recurring=1`;
-                    debug(`Updated PayPal link with amount: ${selectedAmount}`);
-                }
+                //function updatePayPalLink() {
+                   // paypalDonateBtn.href = `https://www.paypal.com/donate/?business=${encodeURIComponent(paypalUsername)}&amount=${selectedAmount}&currency_code=USD&no_recurring=1`;
+                //    debug(`Updated PayPal link with amount: ${selectedAmount}`);
+                //}
                 
                 // Initialize PayPal link
                 updatePayPalLink();
