@@ -965,11 +965,6 @@
     			paypalDonateBtn.href = `https://www.paypal.com/cgi-bin/webscr?cmd=_xclick&business=bswarts2@gmail.com&amount=${selectedAmount}&currency_code=USD&item_name=Payment`;
     			debug(`Updated PayPal link with amount: ${selectedAmount}`);
 		}
-                // Update PayPal donation link when amount changes
-                //function updatePayPalLink() {
-                   // paypalDonateBtn.href = `https://www.paypal.com/donate/?business=${encodeURIComponent(paypalUsername)}&amount=${selectedAmount}&currency_code=USD&no_recurring=1`;
-                //    debug(`Updated PayPal link with amount: ${selectedAmount}`);
-                //}
                 
                 // Initialize PayPal link
                 updatePayPalLink();
