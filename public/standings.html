@@ -88,17 +88,28 @@
         
         .team-item {
             display: flex;
-            align-items: center;
+            flex-direction: column;
             padding: 8px;
             border: 1px solid #ddd;
             border-radius: 4px;
             background-color: #f8f9fa;
         }
+
+        .team-main-row {
+            display: flex;
+            align-items: center;
+            width: 100%;
+        }
         
         .team-item.eliminated {
-            text-decoration: line-through;
             color: #999;
             background-color: #f1f1f1;
+        }
+
+        .team-item.eliminated .team-seed,
+        .team-item.eliminated .team-name,
+        .team-item.eliminated .team-region {
+            text-decoration: line-through;
         }
         
         .team-seed {
@@ -120,9 +131,19 @@
         }
         
         .team-points {
-            margin-left: 8px;
             font-weight: bold;
             color: #28a745;
+            margin-left: auto;
+            padding-left: 8px;
+        }
+
+        .team-breakdown {
+            font-size: 0.68em;
+            color: #6c757d;
+            font-family: monospace;
+            white-space: nowrap;
+            margin-top: 3px;
+            padding-left: 2px;
         }
         
         .no-entries-message {
@@ -194,6 +215,39 @@
             document.getElementById('refreshBtn').addEventListener('click', loadStandings);
         });
         
+        // Ordinal suffix helper: 1 → "1st", 2 → "2nd", etc.
+        function ordinal(n) {
+            const s = ['th','st','nd','rd'];
+            const v = n % 100;
+            return n + (s[(v - 20) % 10] || s[v] || s[0]);
+        }
+
+        // Build a scoring breakdown formula string for a team
+        function buildBreakdown(team) {
+            const s = team.seed;
+            const r = team.round_reached || 1;
+            const elimPart = team.is_eliminated ? `Eliminated in the ${ordinal(r)} round` : '';
+
+            if (r <= 1 || !team.points_earned) {
+                return elimPart;
+            }
+
+            const terms = [];
+            for (let i = 1; i <= r - 1; i++) {
+                terms.push(`(${s}\u00d7${i})`);
+            }
+
+            const bonuses = [];
+            if (r >= 5) bonuses.push('+5 FF');
+            if (r >= 6) bonuses.push('+10 CG');
+            if (r >= 7) bonuses.push('+15 Champ');
+
+            let formula = `(${terms.join('+')})`;
+            if (bonuses.length) formula += ' ' + bonuses.join(', ');
+            if (elimPart) formula += ' · ' + elimPart;
+            return formula;
+        }
+
         // Load standings from the server
         function loadStandings() {
             fetch('/api/standings')
@@ -360,6 +414,7 @@
                         };
                         
                         const nameSpan = document.createElement('span');
+                        nameSpan.className = 'team-name';
                         nameSpan.textContent = team.team_name;
                         
                         const regionSpan = document.createElement('span');
@@ -369,12 +424,23 @@
                         const pointsSpan = document.createElement('span');
                         pointsSpan.className = 'team-points';
                         pointsSpan.textContent = `[${team.points_earned} pts]`;
-                        
-                        teamItem.appendChild(seedSpan);
-                        teamItem.appendChild(logoImg);
-                        teamItem.appendChild(nameSpan);
-                        teamItem.appendChild(regionSpan);
-                        teamItem.appendChild(pointsSpan);
+
+                        const mainRow = document.createElement('div');
+                        mainRow.className = 'team-main-row';
+                        mainRow.appendChild(seedSpan);
+                        mainRow.appendChild(logoImg);
+                        mainRow.appendChild(nameSpan);
+                        mainRow.appendChild(regionSpan);
+                        mainRow.appendChild(pointsSpan);
+                        teamItem.appendChild(mainRow);
+
+                        const breakdown = buildBreakdown(team);
+                        if (breakdown) {
+                            const breakdownDiv = document.createElement('div');
+                            breakdownDiv.className = 'team-breakdown';
+                            breakdownDiv.textContent = breakdown;
+                            teamItem.appendChild(breakdownDiv);
+                        }
                         
                         teamList.appendChild(teamItem);
                     });

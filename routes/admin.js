@@ -413,6 +413,124 @@ router.post('/declare-champion', (req, res) => {
     });
 });
 
+// Correct an incorrect advancement by swapping winner and loser for a matchup
+// Returns the seeds that could face a given seed at a given regional round
+function getMatchupGroupSeeds(seed, round) {
+    const round2Groups = [[1,16,8,9],[5,12,4,13],[6,11,3,14],[7,10,2,15]];
+    const round3Groups = [[1,16,8,9,5,12,4,13],[6,11,3,14,7,10,2,15]];
+    if (round === 2) return round2Groups.find(g => g.includes(seed)) || [];
+    if (round === 3) return round3Groups.find(g => g.includes(seed)) || [];
+    if (round === 4) return [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16];
+    return [];
+}
+
+router.post('/correct-advancement', (req, res) => {
+    const { winnerId, loserId, toRound } = req.body;
+    const fromRound = toRound - 1;
+
+    // Step 1: get the wrong winner's info
+    db.get('SELECT * FROM tournament_progress WHERE id = ?', [loserId], (err, loserRow) => {
+        if (err) return res.status(500).json({ error: err.message });
+        if (!loserRow) return res.status(404).json({ error: 'Team not found' });
+
+        const maxRound = loserRow.round_reached;
+
+        // Step 2: get Final Four config if the wrong winner reached round 5+
+        const getConfig = (cb) => {
+            if (maxRound >= 5) {
+                db.get("SELECT value FROM system_settings WHERE key = 'final_four_matchups'", (err, row) => {
+                    cb(row ? JSON.parse(row.value) : { semifinal1: ['East','West'], semifinal2: ['South','Midwest'] });
+                });
+            } else {
+                cb(null);
+            }
+        };
+
+        getConfig((semifinalConfig) => {
+            // Step 3: walk rounds toRound..maxRound finding each orphaned victim
+            const orphanedIds = [];
+
+            function findForRound(round, done) {
+                if (round > maxRound) return done();
+
+                if (round <= 4) {
+                    const seeds = getMatchupGroupSeeds(loserRow.seed, round);
+                    if (!seeds.length) return findForRound(round + 1, done);
+                    const ph = seeds.map(() => '?').join(',');
+                    db.get(
+                        `SELECT id FROM tournament_progress WHERE region = ? AND seed IN (${ph}) AND round_reached = ? AND is_eliminated = 1 AND id != ?`,
+                        [loserRow.region, ...seeds, round, loserRow.id],
+                        (err, row) => { if (row) orphanedIds.push(row.id); findForRound(round + 1, done); }
+                    );
+                } else if (round === 5 && semifinalConfig) {
+                    const sf = semifinalConfig.semifinal1.includes(loserRow.region)
+                        ? semifinalConfig.semifinal1
+                        : semifinalConfig.semifinal2.includes(loserRow.region)
+                            ? semifinalConfig.semifinal2
+                            : null;
+                    if (!sf) return findForRound(round + 1, done);
+                    const ph = sf.map(() => '?').join(',');
+                    db.get(
+                        `SELECT id FROM tournament_progress WHERE region IN (${ph}) AND round_reached = 5 AND is_eliminated = 1 AND id != ?`,
+                        [...sf, loserRow.id],
+                        (err, row) => { if (row) orphanedIds.push(row.id); findForRound(round + 1, done); }
+                    );
+                } else if (round === 6) {
+                    db.get(
+                        `SELECT id FROM tournament_progress WHERE (round_reached = 6 OR is_finalist = 1) AND is_eliminated = 1 AND id != ?`,
+                        [loserRow.id],
+                        (err, row) => { if (row) orphanedIds.push(row.id); findForRound(round + 1, done); }
+                    );
+                } else if (round === 7) {
+                    db.get(
+                        `SELECT id FROM tournament_progress WHERE (round_reached = 7 OR is_champion = 1) AND is_eliminated = 1 AND id != ?`,
+                        [loserRow.id],
+                        (err, row) => { if (row) orphanedIds.push(row.id); findForRound(round + 1, done); }
+                    );
+                } else {
+                    findForRound(round + 1, done);
+                }
+            }
+
+            findForRound(toRound, () => {
+                // Step 4: apply all updates in a single serialized transaction
+                let responded = false;
+                const fail = (err) => {
+                    if (!responded) { responded = true; db.run('ROLLBACK'); res.status(500).json({ error: err.message }); }
+                };
+
+                db.serialize(() => {
+                    db.run('BEGIN TRANSACTION');
+
+                    db.run(
+                        `UPDATE tournament_progress SET round_reached=?, is_eliminated=0, is_final_four=?, is_finalist=?, is_champion=? WHERE id=?`,
+                        [toRound, toRound >= 5 ? 1 : 0, toRound >= 6 ? 1 : 0, toRound >= 7 ? 1 : 0, winnerId],
+                        err => { if (err) fail(err); }
+                    );
+
+                    db.run(
+                        `UPDATE tournament_progress SET round_reached=?, is_eliminated=1, is_final_four=?, is_finalist=?, is_champion=0 WHERE id=?`,
+                        [fromRound, fromRound >= 5 ? 1 : 0, fromRound >= 6 ? 1 : 0, loserId],
+                        err => { if (err) fail(err); }
+                    );
+
+                    orphanedIds.forEach(id => {
+                        db.run('UPDATE tournament_progress SET is_eliminated=0 WHERE id=?', [id], err => { if (err) fail(err); });
+                    });
+
+                    db.run('COMMIT', err => {
+                        if (err) return fail(err);
+                        if (!responded) {
+                            responded = true;
+                            res.json({ message: 'Advancement corrected successfully', winnerId, loserId, toRound });
+                        }
+                    });
+                });
+            });
+        });
+    });
+});
+
 // Update all scores based on current tournament progress
 router.post('/update-scores', (req, res) => {
     // Begin transaction

@@ -196,6 +196,16 @@
             text-decoration: line-through;
             background-color: #f8f8f8;
         }
+
+        .team.eliminated.correctable {
+            cursor: pointer;
+        }
+
+        .team.eliminated.correctable:hover {
+            background-color: rgba(255, 193, 7, 0.15);
+            border: 1px dashed #ffc107;
+            text-decoration: line-through;
+        }
         
         .team-seed {
             width: 25px;
@@ -721,14 +731,20 @@
                         team1Div.classList.add('connector-top');
                         if (!team1.is_eliminated) {
                             team1Div.addEventListener('click', () => advanceTeam(team1, team2));
+                        } else if (!team2.is_eliminated) {
+                            team1Div.classList.add('correctable');
+                            team1Div.addEventListener('click', () => correctAdvancement(team1, team2, team1.round_reached + 1));
                         }
                         matchupDiv.appendChild(team1Div);
-                        
+
                         // Team 2
                         const team2Div = createTeamDiv(team2);
                         team2Div.classList.add('connector-bottom');
                         if (!team2.is_eliminated) {
                             team2Div.addEventListener('click', () => advanceTeam(team2, team1));
+                        } else if (!team1.is_eliminated) {
+                            team2Div.classList.add('correctable');
+                            team2Div.addEventListener('click', () => correctAdvancement(team2, team1, team2.round_reached + 1));
                         }
                         matchupDiv.appendChild(team2Div);
                         
@@ -767,14 +783,14 @@
                         teamsInMatchup.forEach(team => {
                             const teamDiv = createTeamDiv(team);
                             
-                            // Only add click event to non-eliminated teams
+                            // Add click event to non-eliminated teams, or correction click to eliminated teams
                             if (!team.is_eliminated) {
                                 // Find potential opponents
-                                const opponents = teamsInMatchup.filter(t => 
-                                    t.id !== team.id && 
+                                const opponents = teamsInMatchup.filter(t =>
+                                    t.id !== team.id &&
                                     !t.is_eliminated
                                 );
-                                
+
                                 if (opponents.length > 0) {
                                     teamDiv.addEventListener('click', () => advanceTeam(team, opponents[0]));
                                 } else {
@@ -783,8 +799,14 @@
                                         advanceTeamWithoutOpponent(team, 3);
                                     });
                                 }
+                            } else {
+                                const wrongWinner = teamsInMatchup.find(t => t.id !== team.id && !t.is_eliminated);
+                                if (wrongWinner) {
+                                    teamDiv.classList.add('correctable');
+                                    teamDiv.addEventListener('click', () => correctAdvancement(team, wrongWinner, team.round_reached + 1));
+                                }
                             }
-                            
+
                             matchupDiv.appendChild(teamDiv);
                         });
                     } else {
@@ -794,7 +816,7 @@
                         emptySlot.textContent = 'TBD';
                         matchupDiv.appendChild(emptySlot);
                     }
-                    
+
                     matchupSlot.appendChild(matchupDiv);
                     roundContent.appendChild(matchupSlot);
                 }
@@ -828,14 +850,14 @@
                         teamsInMatchup.forEach(team => {
                             const teamDiv = createTeamDiv(team);
                             
-                            // Only add click event to non-eliminated teams
+                            // Add click event to non-eliminated teams, or correction click to eliminated teams
                             if (!team.is_eliminated) {
                                 // Find potential opponents
-                                const opponents = teamsInMatchup.filter(t => 
-                                    t.id !== team.id && 
+                                const opponents = teamsInMatchup.filter(t =>
+                                    t.id !== team.id &&
                                     !t.is_eliminated
                                 );
-                                
+
                                 if (opponents.length > 0) {
                                     teamDiv.addEventListener('click', () => advanceTeam(team, opponents[0]));
                                 } else {
@@ -844,8 +866,14 @@
                                         advanceTeamWithoutOpponent(team, 4);
                                     });
                                 }
+                            } else {
+                                const wrongWinner = teamsInMatchup.find(t => t.id !== team.id && !t.is_eliminated);
+                                if (wrongWinner) {
+                                    teamDiv.classList.add('correctable');
+                                    teamDiv.addEventListener('click', () => correctAdvancement(team, wrongWinner, team.round_reached + 1));
+                                }
                             }
-                            
+
                             matchupDiv.appendChild(teamDiv);
                         });
                     } else {
@@ -880,14 +908,14 @@
                     teamsInMatchup.forEach(team => {
                         const teamDiv = createTeamDiv(team);
                         
-                        // Only add click event to non-eliminated teams
+                        // Add click event to non-eliminated teams, or correction click to eliminated teams
                         if (!team.is_eliminated) {
                             // Find potential opponents
-                            const opponents = teamsInMatchup.filter(t => 
-                                t.id !== team.id && 
+                            const opponents = teamsInMatchup.filter(t =>
+                                t.id !== team.id &&
                                 !t.is_eliminated
                             );
-                            
+
                             if (opponents.length > 0) {
                                 teamDiv.addEventListener('click', () => advanceTeam(team, opponents[0]));
                             } else {
@@ -896,8 +924,14 @@
                                     advanceTeamWithoutOpponent(team, 5);
                                 });
                             }
+                        } else {
+                            const wrongWinner = teamsInMatchup.find(t => t.id !== team.id && !t.is_eliminated);
+                            if (wrongWinner) {
+                                teamDiv.classList.add('correctable');
+                                teamDiv.addEventListener('click', () => correctAdvancement(team, wrongWinner, team.round_reached + 1));
+                            }
                         }
-                        
+
                         matchupDiv.appendChild(teamDiv);
                     });
                 } else {
@@ -1024,19 +1058,23 @@
             semifinal1Teams.forEach(team => {
                 const teamDiv = createTeamDiv(team);
                 
-                // Only add click event to non-eliminated teams
+                // Add click event to non-eliminated teams, or correction click to eliminated teams
                 if (!team.is_eliminated) {
-                    // Find opponent in this semifinal
-                    const opponent = semifinal1Teams.find(t => 
-                        t.id !== team.id && 
+                    const opponent = semifinal1Teams.find(t =>
+                        t.id !== team.id &&
                         !t.is_eliminated
                     );
-                    
                     if (opponent) {
                         teamDiv.addEventListener('click', () => advanceTeamToFinal(team, opponent));
                     }
+                } else {
+                    const wrongWinner = semifinal1Teams.find(t => t.id !== team.id && !t.is_eliminated);
+                    if (wrongWinner) {
+                        teamDiv.classList.add('correctable');
+                        teamDiv.addEventListener('click', () => correctAdvancement(team, wrongWinner, team.round_reached + 1));
+                    }
                 }
-                
+
                 semifinal1Matchup.appendChild(teamDiv);
             });
         } else {
@@ -1069,19 +1107,23 @@
             semifinal2Teams.forEach(team => {
                 const teamDiv = createTeamDiv(team);
                 
-                // Only add click event to non-eliminated teams
+                // Add click event to non-eliminated teams, or correction click to eliminated teams
                 if (!team.is_eliminated) {
-                    // Find opponent in this semifinal
-                    const opponent = semifinal2Teams.find(t => 
-                        t.id !== team.id && 
+                    const opponent = semifinal2Teams.find(t =>
+                        t.id !== team.id &&
                         !t.is_eliminated
                     );
-                    
                     if (opponent) {
                         teamDiv.addEventListener('click', () => advanceTeamToFinal(team, opponent));
                     }
+                } else {
+                    const wrongWinner = semifinal2Teams.find(t => t.id !== team.id && !t.is_eliminated);
+                    if (wrongWinner) {
+                        teamDiv.classList.add('correctable');
+                        teamDiv.addEventListener('click', () => correctAdvancement(team, wrongWinner, team.round_reached + 1));
+                    }
                 }
-                
+
                 semifinal2Matchup.appendChild(teamDiv);
             });
         } else {
@@ -1117,19 +1159,23 @@
             finalists.forEach(team => {
                 const teamDiv = createTeamDiv(team);
                 
-                // Only add click event to non-eliminated teams
+                // Add click event to non-eliminated teams, or correction click to eliminated teams
                 if (!team.is_eliminated) {
-                    // Find opponent in championship
-                    const opponent = finalists.find(t => 
-                        t.id !== team.id && 
+                    const opponent = finalists.find(t =>
+                        t.id !== team.id &&
                         !t.is_eliminated
                     );
-                    
                     if (opponent) {
                         teamDiv.addEventListener('click', () => declareChampion(team, opponent));
                     }
+                } else {
+                    const wrongWinner = finalists.find(t => t.id !== team.id && !t.is_eliminated);
+                    if (wrongWinner) {
+                        teamDiv.classList.add('correctable');
+                        teamDiv.addEventListener('click', () => correctAdvancement(team, wrongWinner, team.round_reached + 1));
+                    }
                 }
-                
+
                 championshipMatchup.appendChild(teamDiv);
             });
         } else {
@@ -1290,6 +1336,38 @@ function advanceTeam(winner, loser) {
     });
 }
     
+    // Correct a wrong advancement by clicking the incorrectly eliminated team
+    function correctAdvancement(correctTeam, wrongWinner, toRound) {
+        if (window.speechSynthesis) {
+            window.speechSynthesis.cancel();
+            window.speechSynthesis.speak(new SpeechSynthesisUtterance('undoing that pick'));
+        }
+
+        const allTeamDivs = document.querySelectorAll('.team');
+        allTeamDivs.forEach(div => { div.style.pointerEvents = 'none'; });
+
+        showStatusMessage('Correcting advancement...', 'info');
+
+        fetch('/api/admin/correct-advancement', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ winnerId: correctTeam.id, loserId: wrongWinner.id, toRound })
+        })
+        .then(response => {
+            if (!response.ok) throw new Error('Failed to correct advancement');
+            return response.json();
+        })
+        .then(() => {
+            loadTournamentData();
+            showStatusMessage(`Corrected: ${correctTeam.team_name} now advances to ${getRoundName(toRound)}`, 'success');
+        })
+        .catch(error => {
+            console.error('Error correcting advancement:', error);
+            showStatusMessage('Error correcting advancement. Please try again.', 'error');
+            allTeamDivs.forEach(div => { div.style.pointerEvents = 'auto'; });
+        });
+    }
+
     // New function to update team UI elements without full reload
     function updateTeamUIElements(winnerId, loserId) {
         // Update winner UI elements
