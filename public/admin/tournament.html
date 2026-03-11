@@ -192,9 +192,9 @@
         }
         
         .team.eliminated {
-            color: #999;
+            color: #721c24;
             text-decoration: line-through;
-            background-color: #f8f8f8;
+            background-color: #f8d7da;
         }
 
         .team.eliminated.correctable {
@@ -443,6 +443,7 @@
             <a href="/">About</a>
             <a href="/submit.html">Make a Scoonie</a>
             <a href="/standings.html">Standings</a>
+            <a href="/bracket.html">Bracket</a>
             <a href="/admin" class="active">Admin</a>
         </nav>
     </header>
@@ -727,7 +728,7 @@
                         matchupDiv.dataset.slotIndex = index;
                         
                         // Team 1
-                        const team1Div = createTeamDiv(team1);
+                        const team1Div = createTeamDiv(team1, 1);
                         team1Div.classList.add('connector-top');
                         if (!team1.is_eliminated) {
                             team1Div.addEventListener('click', () => advanceTeam(team1, team2));
@@ -738,7 +739,7 @@
                         matchupDiv.appendChild(team1Div);
 
                         // Team 2
-                        const team2Div = createTeamDiv(team2);
+                        const team2Div = createTeamDiv(team2, 1);
                         team2Div.classList.add('connector-bottom');
                         if (!team2.is_eliminated) {
                             team2Div.addEventListener('click', () => advanceTeam(team2, team1));
@@ -777,11 +778,11 @@
                             (i === 3 && (team.seed === 2 || team.seed === 7 || team.seed === 10 || team.seed === 15))
                         )
                     );
-                    
+
                     if (teamsInMatchup.length > 0) {
                         // Add teams to the matchup
                         teamsInMatchup.forEach(team => {
-                            const teamDiv = createTeamDiv(team);
+                            const teamDiv = createTeamDiv(team, 2);
                             
                             // Add click event to non-eliminated teams, or correction click to eliminated teams
                             if (!team.is_eliminated) {
@@ -840,15 +841,15 @@
                             // For proper seeding pattern in each matchup
                             (i === 0 && (team.seed === 1 || team.seed === 4 || team.seed === 5 || team.seed === 8 || 
                                           team.seed === 9 || team.seed === 12 || team.seed === 13 || team.seed === 16)) ||
-                            (i === 1 && (team.seed === 2 || team.seed === 3 || team.seed === 6 || team.seed === 7 || 
+                            (i === 1 && (team.seed === 2 || team.seed === 3 || team.seed === 6 || team.seed === 7 ||
                                           team.seed === 10 || team.seed === 11 || team.seed === 14 || team.seed === 15))
                         )
                     );
-                    
+
                     if (teamsInMatchup.length > 0) {
                         // Add teams to the matchup
                         teamsInMatchup.forEach(team => {
-                            const teamDiv = createTeamDiv(team);
+                            const teamDiv = createTeamDiv(team, 3);
                             
                             // Add click event to non-eliminated teams, or correction click to eliminated teams
                             if (!team.is_eliminated) {
@@ -906,7 +907,7 @@
                 if (teamsInMatchup.length > 0) {
                     // Add teams to the matchup
                     teamsInMatchup.forEach(team => {
-                        const teamDiv = createTeamDiv(team);
+                        const teamDiv = createTeamDiv(team, 4);
                         
                         // Add click event to non-eliminated teams, or correction click to eliminated teams
                         if (!team.is_eliminated) {
@@ -1056,7 +1057,7 @@
         
         if (semifinal1Teams.length > 0) {
             semifinal1Teams.forEach(team => {
-                const teamDiv = createTeamDiv(team);
+                const teamDiv = createTeamDiv(team, 5);
                 
                 // Add click event to non-eliminated teams, or correction click to eliminated teams
                 if (!team.is_eliminated) {
@@ -1105,7 +1106,7 @@
         
         if (semifinal2Teams.length > 0) {
             semifinal2Teams.forEach(team => {
-                const teamDiv = createTeamDiv(team);
+                const teamDiv = createTeamDiv(team, 5);
                 
                 // Add click event to non-eliminated teams, or correction click to eliminated teams
                 if (!team.is_eliminated) {
@@ -1157,7 +1158,7 @@
         
         if (finalists.length > 0) {
             finalists.forEach(team => {
-                const teamDiv = createTeamDiv(team);
+                const teamDiv = createTeamDiv(team, 6);
                 
                 // Add click event to non-eliminated teams, or correction click to eliminated teams
                 if (!team.is_eliminated) {
@@ -1235,7 +1236,7 @@
     }
     
     // Create a team div
-    function createTeamDiv(team) {
+    function createTeamDiv(team, roundNum) {
         const teamDiv = document.createElement('div');
         teamDiv.className = 'team';
         teamDiv.dataset.teamId = team.id;
@@ -1244,13 +1245,11 @@
         teamDiv.dataset.region = team.region;
         teamDiv.dataset.roundReached = team.round_reached;
         teamDiv.dataset.isEliminated = team.is_eliminated ? "1" : "0";
-        
-        if (team.is_eliminated) {
-            teamDiv.classList.add('eliminated');
-        }
-        
-        if (team.round_reached > 1 || team.is_final_four || team.is_finalist || team.is_champion) {
-            teamDiv.classList.add('winner');
+
+        if (team.is_eliminated && team.round_reached === roundNum) {
+            teamDiv.classList.add('eliminated'); // lost in this round
+        } else if (team.round_reached > roundNum) {
+            teamDiv.classList.add('winner'); // advanced past this round
         }
         
         const seedSpan = document.createElement('div');
@@ -1493,7 +1492,7 @@ function advanceTeam(winner, loser) {
                     
                     if (finalists.length > 0) {
                         finalists.forEach(team => {
-                            const teamDiv = createTeamDiv(team);
+                            const teamDiv = createTeamDiv(team, 6);
                             
                             // Only add click event to non-eliminated teams
                             if (!team.is_eliminated) {

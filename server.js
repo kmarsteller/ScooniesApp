@@ -10,6 +10,7 @@ const standingsRoutes = require('./routes/standings');
 const adminRoutes = require('./routes/admin');
 const emailRoutes = require('./routes/email');
 const communicationsRoutes = require('./routes/communications'); // Add this line
+const bracketRoutes = require('./routes/bracket');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -52,6 +53,7 @@ app.use('/api/entries', entriesRoutes);
 app.use('/api/standings', standingsRoutes);
 app.use('/api/admin', emailRoutes);
 app.use('/api/communications', communicationsRoutes); // Add this line
+app.use('/api/bracket', bracketRoutes);
 
 // Serve static files
 app.use(express.static(path.join(__dirname, 'public')));
@@ -90,6 +92,10 @@ app.get('/submit.html', (req, res) => {
 
 app.get('/standings.html', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'standings.html'));
+});
+
+app.get('/bracket.html', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'bracket.html'));
 });
 
 // Handle 404 - must be after all other routes

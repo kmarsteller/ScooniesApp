@@ -1,0 +1,592 @@
+<!-- bracket.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Scoonies - Tournament Bracket</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        .main-title {
+            text-align: center;
+            font-size: 36px;
+            color: #dc3545;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+
+        .bracket-legend {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.85em;
+            color: #495057;
+        }
+
+        .legend-swatch {
+            width: 16px;
+            height: 16px;
+            border-radius: 3px;
+            border: 1px solid #ccc;
+        }
+
+        .legend-swatch.winner  { background-color: rgba(40, 167, 69, 0.25); }
+        .legend-swatch.elim    { background-color: #f8d7da; }
+        .legend-swatch.pending { background-color: #fff; }
+        .legend-swatch.tbd     { background-color: #f0f0f0; }
+
+        .refresh-row {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 15px;
+        }
+
+        /* ── Region ── */
+        .region-section {
+            margin-bottom: 35px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .region-title {
+            background-color: #f8f9fa;
+            color: #dc3545;
+            padding: 12px 20px;
+            font-size: 22px;
+            font-weight: bold;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .bracket-container {
+            display: flex;
+            padding: 15px;
+            overflow-x: auto;
+        }
+
+        /* ── Rounds ── */
+        .round {
+            min-width: 190px;
+            margin: 0 8px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .round-title {
+            text-align: center;
+            padding: 8px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            margin-bottom: 12px;
+            font-weight: bold;
+            font-size: 0.85em;
+            color: #495057;
+        }
+
+        .round-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-around;
+        }
+
+        .matchup-slot {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .round-1 .matchup-slot { min-height: 90px;  margin-bottom: 12px; }
+        .round-2 .matchup-slot { min-height: 110px; margin-bottom: 28px; }
+        .round-3 .matchup-slot { min-height: 130px; margin-bottom: 55px; }
+        .round-4 .matchup-slot { min-height: 110px; }
+
+        .matchup {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        /* ── Teams ── */
+        .team {
+            display: flex;
+            align-items: center;
+            padding: 8px 10px;
+            border-bottom: 1px solid #eee;
+            min-height: 40px;
+        }
+
+        .team:last-child { border-bottom: none; }
+
+        .team.winner {
+            background-color: rgba(40, 167, 69, 0.2);
+        }
+
+        .team.eliminated {
+            color: #721c24;
+            text-decoration: line-through;
+            background-color: #f8d7da;
+        }
+
+        .team.tbd {
+            color: #aaa;
+            font-style: italic;
+            background-color: #f0f0f0;
+            justify-content: center;
+        }
+
+        .team-seed {
+            width: 22px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 0.85em;
+            background-color: #f0f0f0;
+            padding: 3px;
+            border-radius: 3px;
+            margin-right: 8px;
+            flex-shrink: 0;
+        }
+
+        .team.eliminated .team-seed { background-color: #f5c6cb; }
+
+        .team-logo {
+            width: 24px;
+            height: 24px;
+            margin-right: 8px;
+            object-fit: contain;
+            flex-shrink: 0;
+        }
+
+        .team-name {
+            font-size: 0.9em;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* ── Final Four ── */
+        .final-four-section {
+            margin-bottom: 35px;
+            border: 2px solid #dc3545;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .final-four-title {
+            background-color: #dc3545;
+            color: white;
+            padding: 12px 20px;
+            font-size: 26px;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .final-four-body {
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .semifinals-row {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            width: 100%;
+            flex-wrap: wrap;
+        }
+
+        .semifinal-block {
+            width: 280px;
+        }
+
+        .semifinal-label {
+            text-align: center;
+            font-weight: bold;
+            color: #495057;
+            margin-bottom: 8px;
+            font-size: 0.9em;
+        }
+
+        .championship-block {
+            width: 280px;
+        }
+
+        .championship-label {
+            text-align: center;
+            padding: 8px;
+            background-color: #ffc107;
+            color: #212529;
+            border-radius: 4px;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+
+        .champion-block {
+            text-align: center;
+            margin-top: 10px;
+        }
+
+        .champion-label {
+            font-size: 1.1em;
+            color: #dc3545;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .champion-team {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 20px;
+            background-color: gold;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+
+        .champion-team img {
+            width: 36px;
+            height: 36px;
+            object-fit: contain;
+        }
+
+        .loading-message {
+            text-align: center;
+            padding: 40px;
+            color: #6c757d;
+        }
+
+        .error {
+            text-align: center;
+            padding: 40px;
+            color: #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-top">
+            <a href="/"><img src="../images/Scoonies.jpg" alt="The Scoonies Logo"></a>
+        </div>
+        <nav>
+            <a href="/">About</a>
+            <a href="/submit.html">Make a Scoonie</a>
+            <a href="/standings.html">Standings</a>
+            <a href="/bracket.html" class="active">Bracket</a>
+            <a href="/admin">Admin</a>
+        </nav>
+    </header>
+
+    <main>
+        <h1 class="main-title">Tournament Bracket</h1>
+
+        <div class="bracket-legend">
+            <div class="legend-item"><div class="legend-swatch winner"></div> Advanced</div>
+            <div class="legend-item"><div class="legend-swatch elim"></div> Eliminated</div>
+            <div class="legend-item"><div class="legend-swatch pending"></div> In Play</div>
+            <div class="legend-item"><div class="legend-swatch tbd"></div> TBD</div>
+        </div>
+
+        <div class="refresh-row">
+            <button id="refreshBtn" class="action-button">Refresh</button>
+        </div>
+
+        <div id="bracketContent">
+            <div class="loading-message">Loading bracket...</div>
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; 2026 The Scoonies</p>
+    </footer>
+
+    <script>
+        // ── Seed group definitions ──────────────────────────────────────────
+        const R1_MATCHUPS = [[1,16],[8,9],[5,12],[4,13],[6,11],[3,14],[7,10],[2,15]];
+
+        const R2_GROUPS = [
+            [1,8,9,16],
+            [4,5,12,13],
+            [3,6,11,14],
+            [2,7,10,15]
+        ];
+
+        const R3_GROUPS = [
+            [1,4,5,8,9,12,13,16],
+            [2,3,6,7,10,11,14,15]
+        ];
+
+        // Round 4: whole region — handled inline
+
+        // ── Logo helper ─────────────────────────────────────────────────────
+        function logoSrc(teamName) {
+            return `/images/logos/${teamName.toLowerCase().replace(/[^a-z0-9]/g, '-')}.png`;
+        }
+
+        // ── Build a team div (read-only) ────────────────────────────────────
+        function makeTeamDiv(team, roundNum) {
+            const div = document.createElement('div');
+            div.className = 'team';
+
+            if (team.is_eliminated && team.round_reached === roundNum) {
+                div.classList.add('eliminated'); // lost in this round
+            } else if (team.round_reached > roundNum) {
+                div.classList.add('winner'); // advanced past this round
+            }
+
+            const seed = document.createElement('span');
+            seed.className = 'team-seed';
+            seed.textContent = team.seed;
+
+            const logo = document.createElement('img');
+            logo.className = 'team-logo';
+            logo.alt = team.team_name;
+            logo.src = logoSrc(team.team_name);
+            logo.onerror = function() {
+                this.src = '/images/generic-team-logo.png';
+                this.onerror = null;
+            };
+
+            const name = document.createElement('span');
+            name.className = 'team-name';
+            name.textContent = team.team_name;
+
+            div.appendChild(seed);
+            div.appendChild(logo);
+            div.appendChild(name);
+            return div;
+        }
+
+        // ── Build a TBD placeholder div ─────────────────────────────────────
+        function makeTBD() {
+            const div = document.createElement('div');
+            div.className = 'team tbd';
+            div.textContent = 'TBD';
+            return div;
+        }
+
+        // ── Build a matchup box from a list of teams ─────────────────────────
+        function makeMatchup(teams, roundNum) {
+            const box = document.createElement('div');
+            box.className = 'matchup';
+
+            if (teams.length === 0) {
+                box.appendChild(makeTBD());
+                box.appendChild(makeTBD());
+            } else if (teams.length === 1) {
+                box.appendChild(makeTeamDiv(teams[0], roundNum));
+                box.appendChild(makeTBD());
+            } else {
+                teams.forEach(t => box.appendChild(makeTeamDiv(t, roundNum)));
+            }
+            return box;
+        }
+
+        // ── Build a round column ─────────────────────────────────────────────
+        function makeRound(roundNum, roundName, slots) {
+            const col = document.createElement('div');
+            col.className = `round round-${roundNum}`;
+
+            const title = document.createElement('div');
+            title.className = 'round-title';
+            title.textContent = roundName;
+            col.appendChild(title);
+
+            const content = document.createElement('div');
+            content.className = 'round-content';
+
+            slots.forEach(teams => {
+                const slot = document.createElement('div');
+                slot.className = 'matchup-slot';
+                slot.appendChild(makeMatchup(teams, roundNum));
+                content.appendChild(slot);
+            });
+
+            col.appendChild(content);
+            return col;
+        }
+
+        // ── Build slots for each round ───────────────────────────────────────
+        function buildSlots(regionTeams, roundNum, groups) {
+            return groups.map(seedGroup => {
+                if (roundNum === 1) {
+                    // Always show both seeded teams
+                    return seedGroup.map(s => regionTeams.find(t => t.seed === s)).filter(Boolean);
+                }
+                // For rounds 2+: teams that have reached this round
+                return regionTeams.filter(t =>
+                    seedGroup.includes(t.seed) && t.round_reached >= roundNum
+                );
+            });
+        }
+
+        // ── Build a region section ───────────────────────────────────────────
+        function makeRegionSection(regionName, regionTeams) {
+            const section = document.createElement('div');
+            section.className = 'region-section';
+
+            const title = document.createElement('div');
+            title.className = 'region-title';
+            title.textContent = regionName + ' Region';
+            section.appendChild(title);
+
+            const container = document.createElement('div');
+            container.className = 'bracket-container';
+
+            // Round 1
+            container.appendChild(makeRound(1, 'Round of 64',
+                buildSlots(regionTeams, 1, R1_MATCHUPS)));
+
+            // Round 2
+            container.appendChild(makeRound(2, 'Round of 32',
+                buildSlots(regionTeams, 2, R2_GROUPS)));
+
+            // Round 3
+            container.appendChild(makeRound(3, 'Sweet 16',
+                buildSlots(regionTeams, 3, R3_GROUPS)));
+
+            // Round 4 — single slot, whole region
+            const r4Teams = regionTeams.filter(t => t.round_reached >= 4);
+            container.appendChild(makeRound(4, 'Elite 8', [r4Teams]));
+
+            section.appendChild(container);
+            return section;
+        }
+
+        // ── Build Final Four + Championship ─────────────────────────────────
+        function makeFinalFourSection(allTeams, finalFourMatchups) {
+            const section = document.createElement('div');
+            section.className = 'final-four-section';
+
+            const title = document.createElement('div');
+            title.className = 'final-four-title';
+            title.textContent = 'Final Four & Championship';
+            section.appendChild(title);
+
+            const body = document.createElement('div');
+            body.className = 'final-four-body';
+
+            // ── Determine semifinal pairings ──
+            let sf1Regions, sf2Regions;
+            if (finalFourMatchups) {
+                sf1Regions = finalFourMatchups.semifinal1; // e.g. ["East","West"]
+                sf2Regions = finalFourMatchups.semifinal2; // e.g. ["South","Midwest"]
+            } else {
+                // Fallback: first two vs last two alphabetically
+                const regions = [...new Set(allTeams.map(t => t.region))].sort();
+                sf1Regions = [regions[0] || 'TBD', regions[1] || 'TBD'];
+                sf2Regions = [regions[2] || 'TBD', regions[3] || 'TBD'];
+            }
+
+            const sf1Teams = allTeams.filter(t => sf1Regions.includes(t.region) && t.round_reached >= 5);
+            const sf2Teams = allTeams.filter(t => sf2Regions.includes(t.region) && t.round_reached >= 5);
+
+            // ── Semifinals row ──
+            const sfRow = document.createElement('div');
+            sfRow.className = 'semifinals-row';
+
+            function makeSFBlock(teams, label) {
+                const block = document.createElement('div');
+                block.className = 'semifinal-block';
+                const lbl = document.createElement('div');
+                lbl.className = 'semifinal-label';
+                lbl.textContent = label;
+                block.appendChild(lbl);
+                block.appendChild(makeMatchup(teams, 5));
+                return block;
+            }
+
+            sfRow.appendChild(makeSFBlock(sf1Teams,
+                `${sf1Regions[0]} vs ${sf1Regions[1]}`));
+            sfRow.appendChild(makeSFBlock(sf2Teams,
+                `${sf2Regions[0]} vs ${sf2Regions[1]}`));
+
+            body.appendChild(sfRow);
+
+            // ── Championship ──
+            const champTeams = allTeams.filter(t => t.round_reached >= 6);
+            const champBlock = document.createElement('div');
+            champBlock.className = 'championship-block';
+            const champLabel = document.createElement('div');
+            champLabel.className = 'championship-label';
+            champLabel.textContent = 'Championship';
+            champBlock.appendChild(champLabel);
+            champBlock.appendChild(makeMatchup(champTeams, 6));
+            body.appendChild(champBlock);
+
+            // ── Champion ──
+            const champion = allTeams.find(t => t.is_champion);
+            if (champion) {
+                const champBanner = document.createElement('div');
+                champBanner.className = 'champion-block';
+
+                const champTitle = document.createElement('div');
+                champTitle.className = 'champion-label';
+                champTitle.textContent = '🏆 Champion';
+                champBanner.appendChild(champTitle);
+
+                const champTeamDiv = document.createElement('div');
+                champTeamDiv.className = 'champion-team';
+
+                const logo = document.createElement('img');
+                logo.alt = champion.team_name;
+                logo.src = logoSrc(champion.team_name);
+                logo.onerror = function() { this.src = '/images/generic-team-logo.png'; this.onerror = null; };
+
+                champTeamDiv.appendChild(logo);
+                champTeamDiv.appendChild(document.createTextNode(
+                    `#${champion.seed} ${champion.team_name} (${champion.region})`));
+                champBanner.appendChild(champTeamDiv);
+                body.appendChild(champBanner);
+            }
+
+            section.appendChild(body);
+            return section;
+        }
+
+        // ── Main render ──────────────────────────────────────────────────────
+        function renderBracket(data) {
+            const content = document.getElementById('bracketContent');
+            content.innerHTML = '';
+
+            // Group by region
+            const regionMap = {};
+            data.teams.forEach(t => {
+                if (!regionMap[t.region]) regionMap[t.region] = [];
+                regionMap[t.region].push(t);
+            });
+
+            Object.keys(regionMap).sort().forEach(region => {
+                content.appendChild(makeRegionSection(region, regionMap[region]));
+            });
+
+            content.appendChild(makeFinalFourSection(data.teams, data.finalFourMatchups));
+        }
+
+        // ── Fetch & load ─────────────────────────────────────────────────────
+        function loadBracket() {
+            fetch('/api/bracket')
+                .then(r => { if (!r.ok) throw new Error('Failed'); return r.json(); })
+                .then(renderBracket)
+                .catch(() => {
+                    document.getElementById('bracketContent').innerHTML =
+                        '<div class="error">Error loading bracket. Please try again.</div>';
+                });
+        }
+
+        document.addEventListener('DOMContentLoaded', loadBracket);
+        document.getElementById('refreshBtn').addEventListener('click', loadBracket);
+    </script>
+</body>
+</html>

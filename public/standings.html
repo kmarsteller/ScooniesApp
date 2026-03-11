@@ -153,6 +153,14 @@
             font-style: italic;
         }
         
+        .tournament-status {
+            text-align: center;
+            font-size: 1em;
+            color: #495057;
+            margin-bottom: 18px;
+            font-style: italic;
+        }
+
         .loading-message {
             text-align: center;
             padding: 40px;
@@ -184,18 +192,20 @@
             <a href="/">About</a>
             <a href="/submit.html">Make a Scoonie</a>
             <a href="/standings.html" class="active">Standings</a>
+            <a href="/bracket.html">Bracket</a>
             <a href="/admin">Admin</a>
         </nav>
     </header>
     
     <main>
         <h1 class="main-title">Standings</h1>
-        
+        <div id="tournamentStatus" class="tournament-status"></div>
+
         <div class="standings-container">
             <div class="standings-filter">
                 <button id="refreshBtn" class="action-button">Refresh Standings</button>
             </div>
-            
+
             <div id="standingsContent" class="standings-content">
                 <div class="loading-message">Loading standings...</div>
             </div>
@@ -269,7 +279,20 @@
         
         function renderStandings(data) {
             const standingsContent = document.getElementById('standingsContent');
-            
+
+            // Update tournament status line
+            const statusEl = document.getElementById('tournamentStatus');
+            if (data.tournamentStatus) {
+                const { currentRound, gamesCompleted, totalGames, roundName } = data.tournamentStatus;
+                if (currentRound === null) {
+                    statusEl.textContent = 'Tournament Complete';
+                } else if (gamesCompleted === 0 && currentRound === 1) {
+                    statusEl.textContent = 'Tournament has not yet begun';
+                } else {
+                    statusEl.textContent = `After ${gamesCompleted} of ${totalGames} games reported in ${roundName}`;
+                }
+            }
+
             // Sort entries by score (highest first)
             const sortedEntries = data.entries.sort((a, b) => b.score - a.score);
             

@@ -67,10 +67,38 @@ router.get('/', (req, res) => {
                     // Wait for all entries to be processed
                     Promise.all(entryPromises)
                         .then(completedEntries => {
-                            res.json({ 
-                                entries: completedEntries,
-                                teamsVisible: teamsVisible
-                            });
+                            // Compute tournament status: games completed per round
+                            db.all(
+                                `SELECT round_reached, COUNT(*) as games_done
+                                 FROM tournament_progress
+                                 WHERE is_eliminated = 1
+                                 GROUP BY round_reached`,
+                                (err, roundData) => {
+                                    const TOTAL_GAMES  = { 1: 32, 2: 16, 3: 8, 4: 4, 5: 2, 6: 1 };
+                                    const ROUND_NAMES  = { 1: 'Round of 64', 2: 'Round of 32', 3: 'Sweet 16', 4: 'Elite Eight', 5: 'Final Four', 6: 'Championship' };
+
+                                    let tournamentStatus = null;
+                                    for (let r = 1; r <= 6; r++) {
+                                        const row = (roundData || []).find(x => x.round_reached === r);
+                                        const done  = row ? row.games_done : 0;
+                                        const total = TOTAL_GAMES[r];
+                                        if (done < total) {
+                                            tournamentStatus = { currentRound: r, gamesCompleted: done, totalGames: total, roundName: ROUND_NAMES[r] };
+                                            break;
+                                        }
+                                    }
+                                    // All 63 games done → champion crowned
+                                    if (!tournamentStatus) {
+                                        tournamentStatus = { currentRound: null, gamesCompleted: 63, totalGames: 63, roundName: 'Complete' };
+                                    }
+
+                                    res.json({
+                                        entries: completedEntries,
+                                        teamsVisible,
+                                        tournamentStatus
+                                    });
+                                }
+                            );
                         })
                         .catch(err => {
                             res.status(500).json({ error: 'Error fetching team data: ' + err.message });
