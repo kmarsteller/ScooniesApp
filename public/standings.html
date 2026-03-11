@@ -378,13 +378,8 @@
                     const teamList = document.createElement('div');
                     teamList.className = 'team-list';
                     
-                    // Sort teams by region and seed
-                    const sortedTeams = (entry.teams || []).sort((a, b) => {
-                        if (a.region !== b.region) {
-                            return a.region.localeCompare(b.region);
-                        }
-                        return a.seed - b.seed;
-                    });
+                    // Sort teams by seed
+                    const sortedTeams = (entry.teams || []).sort((a, b) => a.seed - b.seed);
                     
                     // Add team items
                     sortedTeams.forEach(team => {
