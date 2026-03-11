@@ -415,7 +415,7 @@
     </header>
     
     <main>        
-        <h1 class="main-title">Make a Scoonie</h1>
+        <h1 class="main-title">Make a Scoonie: $20 Per Entry</h1>
         
         <form id="entryForm">
 
@@ -474,11 +474,11 @@
                             <h3>Settle up with PayPal</h3>
                             <p>Quick and secure payment using PayPal</p>
                             <div class="donation-amounts">
-                                <button class="amount-btn selected" data-amount="10">$10</button>
-                                <button class="amount-btn" data-amount="20">$20</button>
-                                <button class="amount-btn" data-amount="30">$30</button>
+                                <button class="amount-btn selected" data-amount="20">$20</button>
+                                <button class="amount-btn" data-amount="40">$40</button>
+                                <button class="amount-btn" data-amount="60">$60</button>
                             </div>
-                            <a href="#" id="paypalDonateBtn" class="donate-btn" target="_blank">Pay via PayPal to @BrianSwarts</a>
+                            <a href="#" id="paypalDonateBtn" class="donate-btn" target="_blank">Pay via PayPal to  bswarts2@gmail.com</a>
                         </div>
                         
                         <div class="donation-option venmo">
@@ -487,14 +487,15 @@
                             <p>Use Venmo to send your donation</p>
                             <div class="venmo-info">
                                 <p>Venmo: <strong>@Brian-Swarts</strong></p>
-                                <p>Scan with your phone:</p>
-                                <div id="venmoQRCode" class="qr-code">
+				<!-- <p>Scan with your phone:</p> -->
+				<!-- <div id="venmoQRCode" class="qr-code"> -->
                                     <!-- Replace this comment with an actual QR code image -->
                                     <!-- <img src="venmo-qr-code.png" alt="Venmo QR Code"> -->
-                                    <div class="placeholder-qr">QR Placeholder</div>
-                                </div>
+				    <!-- <div class="placeholder-qr">QR Placeholder</div> -->
+				    <!-- </div> -->
+				    <a href="https://venmo.com/Brian-Swarts" class="donate-btn" target="_blank">Open Venmo</a>
                             </div>
-                            <a href="https://venmo.com/Brian-Swarts" class="donate-btn" target="_blank">Open Venmo</a>
+			    <!-- <a href="https://venmo.com/Brian-Swarts" class="donate-btn" target="_blank">Open Venmo</a> -->
                         </div>
                     </div>
                     
@@ -508,7 +509,7 @@
     </main>
     
     <footer>
-        <p>&copy; 2025 The Scoonies</p>
+        <p>&copy; 2026 The Scoonies</p>
     </footer>
     
     <script>
@@ -946,10 +947,10 @@
                 const skipDonationBtn = document.getElementById('skipDonation');
                 const paypalDonateBtn = document.getElementById('paypalDonateBtn');
                 const amountBtns = document.querySelectorAll('.amount-btn');
-                let selectedAmount = 5; // Default amount
+                let selectedAmount = 10; // Default amount
                 
                 // Set your PayPal details
-                const paypalUsername = 'YourPayPalEmail@example.com'; // Replace with your actual PayPal email/username
+                const paypalUsername = 'bswarts2@gmail.com'; // Replace with your actual PayPal email/username
                 
                 // Function to go to standings page
                 function goToStandings() {
@@ -957,12 +958,13 @@
                     window.location.href = '/standings.html';
                 }
                 
-                // Update PayPal donation link when amount changes
+
                 function updatePayPalLink() {
-                    paypalDonateBtn.href = `https://www.paypal.com/donate/?business=${encodeURIComponent(paypalUsername)}&amount=${selectedAmount}&currency_code=USD&no_recurring=1`;
-                    debug(`Updated PayPal link with amount: ${selectedAmount}`);
-                }
-                
+    			// Absolute minimal - just recipient and amount
+			paypalDonateBtn.href = `https://www.paypal.me/bswarts2/${selectedAmount}USD`;
+    			debug(`Updated PayPal link with amount: ${selectedAmount}`);
+		}
+
                 // Initialize PayPal link
                 updatePayPalLink();
                 
