@@ -381,6 +381,7 @@
             <a href="/admin/tournament">Tournament Bracket</a>
             <a href="/admin/entries" class="active">Manage Entries</a>
             <a href="/admin/communications">League Communications</a>
+            <a href="#" id="logoutBtn" style="margin-left:auto; color:#721c24;">Logout</a>
         </div>
         
         <div class="section-content">
@@ -1227,6 +1228,25 @@
             // Make sure button is enabled
             toggleBtn.disabled = false;
         }
+    </script>
+    <script>
+        // Logout
+        document.getElementById('logoutBtn').addEventListener('click', function(e) {
+            e.preventDefault();
+            fetch('/api/admin/logout', { method: 'POST' }).then(() => {
+                window.location.href = '/admin';
+            });
+        });
+        // Redirect to login on any 401
+        (function() {
+            const origFetch = window.fetch;
+            window.fetch = function(...args) {
+                return origFetch.apply(this, args).then(res => {
+                    if (res.status === 401) { window.location.href = '/admin'; }
+                    return res;
+                });
+            };
+        })();
     </script>
 </body>
 </html>

@@ -4,6 +4,11 @@ const router = express.Router();
 const nodemailer = require('nodemailer');
 const { db } = require('../db/database');
 
+function requireAuth(req, res, next) {
+    if (req.session && req.session.isAdmin) return next();
+    res.status(401).json({ error: 'Unauthorized' });
+}
+
 // Email configuration
 // You should move these to environment variables in a production app
 const EMAIL_USER = 'your-gmail-address@gmail.com';
@@ -19,7 +24,7 @@ const transporter = nodemailer.createTransport({
 });
 
 // Get email recipients
-router.get('/email-recipients', (req, res) => {
+router.get('/email-recipients', requireAuth, (req, res) => {
     const filter = req.query.filter || 'all';
     
     let query = `
@@ -45,7 +50,7 @@ router.get('/email-recipients', (req, res) => {
 });
 
 // Send email
-router.post('/send-email', (req, res) => {
+router.post('/send-email', requireAuth, (req, res) => {
     const { filter, subject, body } = req.body;
     
     if (!subject || !body) {

@@ -156,10 +156,22 @@
             color: #155724;
             display: block;
         }
-        
+
         .status-message.error {
             background-color: #f8d7da;
             color: #721c24;
+            display: block;
+        }
+
+        .status-message.info {
+            background-color: #cce5ff;
+            color: #004085;
+            display: block;
+        }
+
+        .status-message.warning {
+            background-color: #fff3cd;
+            color: #856404;
             display: block;
         }
         
@@ -219,6 +231,7 @@
                 <a href="/admin/tournament">Tournament Bracket</a>
                 <a href="/admin/entries">Manage Entries</a>
                 <a href="/admin/communications" class="active">League Communications</a>
+                <a href="#" id="logoutBtn" style="margin-left:auto; color:#721c24;">Logout</a>
             </div>
             
             <div class="section-content">
@@ -366,31 +379,6 @@
         // Store participant data
         let participants = [];
         
-        document.addEventListener('DOMContentLoaded', function() {
-            // Load recipients on page load
-            loadRecipients();
-            
-            // Setup template selector
-            setupReminderTemplates();
-            
-            // Initialize tab navigation
-            setupTabs();
-            
-            // Setup buttons
-            document.getElementById('selectAllBtn').addEventListener('click', selectAll);
-            document.getElementById('selectNoneBtn').addEventListener('click', selectNone);
-            document.getElementById('selectUnpaidBtn').addEventListener('click', selectUnpaid);
-            
-            document.getElementById('previewSpecificBtn').addEventListener('click', previewSpecific);
-            document.getElementById('sendSpecificBtn').addEventListener('click', sendSpecific);
-            
-            document.getElementById('previewAllBtn').addEventListener('click', previewAll);
-            document.getElementById('sendAllBtn').addEventListener('click', sendAll);
-            
-            document.getElementById('previewReminderBtn').addEventListener('click', previewReminder);
-            document.getElementById('sendReminderBtn').addEventListener('click', sendReminder);
-        });
-
         // Add placeholder help text under message fields
         function addPlaceholderHelp() {
             const helpText = document.createElement('div');
@@ -399,37 +387,33 @@
             helpText.style.color = '#6c757d';
             helpText.style.marginTop = '5px';
             helpText.innerHTML = 'Available placeholders: <code>{name}</code>, <code>{nickname}</code>, <code>{email}</code>, <code>{all_nicknames}</code>';
-            
-            // Add to all message fields
-            const messageFields = [
+
+            [
                 document.getElementById('specificMessage').parentNode,
                 document.getElementById('allMessage').parentNode,
                 document.getElementById('reminderMessage').parentNode
-            ];
-            
-            messageFields.forEach(field => {
-                const helpClone = helpText.cloneNode(true);
-                field.appendChild(helpClone);
-            });
+            ].forEach(field => field.appendChild(helpText.cloneNode(true)));
         }
 
-// Call this function after loadRecipients() in the DOMContentLoaded handler
-document.addEventListener('DOMContentLoaded', function() {
-    // Load recipients on page load
-    loadRecipients();
-    
-    // Setup template selector
-    setupReminderTemplates();
-    
-    // Initialize tab navigation
-    setupTabs();
-    
-    // Add placeholder help text
-    addPlaceholderHelp();
-    
-    // Setup buttons
-    // ... rest of your initialization code
-});
+        document.addEventListener('DOMContentLoaded', function() {
+            loadRecipients();
+            setupReminderTemplates();
+            setupTabs();
+            addPlaceholderHelp();
+
+            document.getElementById('selectAllBtn').addEventListener('click', selectAll);
+            document.getElementById('selectNoneBtn').addEventListener('click', selectNone);
+            document.getElementById('selectUnpaidBtn').addEventListener('click', selectUnpaid);
+
+            document.getElementById('previewSpecificBtn').addEventListener('click', previewSpecific);
+            document.getElementById('sendSpecificBtn').addEventListener('click', sendSpecific);
+
+            document.getElementById('previewAllBtn').addEventListener('click', previewAll);
+            document.getElementById('sendAllBtn').addEventListener('click', sendAll);
+
+            document.getElementById('previewReminderBtn').addEventListener('click', previewReminder);
+            document.getElementById('sendReminderBtn').addEventListener('click', sendReminder);
+        });
         
         // Setup tab navigation
         function setupTabs() {
@@ -979,6 +963,25 @@ document.addEventListener('DOMContentLoaded', function() {
                 }, 10000);
             }
         }
+    </script>
+    <script>
+        // Logout
+        document.getElementById('logoutBtn').addEventListener('click', function(e) {
+            e.preventDefault();
+            fetch('/api/admin/logout', { method: 'POST' }).then(() => {
+                window.location.href = '/admin';
+            });
+        });
+        // Redirect to login on any 401
+        (function() {
+            const origFetch = window.fetch;
+            window.fetch = function(...args) {
+                return origFetch.apply(this, args).then(res => {
+                    if (res.status === 401) { window.location.href = '/admin'; }
+                    return res;
+                });
+            };
+        })();
     </script>
 </body>
 </html>

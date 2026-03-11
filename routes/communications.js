@@ -4,8 +4,13 @@ const router = express.Router();
 const { db } = require('../db/database');
 const emailService = require('../services/email-service');
 
+function requireAuth(req, res, next) {
+    if (req.session && req.session.isAdmin) return next();
+    res.status(401).json({ error: 'Unauthorized' });
+}
+
 // Get all entries with email addresses, but only unique addresses, no dupes.
-router.get('/recipients', (req, res) => {
+router.get('/recipients', requireAuth, (req, res) => {
     db.all(
         `SELECT id, player_name, email, nickname, has_paid FROM entries ORDER BY player_name`,
         (err, entries) => {
@@ -32,7 +37,7 @@ router.get('/recipients', (req, res) => {
 });
 
 // Send email to specific recipients
-router.post('/send', async (req, res) => {
+router.post('/send', requireAuth, async (req, res) => {
     const { recipients, subject, message, messageType } = req.body;
     
     if (!recipients || !Array.isArray(recipients) || recipients.length === 0) {
@@ -134,7 +139,7 @@ router.post('/send', async (req, res) => {
 });
 
 // Send email to all participants
-router.post('/send-all', async (req, res) => {
+router.post('/send-all', requireAuth, async (req, res) => {
     const { subject, message, messageType, filter } = req.body;
     
     if (!subject || !message) {
@@ -227,7 +232,7 @@ router.post('/send-all', async (req, res) => {
     }
 });
 // Send payment reminders to unpaid participants
-router.post('/send-payment-reminders', async (req, res) => {
+router.post('/send-payment-reminders', requireAuth, async (req, res) => {
     const { subject, message } = req.body;
     
     try {

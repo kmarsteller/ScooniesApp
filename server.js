@@ -1,15 +1,16 @@
 //The server, run with "node server.js" or "npm run dev"
 const express = require('express');
+const session = require('express-session');
 const path = require('path');
 const fs = require('fs');
-const { initializeDatabase } = require('./db/database');
+const { initializeDatabase, db } = require('./db/database');
+const SqliteStore = require('./db/session-store');
 
 // Import routes
 const entriesRoutes = require('./routes/entries');
 const standingsRoutes = require('./routes/standings');
 const adminRoutes = require('./routes/admin');
-const emailRoutes = require('./routes/email');
-const communicationsRoutes = require('./routes/communications'); // Add this line
+const communicationsRoutes = require('./routes/communications');
 const bracketRoutes = require('./routes/bracket');
 
 const app = express();
@@ -28,6 +29,13 @@ console.log(`Locale time: ${now.toLocaleString('en-US', { timeZone: 'America/New
 initializeDatabase();
 
 // Middleware
+app.use(session({
+    store: new SqliteStore(db),
+    secret: process.env.SESSION_SECRET || 'scoonies-dev-secret',
+    resave: false,
+    saveUninitialized: false,
+    cookie: { maxAge: 7 * 24 * 60 * 60 * 1000 } // 7 days
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -48,12 +56,20 @@ if (!fs.existsSync(logoDir)) {
 
 // API Routes - order matters!
 // The order should be from most specific to most general
-app.use('/api/admin', adminRoutes);  // Admin routes first (most specific)
+app.use('/api/admin', adminRoutes);
 app.use('/api/entries', entriesRoutes);
 app.use('/api/standings', standingsRoutes);
-app.use('/api/admin', emailRoutes);
-app.use('/api/communications', communicationsRoutes); // Add this line
+app.use('/api/communications', communicationsRoutes);
 app.use('/api/bracket', bracketRoutes);
+
+// Admin login/redirect — MUST be before static middleware so the session
+// check runs instead of express.static serving public/admin/index.html directly
+app.get(['/admin', '/admin/'], (req, res) => {
+    if (req.session && req.session.isAdmin) {
+        return res.redirect('/admin/tournament');
+    }
+    res.sendFile(path.join(__dirname, 'public', 'admin', 'index.html'));
+});
 
 // Serve static files
 app.use(express.static(path.join(__dirname, 'public')));
@@ -61,12 +77,6 @@ app.use(express.static(path.join(__dirname, 'public')));
 // Serve teams.csv directly
 app.get('/teams.csv', (req, res) => {
     res.sendFile(path.join(__dirname, 'public/teams.csv'));
-});
-
-// HTML Page Routes
-// Admin pages
-app.get('/admin', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'admin', 'index.html'));
 });
 
 app.get('/admin/tournament', (req, res) => {

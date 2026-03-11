@@ -3,8 +3,14 @@ const express = require('express');
 const router = express.Router();
 const { db } = require('../db/database');
 
+// Auth middleware — applied to all routes except login/logout
+function requireAuth(req, res, next) {
+    if (req.session && req.session.isAdmin) return next();
+    res.status(401).json({ error: 'Unauthorized' });
+}
+
 // Get tournament data
-router.get('/tournament', (req, res) => {
+router.get('/tournament', requireAuth, (req, res) => {
     db.all('SELECT * FROM tournament_progress ORDER BY region, seed', (err, rows) => {
         if (err) {
             return res.status(500).json({ error: 'Database error: ' + err.message });
@@ -42,11 +48,15 @@ router.post('/login', (req, res) => {
             }
             
             console.log('Login successful for user:', username);
-            
-            // In a real app, you would set a session or generate a JWT token here
-            res.json({
-                success: true,
-                message: 'Login successful'
+
+            req.session.isAdmin = true;
+            req.session.save((saveErr) => {
+                if (saveErr) {
+                    console.error('Session save error:', saveErr);
+                    return res.status(500).json({ error: 'Session error' });
+                }
+                console.log('Session saved. sessionID:', req.sessionID, 'isAdmin:', req.session.isAdmin);
+                res.json({ success: true, message: 'Login successful' });
             });
         } catch (error) {
             console.error('Error comparing passwords:', error);
@@ -55,10 +65,17 @@ router.post('/login', (req, res) => {
     });
 });
 
+// Logout
+router.post('/logout', (req, res) => {
+    req.session.destroy(() => {
+        res.json({ success: true });
+    });
+});
+
 // Possible fix for admin.js entry update route
 // Replace your existing router.put('/entry/:id', ...) function with this one:
 
-router.put('/entry/:id', (req, res) => {
+router.put('/entry/:id', requireAuth, (req, res) => {
     const entryId = parseInt(req.params.id, 10); // Convert to number explicitly
     const { player_name, nickname, email, has_paid } = req.body;
     
@@ -139,7 +156,7 @@ router.put('/entry/:id', (req, res) => {
     });
 });
 // Update payment status for an entry
-router.put('/entry/:id/payment', (req, res) => {
+router.put('/entry/:id/payment', requireAuth, (req, res) => {
     const entryId = req.params.id;
     const { has_paid } = req.body;
     
@@ -172,7 +189,7 @@ router.put('/entry/:id/payment', (req, res) => {
     );
 });
 // Get all entries (for admin panel)
-router.get('/entries', (req, res) => {
+router.get('/entries', requireAuth, (req, res) => {
     console.log('GET /api/admin/entries endpoint called at', new Date().toISOString());
     
     // Use a promise-based approach for more reliable handling
@@ -230,7 +247,7 @@ router.get('/entries', (req, res) => {
 });
 
 // Advance a team to the next round
-router.post('/advance-team', (req, res) => {
+router.post('/advance-team', requireAuth, (req, res) => {
     const { winnerId, loserId, toRound } = req.body;
     
     // Begin transaction
@@ -314,7 +331,7 @@ router.post('/advance-team', (req, res) => {
 });
 
 // Advance a team to the championship game
-router.post('/advance-to-final', (req, res) => {
+router.post('/advance-to-final', requireAuth, (req, res) => {
     const { winnerId, loserId } = req.body;
     
     // Begin transaction
@@ -364,7 +381,7 @@ router.post('/advance-to-final', (req, res) => {
 });
 
 // Declare the champion
-router.post('/declare-champion', (req, res) => {
+router.post('/declare-champion', requireAuth, (req, res) => {
     const { winnerId, loserId } = req.body;
     
     // Begin transaction
@@ -424,7 +441,7 @@ function getMatchupGroupSeeds(seed, round) {
     return [];
 }
 
-router.post('/correct-advancement', (req, res) => {
+router.post('/correct-advancement', requireAuth, (req, res) => {
     const { winnerId, loserId, toRound } = req.body;
     const fromRound = toRound - 1;
 
@@ -532,7 +549,7 @@ router.post('/correct-advancement', (req, res) => {
 });
 
 // Update all scores based on current tournament progress
-router.post('/update-scores', (req, res) => {
+router.post('/update-scores', requireAuth, (req, res) => {
     // Begin transaction
     db.serialize(() => {
         db.run('BEGIN TRANSACTION');
@@ -659,7 +676,7 @@ router.post('/update-scores', (req, res) => {
 });
 
 // Update Final Four matchups
-router.post('/final-four-matchups', (req, res) => {
+router.post('/final-four-matchups', requireAuth, (req, res) => {
     const { semifinal1, semifinal2 } = req.body;
     
     // Validate inputs
@@ -704,7 +721,7 @@ router.post('/final-four-matchups', (req, res) => {
     );
 });
 // Reset the tournament
-router.post('/reset-tournament', (req, res) => {
+router.post('/reset-tournament', requireAuth, (req, res) => {
     // Begin transaction
     db.serialize(() => {
         db.run('BEGIN TRANSACTION');
@@ -753,7 +770,7 @@ router.post('/reset-tournament', (req, res) => {
 });
 
 // Delete an entry
-router.delete('/entry/:id', (req, res) => {
+router.delete('/entry/:id', requireAuth, (req, res) => {
     const entryId = req.params.id;
     
     if (!entryId) {
@@ -809,7 +826,7 @@ router.delete('/entry/:id', (req, res) => {
 });
 
 // Get entry status
-router.get('/entry-status', (req, res) => {
+router.get('/entry-status', requireAuth, (req, res) => {
     db.get(
         "SELECT value FROM system_settings WHERE key = 'entries_open'",
         (err, row) => {
@@ -828,7 +845,7 @@ router.get('/entry-status', (req, res) => {
     );
 });
 
-router.get('/check-times', (req, res) => {
+router.get('/check-times', requireAuth, (req, res) => {
     db.all('SELECT id, player_name, submission_date FROM entries LIMIT 10', (err, rows) => {
         if (err) {
             return res.status(500).json({ error: 'Database error: ' + err.message });
@@ -849,7 +866,7 @@ router.get('/check-times', (req, res) => {
     });
 });
 // Toggle entry status
-router.post('/toggle-entry-status', (req, res) => {
+router.post('/toggle-entry-status', requireAuth, (req, res) => {
     // First, get current status
     db.get(
         "SELECT value FROM system_settings WHERE key = 'entries_open'",
@@ -883,7 +900,7 @@ router.post('/toggle-entry-status', (req, res) => {
         }
     );
 });
-router.get('/team-visibility', (req, res) => {
+router.get('/team-visibility', requireAuth, (req, res) => {
     db.get(
         "SELECT value FROM system_settings WHERE key = 'teams_visible'",
         (err, row) => {
@@ -903,7 +920,7 @@ router.get('/team-visibility', (req, res) => {
 });
 
 // Toggle team visibility status
-router.post('/toggle-team-visibility', (req, res) => {
+router.post('/toggle-team-visibility', requireAuth, (req, res) => {
     // First, get current status
     db.get(
         "SELECT value FROM system_settings WHERE key = 'teams_visible'",
@@ -938,7 +955,7 @@ router.post('/toggle-team-visibility', (req, res) => {
     );
 });
 // Get Final Four matchups
-router.get('/final-four-matchups', (req, res) => {
+router.get('/final-four-matchups', requireAuth, (req, res) => {
     db.get(
         "SELECT value FROM system_settings WHERE key = 'final_four_matchups'",
         (err, row) => {
