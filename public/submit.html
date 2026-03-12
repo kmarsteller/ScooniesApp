@@ -61,22 +61,40 @@
         
         .team-button {
             padding: 2px 6px;
-            border: none;
+            border: 2px solid #28a745;
             border-radius: 8px;
             cursor: pointer;
             background-color: #28a745;
             color: white;
             font-size: 14px;
             margin-left: 10px;
+            transition: background-color 0.15s ease, color 0.15s ease;
         }
-        
+
+        .team-button:hover {
+            background-color: white;
+            color: #28a745;
+        }
+
         .team-button.unpurchase {
             background-color: #dc3545;
+            border-color: #dc3545;
         }
-        
+
+        .team-button.unpurchase:hover {
+            background-color: white;
+            color: #dc3545;
+        }
+
         .team-button.disabled {
             background-color: #6c757d;
+            border-color: #6c757d;
             cursor: not-allowed;
+        }
+
+        .team-button.disabled:hover {
+            background-color: #6c757d;
+            color: white;
         }
         
         .selected {
@@ -934,6 +952,7 @@
                         row.classList.remove('unaffordable');
                         button.textContent = `Purchase\n(-${cost} pts)`;
                         button.classList.remove('disabled');
+                        button.classList.remove('unpurchase');
                         button.disabled = false;
                     }
                 });
