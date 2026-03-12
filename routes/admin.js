@@ -2,6 +2,7 @@ const bcrypt = require('bcrypt');
 const express = require('express');
 const router = express.Router();
 const { db } = require('../db/database');
+const { calculatePoints } = require('../utils/scoring');
 
 // Auth middleware — applied to all routes except login/logout
 function requireAuth(req, res, next) {
@@ -577,43 +578,8 @@ router.post('/update-scores', requireAuth, (req, res) => {
                         return;
                     }
                     
-                    // Calculate points for this team
-                    let points = 0;
-                    const seed = team.seed;
-                    
-                    // Base case - team won at least 1 game (reached Round of 32)
-                    if (team.round_reached >= 2) {
-                        // Round of 32 points
-                        points += seed * 1;
-                    }
-                    
-                    // Team reached Sweet 16
-                    if (team.round_reached >= 3) {
-                        points += seed * 2;
-                    }
-                    
-                    // Team reached Elite 8
-                    if (team.round_reached >= 4) {
-                        points += seed * 3;
-                    }
-                    
-                    // Team reached Final Four
-                    if (team.round_reached >= 5 || team.is_final_four) {
-                        points += seed * 4; // Points for winning Elite 8
-                        points += 5;        // Final Four bonus
-                    }
-                    
-                    // Team reached Championship Game
-                    if (team.round_reached >= 6 || team.is_finalist) {
-                        points += seed * 5; // Points for winning Final Four
-                        points += 10;       // Championship bonus
-                    }
-                    
-                    // Team won Championship
-                    if (team.round_reached >= 7 || team.is_champion) {
-                        points += seed * 6; // Points for winning Championship
-                        points += 15;       // Champion bonus
-                    }
+                    // Calculate points for this team (logic lives in utils/scoring.js)
+                    const points = calculatePoints(team);
                     
                     // Update points for all entries that selected this team
                     db.run(

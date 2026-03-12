@@ -3,6 +3,7 @@ const express = require('express');
 const router = express.Router();
 const { db, getCurrentEasternTime } = require('../db/database');
 const { sendEmail } = require('../services/email-service');
+const { teamLogoFilename } = require('../utils/filename');
 
 // Check if entries are open
 router.get('/status', (req, res) => {
@@ -119,14 +120,7 @@ router.post('/', (req, res) => {
 const SITE_URL = (process.env.SITE_URL || 'https://scoonies.com').replace(/\/$/, '');
 
 function teamLogoUrl(teamName) {
-    const filename = teamName
-        .toLowerCase()
-        .replace(/[''']/g, '-')
-        .replace(/&/g, ' ')
-        .replace(/\s+/g, '-')
-        .replace(/-+/g, '-')
-        .replace(/^-|-$/g, '');
-    return `${SITE_URL}/images/logos/${filename}.png`;
+    return `${SITE_URL}/images/logos/${teamLogoFilename(teamName)}.png`;
 }
 
 function sendConfirmationEmail(playerName, email, nickname, selectedTeams) {
