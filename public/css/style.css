@@ -124,7 +124,7 @@ button {
   font-size: 16px;
 }
 
-@media (hover: hover) {
+@media (pointer: fine) {
   button:hover {
     background-color: #c82333;
   }
