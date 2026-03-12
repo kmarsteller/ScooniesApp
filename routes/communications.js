@@ -345,4 +345,115 @@ router.post('/send-payment-reminders', requireAuth, async (req, res) => {
     }
 });
 
+// Send scoring update to all participants
+router.post('/send-scoring-update', requireAuth, async (req, res) => {
+    const SITE_URL = (process.env.SITE_URL || 'https://scoonies.com').replace(/\/$/, '');
+
+    try {
+        // Fetch all entries ranked by score
+        const entries = await new Promise((resolve, reject) => {
+            db.all(
+                `SELECT player_name, email, nickname, score, has_paid
+                 FROM entries ORDER BY score DESC`,
+                (err, rows) => err ? reject(err) : resolve(rows)
+            );
+        });
+
+        if (entries.length === 0) {
+            return res.json({ success: true, message: 'No entries found.', results: { successful: [], failed: [] } });
+        }
+
+        // Build ranked rows — ties get the same rank
+        let rank = 0, prevScore = null, sameRankCount = 0;
+        const ranked = entries.map((e, i) => {
+            if (e.score !== prevScore) {
+                rank += 1 + sameRankCount;
+                sameRankCount = 0;
+            } else {
+                sameRankCount++;
+            }
+            prevScore = e.score;
+            return { ...e, rank };
+        });
+
+        // Build standings table rows (HTML)
+        const rowsHtml = ranked.map(e => `
+        <tr>
+            <td style="padding:8px 12px;border-bottom:1px solid #eee;text-align:center;font-weight:bold;color:#dc3545;">${e.rank}</td>
+            <td style="padding:8px 12px;border-bottom:1px solid #eee;text-align:center;font-weight:bold;">${e.score}</td>
+            <td style="padding:8px 12px;border-bottom:1px solid #eee;font-weight:500;">${e.nickname}</td>
+            <td style="padding:8px 12px;border-bottom:1px solid #eee;color:#555;">${e.player_name}</td>
+        </tr>`).join('');
+
+        // Plain text version
+        const textRows = ranked.map(e =>
+            `  ${String(e.rank).padStart(3)}. [${e.score} pts]  ${e.nickname}  — ${e.player_name}`
+        ).join('\n');
+
+        const scooniesLogoSrc = `${SITE_URL}/images/Scoonies.jpg`;
+
+        const html = `
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"></head>
+<body style="margin:0;padding:0;background:#f4f4f4;font-family:Arial,sans-serif;">
+  <div style="max-width:600px;margin:30px auto;background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.1);">
+
+    <!-- Header -->
+    <div style="background:#fff;padding:24px 32px;text-align:center;border-bottom:3px solid #dc3545;">
+      <img src="${scooniesLogoSrc}" alt="The Scoonies" style="max-height:80px;max-width:280px;object-fit:contain;">
+      <p style="margin:10px 0 0;color:#999;font-size:14px;">2026 Tournament Challenge</p>
+    </div>
+
+    <!-- Body -->
+    <div style="padding:28px 32px;">
+      <h2 style="color:#dc3545;margin:0 0 6px;">📊 Scoring Update</h2>
+      <p style="color:#555;margin:0 0 24px;">Here's how everyone stacks up. Good luck the rest of the way!</p>
+
+      <table style="width:100%;border-collapse:collapse;font-size:14px;">
+        <thead>
+          <tr style="background:#dc3545;color:#fff;">
+            <th style="padding:10px 12px;text-align:center;font-weight:600;">Rank</th>
+            <th style="padding:10px 12px;text-align:center;font-weight:600;">Score</th>
+            <th style="padding:10px 12px;text-align:left;font-weight:600;">Entry Name</th>
+            <th style="padding:10px 12px;text-align:left;font-weight:600;">Submitted By</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rowsHtml}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Footer -->
+    <div style="background:#f4f4f4;padding:18px 32px;text-align:center;border-top:1px solid #ddd;">
+      <p style="margin:0;font-size:13px;color:#999;">The Scoonies &nbsp;|&nbsp; <a href="mailto:thescoonies.basketball@gmail.com" style="color:#dc3545;">thescoonies.basketball@gmail.com</a></p>
+    </div>
+
+  </div>
+</body>
+</html>`;
+
+        const text = `THE SCOONIES — SCORING UPDATE\n${'─'.repeat(50)}\n\n${textRows}\n\n${'─'.repeat(50)}\nGood luck!\n— The Scoonies`;
+        const subject = '🏀 Scoonies Scoring Update';
+
+        // Get unique emails
+        const uniqueEmails = new Map();
+        entries.forEach(e => { if (!uniqueEmails.has(e.email)) uniqueEmails.set(e.email, e); });
+        const recipients = Array.from(uniqueEmails.values());
+
+        const results = { successful: [], failed: [] };
+        for (const recipient of recipients) {
+            const result = await emailService.sendEmail(recipient.email, subject, text, html);
+            if (result.success) results.successful.push(recipient.email);
+            else results.failed.push({ email: recipient.email, error: result.error });
+        }
+
+        res.json({ success: true, results });
+    } catch (error) {
+        console.error('Error sending scoring update:', error);
+        res.status(500).json({ error: 'Error sending scoring update: ' + error.message });
+    }
+});
+
 module.exports = router;
