@@ -171,3 +171,44 @@ When the 2026 bracket is announced, here's the full process to update the site:
 | GitHub (optional) | Stores the code | github.com |
 
 The app itself, the database, and the logo images all live on the DigitalOcean droplet.
+
+---
+
+## Backing Up the Database
+
+The SQLite database (`scoonies.db`) is the only thing that can't be recreated from code — it holds every entry, payment status, and tournament result. It lives exclusively on the DigitalOcean droplet and is not backed up automatically.
+
+**When to back up:**
+- Before Selection Sunday (before you reseed the bracket and open entries)
+- Once entries are rolling in (every few days during entry week)
+- Before any major admin action like clearing entries or reseeding
+
+**How to back up — run this from your local machine:**
+
+```bash
+# Replace YOUR_DROPLET_IP with the actual IP address from DigitalOcean
+scp root@YOUR_DROPLET_IP:/root/ScooniesApp/scoonies.db ~/Desktop/scoonies-backup-$(date +%Y-%m-%d).db
+```
+
+This copies the database file to your Desktop with today's date in the filename, e.g. `scoonies-backup-2026-03-20.db`.
+
+**How to find your droplet IP:** Log into digitalocean.com → Droplets — the IP address is listed right there.
+
+**How to restore from a backup if something goes wrong:**
+
+```bash
+# Copy the backup back up to the server (replace filename and IP as needed)
+scp ~/Desktop/scoonies-backup-2026-03-20.db root@YOUR_DROPLET_IP:/root/ScooniesApp/scoonies.db
+
+# Then restart the app on the droplet
+ssh root@YOUR_DROPLET_IP
+pm2 restart all
+```
+
+**To verify a backup is readable** (optional, but reassuring):
+
+```bash
+sqlite3 ~/Desktop/scoonies-backup-2026-03-20.db "SELECT COUNT(*) FROM entries;"
+```
+
+This should print the number of entries in the backup. If it prints a number, the file is intact. (`sqlite3` is built into macOS.)
