@@ -1,113 +1,124 @@
 // scripts/download-logos.js
-// make sure teams.csv is ready, then run to pull team logos into public/images/logos
-// run with "node download-logos.js"
+// Reads public/teams.csv and downloads each team logo into public/images/logos/
+// Run from the ScooniesApp directory: node scripts/download-logos.js
+// CSV format: seed,logo_url,team_name,region  (header row optional)
 
-const fs = require('fs');
+const fs   = require('fs');
 const path = require('path');
 const https = require('https');
-const http = require('http');
-const csv = require('csv-parser');
+const http  = require('http');
 
-// Create directories if they don't exist
+const csvPath = path.join(__dirname, '..', 'public', 'teams.csv');
 const logoDir = path.join(__dirname, '..', 'public', 'images', 'logos');
+
+// Create logos directory if it doesn't exist
 if (!fs.existsSync(logoDir)) {
     fs.mkdirSync(logoDir, { recursive: true });
     console.log('Created logos directory:', logoDir);
 }
 
-// Function to download a file from a URL
+// Parse CSV manually — no external dependencies needed
+function parseCsv(filePath) {
+    const lines = fs.readFileSync(filePath, 'utf8')
+        .split('\n')
+        .map(l => l.trim())
+        .filter(l => l.length > 0);
+
+    const teams = [];
+    lines.forEach((line, i) => {
+        // Skip header row
+        if (i === 0 && line.toLowerCase().startsWith('seed')) return;
+        const parts = line.split(',').map(p => p.trim());
+        if (parts.length < 3) return;
+
+        // Support both formats:
+        //   4-col: seed, logo_url, team_name, region
+        //   3-col: seed, team_name, region  (no logo — will be skipped)
+        const hasLogoCol = parts.length >= 4 && (parts[1].startsWith('http') || parts[1] === '');
+        const seed     = parseInt(parts[0]);
+        const logoUrl  = hasLogoCol ? parts[1] : null;
+        const teamName = hasLogoCol ? parts[2] : parts[1];
+        const region   = hasLogoCol ? parts[3] : parts[2];
+
+        if (!teamName || !region || isNaN(seed)) return;
+        teams.push({ seed, logo_url: logoUrl, team_name: teamName, region });
+    });
+    return teams;
+}
+
+// Download a single file, following redirects
 function downloadFile(url, destPath) {
     return new Promise((resolve, reject) => {
-        // Determine whether to use http or https
         const protocol = url.startsWith('https') ? https : http;
-        
         const file = fs.createWriteStream(destPath);
-        
+
         protocol.get(url, response => {
-            // Handle redirects
             if (response.statusCode === 301 || response.statusCode === 302) {
-                const redirectUrl = response.headers.location;
-                console.log(`Redirected to ${redirectUrl}`);
-                downloadFile(redirectUrl, destPath).then(resolve).catch(reject);
-                return;
-            }
-            
-            if (response.statusCode !== 200) {
-                reject(new Error(`Failed to download ${url}, status code: ${response.statusCode}`));
-                return;
-            }
-            
-            response.pipe(file);
-            
-            file.on('finish', () => {
                 file.close();
-                console.log(`Downloaded: ${path.basename(destPath)}`);
-                resolve();
-            });
-            
-            file.on('error', err => {
-                fs.unlink(destPath, () => {}); // Delete the file if there was an error
-                reject(err);
-            });
-        }).on('error', err => {
-            fs.unlink(destPath, () => {}); // Delete the file if there was an error
-            reject(err);
-        });
+                fs.unlink(destPath, () => {});
+                downloadFile(response.headers.location, destPath).then(resolve).catch(reject);
+                return;
+            }
+            if (response.statusCode !== 200) {
+                file.close();
+                fs.unlink(destPath, () => {});
+                reject(new Error(`HTTP ${response.statusCode} for ${url}`));
+                return;
+            }
+            response.pipe(file);
+            file.on('finish', () => { file.close(); resolve(); });
+            file.on('error', err => { fs.unlink(destPath, () => {}); reject(err); });
+        }).on('error', err => { fs.unlink(destPath, () => {}); reject(err); });
     });
 }
 
-// Read teams.csv and download logos
-const results = [];
-fs.createReadStream(path.join(__dirname, '..', 'public', 'teams.csv'))
-    .pipe(csv())
-    .on('data', data => results.push(data))
-    .on('end', async () => {
-        console.log(`Found ${results.length} teams in CSV file`);
-        
-        // Create a map to track team name and region combinations
-        const teamMap = new Map();
-        
-        // Process each team
-        for (const team of results) {
-            // Create safe filename
-            const teamName = team.team_name || '';
-            const region = team.region || '';
-            const seed = team.seed || '';
-            
-            // Skip if missing data
-            if (!teamName || !region || !seed) {
-                console.warn('Skipping team with missing data:', team);
-                continue;
-            }
-            
-            // Skip if no logo URL
-            if (!team.logo_url) {
-                console.warn(`No logo URL for ${teamName} (${region})`);
-                continue;
-            }
-            
-            // Create unique key for this team
-            const key = `${teamName}-${region}`;
-            
-            // Check if we've already processed this team
-            if (teamMap.has(key)) {
-                console.warn(`Duplicate team entry: ${key}`);
-                continue;
-            }
-            
-            teamMap.set(key, true);
-            
-            // Create safe filename
-            const safeTeamName = teamName.toLowerCase().replace(/[^a-z0-9]/g, '-');
-            const filename = `${safeTeamName}.png`;
-            const destPath = path.join(logoDir, filename);
-            
-            try {
-                await downloadFile(team.logo_url, destPath);
-            } catch (error) {
-                console.error(`Error downloading logo for ${teamName} (${region}):`, error.message);
-            }
+// Convert team name to logo filename (matches the pattern used in entries.js)
+function safeFilename(teamName) {
+    return teamName
+        .toLowerCase()
+        .replace(/[''']/g, '-')
+        .replace(/&/g, ' ')
+        .replace(/\s+/g, '-')
+        .replace(/-+/g, '-')
+        .replace(/^-|-$/g, '');
+}
+
+// Main
+(async () => {
+    console.log(`Reading ${csvPath}...`);
+    const teams = parseCsv(csvPath);
+    console.log(`Found ${teams.length} teams`);
+
+    let downloaded = 0, skipped = 0, errors = 0;
+    const seen = new Set();
+
+    for (const team of teams) {
+        const key = `${team.team_name}-${team.region}`;
+        if (seen.has(key)) {
+            console.warn(`Duplicate skipped: ${key}`);
+            skipped++;
+            continue;
         }
-        
-        console.log('Finished downloading team logos');
-    });
+        seen.add(key);
+
+        if (!team.logo_url) {
+            console.warn(`No logo URL for ${team.team_name} — skipped`);
+            skipped++;
+            continue;
+        }
+
+        const filename = safeFilename(team.team_name) + '.png';
+        const destPath = path.join(logoDir, filename);
+
+        try {
+            await downloadFile(team.logo_url, destPath);
+            console.log(`✓  ${team.team_name} → ${filename}`);
+            downloaded++;
+        } catch (err) {
+            console.error(`✗  ${team.team_name}: ${err.message}`);
+            errors++;
+        }
+    }
+
+    console.log(`\nDone: ${downloaded} downloaded, ${skipped} skipped, ${errors} errors`);
+})();

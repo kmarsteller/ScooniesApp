@@ -4,9 +4,43 @@ const router = express.Router();
 const { db } = require('../db/database');
 const emailService = require('../services/email-service');
 
+const SITE_URL = (process.env.SITE_URL || 'https://scoonies.com').replace(/\/$/, '');
+
 function requireAuth(req, res, next) {
     if (req.session && req.session.isAdmin) return next();
     res.status(401).json({ error: 'Unauthorized' });
+}
+
+// Wrap any HTML body content in the standard Scoonies branded email shell
+function brandedHtml(title, bodyHtml) {
+    const logoSrc = `${SITE_URL}/images/Scoonies.jpg`;
+    return `<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"></head>
+<body style="margin:0;padding:0;background:#f4f4f4;font-family:Arial,sans-serif;">
+  <div style="max-width:600px;margin:30px auto;background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.1);">
+
+    <!-- Header -->
+    <div style="background:#fff;padding:24px 32px;text-align:center;border-bottom:3px solid #dc3545;">
+      <img src="${logoSrc}" alt="The Scoonies" style="max-height:80px;max-width:280px;object-fit:contain;">
+      <p style="margin:10px 0 0;color:#999;font-size:14px;">${new Date().getFullYear()} Tournament Challenge</p>
+    </div>
+
+    <!-- Body -->
+    <div style="padding:28px 32px;">
+      <h2 style="color:#dc3545;margin:0 0 18px;">${title}</h2>
+      ${bodyHtml}
+    </div>
+
+    <!-- Footer -->
+    <div style="background:#f4f4f4;padding:18px 32px;text-align:center;border-top:1px solid #ddd;">
+      <p style="margin:0 0 4px;font-size:13px;color:#999;">The Scoonies &nbsp;|&nbsp; <a href="mailto:thescoonies.basketball@gmail.com" style="color:#dc3545;">thescoonies.basketball@gmail.com</a></p>
+      <p style="margin:0;font-size:12px;color:#bbb;">&copy; ${new Date().getFullYear()} Scoonies.com</p>
+    </div>
+
+  </div>
+</body>
+</html>`;
 }
 
 // Get all entries with email addresses, but only unique addresses, no dupes.
@@ -106,11 +140,12 @@ router.post('/send', requireAuth, async (req, res) => {
                     );
                 }
                 
-                // For HTML emails, wrap the message in basic HTML formatting
-                const htmlMessage = messageType === 'html' 
-                    ? personalizedMessage 
-                    : `<p>${personalizedMessage.replace(/\n/g, '</p><p>')}</p>`;
-                
+                // Build branded HTML email
+                const bodyHtml = messageType === 'html'
+                    ? personalizedMessage
+                    : `<p style="color:#333;font-size:15px;line-height:1.6;">${personalizedMessage.replace(/\n\n/g, '</p><p style="color:#333;font-size:15px;line-height:1.6;">').replace(/\n/g, '<br>')}</p>`;
+                const htmlMessage = brandedHtml(subject, bodyHtml);
+
                 const result = await emailService.sendEmail(
                     recipient,
                     subject,
@@ -200,11 +235,12 @@ router.post('/send-all', requireAuth, async (req, res) => {
                 personalizedMessage = personalizedMessage.replace(/\{nickname\}/g, participant.nickname || '');
                 personalizedMessage = personalizedMessage.replace(/\{email\}/g, participant.email || '');
                 
-                // For HTML emails, wrap the message in basic HTML formatting
-                const htmlMessage = messageType === 'html' 
-                    ? personalizedMessage 
-                    : `<p>${personalizedMessage.replace(/\n/g, '</p><p>')}</p>`;
-                
+                // Build branded HTML email
+                const bodyHtml = messageType === 'html'
+                    ? personalizedMessage
+                    : `<p style="color:#333;font-size:15px;line-height:1.6;">${personalizedMessage.replace(/\n\n/g, '</p><p style="color:#333;font-size:15px;line-height:1.6;">').replace(/\n/g, '<br>')}</p>`;
+                const htmlMessage = brandedHtml(subject, bodyHtml);
+
                 const result = await emailService.sendEmail(
                     participant.email,
                     subject,
@@ -280,39 +316,69 @@ router.post('/send-payment-reminders', requireAuth, async (req, res) => {
                     
                     // Default message if none provided
                     let personalizedMessage = message;
+                    let htmlMessage;
+                    const isMultiple = entry.allNicknames && entry.allNicknames.length > 1;
+
                     if (!personalizedMessage) {
-                        // If they have multiple entries, list them all
+                        // Build nicknameText for plain text
                         let nicknameText = entry.nickname;
-                        if (entry.allNicknames && entry.allNicknames.length > 1) {
-                            nicknameText = entry.allNicknames.join('", "');
-                            nicknameText = `"${nicknameText}"`;
+                        if (isMultiple) {
+                            nicknameText = `"${entry.allNicknames.join('", "')}"`;
                         } else {
                             nicknameText = `"${nicknameText}"`;
                         }
-                        
+
+                        // Plain text version
                         personalizedMessage = `Hi ${entry.player_name},\n\n` +
-                            `This is a friendly reminder that payment is required for your Scoonies ${entry.allNicknames && entry.allNicknames.length > 1 ? 'entries' : 'entry'} ${nicknameText}. ` +
-                            `Please submit your payment as soon as possible to ensure your ${entry.allNicknames && entry.allNicknames.length > 1 ? 'entries are' : 'entry is'} included in the competition.\n\n` +
-                            `You can pay via Venmo (@Brian-Swarts) or PayPal.\n\n` +
+                            `This is a friendly reminder that payment is required for your Scoonies ${isMultiple ? 'entries' : 'entry'} ${nicknameText}. ` +
+                            `Please submit your payment as soon as possible to ensure your ${isMultiple ? 'entries are' : 'entry is'} included in the competition.\n\n` +
+                            `You can pay via Venmo (@Brian-Swarts) or PayPal (paypal.me/bswarts2).\n\n` +
                             `Thank you,\nThe Scoonies Team`;
+
+                        // Rich HTML version with payment links
+                        const nicknameHtml = isMultiple
+                            ? entry.allNicknames.map(n => `<strong>${n}</strong>`).join(', ')
+                            : `<strong>${entry.nickname}</strong>`;
+
+                        htmlMessage = brandedHtml('💰 Payment Reminder', `
+                            <p style="color:#333;font-size:15px;line-height:1.6;">Hi <strong>${entry.player_name}</strong>,</p>
+                            <p style="color:#333;font-size:15px;line-height:1.6;">
+                                This is a friendly reminder that payment is required for your Scoonies
+                                ${isMultiple ? 'entries' : 'entry'}: ${nicknameHtml}.
+                                Please submit your payment as soon as possible to ensure your
+                                ${isMultiple ? 'entries are' : 'entry is'} included in the competition.
+                            </p>
+                            <div style="background:#fff8e1;border-left:4px solid #f5a623;border-radius:4px;padding:16px 18px;margin:20px 0;">
+                                <p style="margin:0 0 8px;font-weight:bold;color:#b07d00;font-size:15px;">💰 $20 per entry — pay Brian Swarts:</p>
+                                <p style="margin:0 0 6px;font-size:15px;">
+                                    <a href="https://venmo.com/Brian-Swarts" style="color:#dc3545;font-weight:bold;">Venmo: @Brian-Swarts</a>
+                                </p>
+                                <p style="margin:0 0 10px;font-size:15px;">
+                                    <a href="https://paypal.me/bswarts2" style="color:#dc3545;font-weight:bold;">PayPal: paypal.me/bswarts2</a>
+                                </p>
+                                <p style="margin:8px 0 0;color:#c0392b;font-size:13px;font-weight:bold;">⚠️ Entries that have not been paid by tipoff will be deleted.</p>
+                            </div>
+                            <p style="color:#333;font-size:15px;line-height:1.6;">Thank you,<br>The Scoonies Team</p>
+                        `);
                     } else {
                         // Replace placeholders with actual values
                         personalizedMessage = personalizedMessage
                             .replace(/\{name\}/g, entry.player_name)
                             .replace(/\{nickname\}/g, entry.nickname)
                             .replace(/\{email\}/g, entry.email);
-                            
+
                         // If they have multiple entries, try to add that info
-                        if (entry.allNicknames && entry.allNicknames.length > 1) {
+                        if (isMultiple) {
                             const allNicknamesText = entry.allNicknames.join('", "');
                             personalizedMessage = personalizedMessage.replace(/\{all_nicknames\}/g, `"${allNicknamesText}"`);
                         } else {
                             personalizedMessage = personalizedMessage.replace(/\{all_nicknames\}/g, `"${entry.nickname}"`);
                         }
+
+                        // Custom message — convert plain text to branded HTML
+                        const reminderBody = `<p style="color:#333;font-size:15px;line-height:1.6;">${personalizedMessage.replace(/\n\n/g, '</p><p style="color:#333;font-size:15px;line-height:1.6;">').replace(/\n/g, '<br>')}</p>`;
+                        htmlMessage = brandedHtml('💰 Payment Reminder', reminderBody);
                     }
-                    
-                    // HTML version with basic formatting
-                    const htmlMessage = `<p>${personalizedMessage.replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br>')}</p>`;
                     
                     try {
                         const result = await emailService.sendEmail(
@@ -347,7 +413,7 @@ router.post('/send-payment-reminders', requireAuth, async (req, res) => {
 
 // Send scoring update to all participants
 router.post('/send-scoring-update', requireAuth, async (req, res) => {
-    const SITE_URL = (process.env.SITE_URL || 'https://scoonies.com').replace(/\/$/, '');
+    const customMessage = (req.body && req.body.message) || "Here's how everyone stacks up. Good luck the rest of the way!";
 
     try {
         // Fetch all entries ranked by score
@@ -390,26 +456,8 @@ router.post('/send-scoring-update', requireAuth, async (req, res) => {
             `  ${String(e.rank).padStart(3)}. [${e.score} pts]  ${e.nickname}  — ${e.player_name}`
         ).join('\n');
 
-        const scooniesLogoSrc = `${SITE_URL}/images/Scoonies.jpg`;
-
-        const html = `
-<!DOCTYPE html>
-<html>
-<head><meta charset="UTF-8"></head>
-<body style="margin:0;padding:0;background:#f4f4f4;font-family:Arial,sans-serif;">
-  <div style="max-width:600px;margin:30px auto;background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.1);">
-
-    <!-- Header -->
-    <div style="background:#fff;padding:24px 32px;text-align:center;border-bottom:3px solid #dc3545;">
-      <img src="${scooniesLogoSrc}" alt="The Scoonies" style="max-height:80px;max-width:280px;object-fit:contain;">
-      <p style="margin:10px 0 0;color:#999;font-size:14px;">2026 Tournament Challenge</p>
-    </div>
-
-    <!-- Body -->
-    <div style="padding:28px 32px;">
-      <h2 style="color:#dc3545;margin:0 0 6px;">📊 Scoring Update</h2>
-      <p style="color:#555;margin:0 0 24px;">Here's how everyone stacks up. Good luck the rest of the way!</p>
-
+        const scoringBody = `
+      <p style="color:#555;margin:0 0 24px;">${customMessage}</p>
       <table style="width:100%;border-collapse:collapse;font-size:14px;">
         <thead>
           <tr style="background:#dc3545;color:#fff;">
@@ -422,19 +470,10 @@ router.post('/send-scoring-update', requireAuth, async (req, res) => {
         <tbody>
           ${rowsHtml}
         </tbody>
-      </table>
-    </div>
+      </table>`;
+        const html = brandedHtml('📊 Scoring Update', scoringBody);
 
-    <!-- Footer -->
-    <div style="background:#f4f4f4;padding:18px 32px;text-align:center;border-top:1px solid #ddd;">
-      <p style="margin:0;font-size:13px;color:#999;">The Scoonies &nbsp;|&nbsp; <a href="mailto:thescoonies.basketball@gmail.com" style="color:#dc3545;">thescoonies.basketball@gmail.com</a></p>
-    </div>
-
-  </div>
-</body>
-</html>`;
-
-        const text = `THE SCOONIES — SCORING UPDATE\n${'─'.repeat(50)}\n\n${textRows}\n\n${'─'.repeat(50)}\nGood luck!\n— The Scoonies`;
+        const text = `THE SCOONIES — SCORING UPDATE\n${'─'.repeat(50)}\n\n${customMessage}\n\n${textRows}\n\n${'─'.repeat(50)}\n— The Scoonies`;
         const subject = '🏀 Scoonies Scoring Update';
 
         // Get unique emails

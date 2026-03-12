@@ -451,10 +451,36 @@
                 </div>
             </form>
         </div>
+    <!-- Danger Zone -->
+    <div class="admin-section" style="margin-top:30px;border:2px solid #dc3545;">
+        <div class="section-header" style="background:#dc3545;">⚠️ Danger Zone</div>
+        <div class="section-content">
+            <h3 style="color:#dc3545;">Clear All Entries</h3>
+            <p>This will permanently delete <strong>every entry and all team selections</strong> from the database. The bracket teams and tournament progress are not affected. <strong>This cannot be undone.</strong></p>
+            <button id="clearEntriesBtn" class="delete-btn" style="font-size:15px;padding:10px 24px;">🗑️ Clear All Entries</button>
+        </div>
+    </div>
+
+    <!-- Clear Entries Modal -->
+    <div id="clearEntriesOverlay" class="overlay" style="display:none;"></div>
+    <div id="clearEntriesModal" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+         background:#fff;border:2px solid #dc3545;border-radius:8px;padding:32px;width:420px;max-width:90%;
+         z-index:1001;box-shadow:0 8px 32px rgba(0,0,0,0.25);">
+        <h3 style="color:#dc3545;margin-top:0;">⚠️ Clear All Entries</h3>
+        <p>You are about to delete <strong>all entries</strong> from the Scoonies database. Every bracket submitted by every participant will be gone.</p>
+        <p>To confirm, type <strong>DELETE</strong> in the box below:</p>
+        <input type="text" id="clearEntriesConfirm" placeholder="Type DELETE here"
+               style="width:100%;padding:10px;font-size:16px;border:2px solid #dc3545;border-radius:4px;
+                      box-sizing:border-box;margin-bottom:16px;">
+        <div style="display:flex;gap:12px;justify-content:flex-end;">
+            <button id="clearEntriesCancelBtn" class="edit-btn">Cancel</button>
+            <button id="clearEntriesConfirmBtn" class="delete-btn" disabled>Delete Everything</button>
+        </div>
+    </div>
     </main>
-    
+
     <footer>
-        <p>&copy; 2026 The Scoonies </p>
+        <p>&copy; <script>document.write(new Date().getFullYear())</script> The Scoonies</p>
     </footer>
     
     <script>
@@ -1228,6 +1254,59 @@
             // Make sure button is enabled
             toggleBtn.disabled = false;
         }
+    </script>
+    <script>
+        // ── Clear All Entries ──────────────────────────────────────────────
+        const clearBtn       = document.getElementById('clearEntriesBtn');
+        const clearOverlay   = document.getElementById('clearEntriesOverlay');
+        const clearModal     = document.getElementById('clearEntriesModal');
+        const clearInput     = document.getElementById('clearEntriesConfirm');
+        const clearConfirm   = document.getElementById('clearEntriesConfirmBtn');
+        const clearCancel    = document.getElementById('clearEntriesCancelBtn');
+
+        function openClearModal() {
+            clearInput.value = '';
+            clearConfirm.disabled = true;
+            clearOverlay.style.display = 'block';
+            clearModal.style.display = 'block';
+            clearInput.focus();
+        }
+        function closeClearModal() {
+            clearOverlay.style.display = 'none';
+            clearModal.style.display = 'none';
+        }
+
+        clearBtn.addEventListener('click', openClearModal);
+        clearCancel.addEventListener('click', closeClearModal);
+        clearOverlay.addEventListener('click', closeClearModal);
+
+        clearInput.addEventListener('input', () => {
+            clearConfirm.disabled = clearInput.value !== 'DELETE';
+        });
+
+        clearConfirm.addEventListener('click', () => {
+            if (clearInput.value !== 'DELETE') return;
+            clearConfirm.disabled = true;
+            clearConfirm.textContent = 'Deleting...';
+            fetch('/api/admin/clear-entries', { method: 'DELETE' })
+                .then(r => r.json())
+                .then(data => {
+                    closeClearModal();
+                    if (data.success) {
+                        showStatusMessage('All entries have been cleared.', 'success');
+                        loadEntries();
+                    } else {
+                        showStatusMessage('Error: ' + (data.error || 'Unknown error'), 'error');
+                    }
+                })
+                .catch(err => {
+                    closeClearModal();
+                    showStatusMessage('Request failed: ' + err.message, 'error');
+                })
+                .finally(() => {
+                    clearConfirm.textContent = 'Delete Everything';
+                });
+        });
     </script>
     <script>
         // Logout

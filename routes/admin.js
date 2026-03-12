@@ -983,4 +983,76 @@ router.get('/final-four-matchups', requireAuth, (req, res) => {
         }
     );
 });
+// ── Clear all entries ────────────────────────────────────────────────────────
+router.delete('/clear-entries', requireAuth, (req, res) => {
+    db.serialize(() => {
+        db.run('BEGIN TRANSACTION');
+        db.run('DELETE FROM team_selections', (err) => {
+            if (err) {
+                db.run('ROLLBACK');
+                return res.status(500).json({ error: err.message });
+            }
+            db.run('DELETE FROM entries', (err2) => {
+                if (err2) {
+                    db.run('ROLLBACK');
+                    return res.status(500).json({ error: err2.message });
+                }
+                db.run('COMMIT', (err3) => {
+                    if (err3) return res.status(500).json({ error: err3.message });
+                    console.log('All entries cleared by admin');
+                    res.json({ success: true, message: 'All entries have been cleared.' });
+                });
+            });
+        });
+    });
+});
+
+// ── Re-seed the field ────────────────────────────────────────────────────────
+router.post('/reseed-teams', requireAuth, (req, res) => {
+    const { teams } = req.body;
+
+    if (!Array.isArray(teams) || teams.length !== 64) {
+        return res.status(400).json({ error: `Expected exactly 64 teams, got ${teams ? teams.length : 0}.` });
+    }
+
+    for (const t of teams) {
+        const seed = parseInt(t.seed);
+        if (!t.team_name || !t.region || isNaN(seed) || seed < 1 || seed > 16) {
+            return res.status(400).json({ error: `Invalid team entry: ${JSON.stringify(t)}` });
+        }
+    }
+
+    db.serialize(() => {
+        db.run('BEGIN TRANSACTION');
+        db.run('DELETE FROM team_selections', (err) => {
+            if (err) { db.run('ROLLBACK'); return res.status(500).json({ error: err.message }); }
+            db.run('DELETE FROM entries', (err) => {
+                if (err) { db.run('ROLLBACK'); return res.status(500).json({ error: err.message }); }
+                db.run('DELETE FROM tournament_progress', (err) => {
+                    if (err) { db.run('ROLLBACK'); return res.status(500).json({ error: err.message }); }
+
+                    const stmt = db.prepare('INSERT INTO tournament_progress (team_name, region, seed) VALUES (?, ?, ?)');
+                    let insertError = null;
+                    for (const t of teams) {
+                        stmt.run(t.team_name.trim(), t.region.trim(), parseInt(t.seed), (err) => {
+                            if (err) insertError = err;
+                        });
+                    }
+                    stmt.finalize((err) => {
+                        if (err || insertError) {
+                            db.run('ROLLBACK');
+                            return res.status(500).json({ error: (err || insertError).message });
+                        }
+                        db.run('COMMIT', (err) => {
+                            if (err) return res.status(500).json({ error: err.message });
+                            console.log(`Bracket reseeded with ${teams.length} teams. All entries cleared.`);
+                            res.json({ success: true, message: `Bracket reseeded with ${teams.length} teams. All previous entries have been cleared.` });
+                        });
+                    });
+                });
+            });
+        });
+    });
+});
+
 module.exports = router;

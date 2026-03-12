@@ -1,7 +1,7 @@
 {
-  "name": "game-website",
+  "name": "scoonies",
   "version": "1.0.0",
-  "description": "Simple game website with standings",
+  "description": "The Scoonies NCAA Tournament Challenge",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
@@ -9,11 +9,9 @@
   },
   "dependencies": {
     "bcrypt": "^6.0.0",
-    "brevo": "^1.0.0",
     "dotenv": "^16.5.0",
     "express": "^4.18.2",
     "express-session": "^1.19.0",
-    "nodemailer": "^7.0.3",
     "sib-api-v3-sdk": "^8.5.0",
     "sqlite3": "^5.1.6"
   },

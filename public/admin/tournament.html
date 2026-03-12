@@ -533,10 +533,66 @@
         <div id="bracketContent">
             <div class="loading">Loading tournament data...</div>
         </div>
+
+    <!-- Re-seed the Field -->
+    <div class="admin-section" style="margin-top:30px;border:2px solid #dc3545;">
+        <div class="section-header" style="background:#dc3545;">⚠️ Re-seed the Field</div>
+        <div class="section-content">
+            <h3 style="color:#dc3545;">Load New Bracket (Selection Sunday)</h3>
+            <p>Upload a CSV file to replace the current 64 teams with the real bracket. <strong>This will also clear all existing entries.</strong> CSV format (no header row needed):</p>
+            <pre style="background:#f8f9fa;padding:10px;border-radius:4px;font-size:13px;">seed,team_name,region
+1,Duke,East
+2,Kansas,West
+...</pre>
+            <p>Regions must be: <strong>East, West, South, Midwest</strong> — 16 teams per region, seeds 1–16.</p>
+
+            <div style="margin:16px 0;">
+                <label for="reseedCsvFile" style="font-weight:bold;">Choose CSV file:</label><br><br>
+                <input type="file" id="reseedCsvFile" accept=".csv,.txt" style="font-size:14px;">
+            </div>
+
+            <div id="reseedPreview" style="display:none;margin-top:16px;">
+                <h4>Preview — <span id="reseedTeamCount">0</span> teams parsed</h4>
+                <div id="reseedPreviewError" style="color:#dc3545;font-weight:bold;display:none;"></div>
+                <div style="max-height:300px;overflow-y:auto;border:1px solid #ddd;border-radius:4px;">
+                    <table style="width:100%;border-collapse:collapse;font-size:13px;">
+                        <thead>
+                            <tr style="background:#dc3545;color:#fff;position:sticky;top:0;">
+                                <th style="padding:6px 10px;text-align:left;">Region</th>
+                                <th style="padding:6px 10px;text-align:center;">Seed</th>
+                                <th style="padding:6px 10px;text-align:left;">Team Name</th>
+                            </tr>
+                        </thead>
+                        <tbody id="reseedPreviewBody"></tbody>
+                    </table>
+                </div>
+                <button id="reseedBtn" class="delete-btn" style="margin-top:16px;font-size:15px;padding:10px 24px;" disabled>
+                    🌱 Re-seed the Field
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Re-seed Modal -->
+    <div id="reseedOverlay" class="overlay" style="display:none;"></div>
+    <div id="reseedModal" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+         background:#fff;border:2px solid #dc3545;border-radius:8px;padding:32px;width:420px;max-width:90%;
+         z-index:1001;box-shadow:0 8px 32px rgba(0,0,0,0.25);">
+        <h3 style="color:#dc3545;margin-top:0;">⚠️ Re-seed the Field</h3>
+        <p>You are about to <strong>replace all 64 teams</strong> and <strong>clear every entry</strong>. The old bracket and all participant picks will be permanently deleted.</p>
+        <p>To confirm, type <strong>DELETE</strong> in the box below:</p>
+        <input type="text" id="reseedConfirmInput" placeholder="Type DELETE here"
+               style="width:100%;padding:10px;font-size:16px;border:2px solid #dc3545;border-radius:4px;
+                      box-sizing:border-box;margin-bottom:16px;">
+        <div style="display:flex;gap:12px;justify-content:flex-end;">
+            <button id="reseedCancelBtn" class="edit-btn">Cancel</button>
+            <button id="reseedConfirmBtn" class="delete-btn" disabled>Replace Bracket</button>
+        </div>
+    </div>
     </main>
     
     <footer>
-        <p>&copy; 2026 The Scoonies</p>
+        <p>&copy; <script>document.write(new Date().getFullYear())</script> The Scoonies</p>
     </footer>
 <script>
     // Global variables for tournament state
@@ -579,6 +635,17 @@
     });
     
      // Load tournament data from server
+    // Matches the filename generation in download-logos.js and entries.js
+    function teamLogoFilename(teamName) {
+        return teamName
+            .toLowerCase()
+            .replace(/[''']/g, '-')
+            .replace(/&/g, ' ')
+            .replace(/\s+/g, '-')
+            .replace(/-+/g, '-')
+            .replace(/^-|-$/g, '');
+    }
+
     function loadTournamentData() {
         console.log('Loading tournament data...');
         
@@ -1211,7 +1278,7 @@
             
             const logo = document.createElement('img');
             logo.className = 'team-logo';
-            logo.src = `/images/logos/${champion.team_name.toLowerCase().replace(/[^a-z0-9]/g, '-')}.png`;
+            logo.src = `/images/logos/${teamLogoFilename(champion.team_name)}.png`;
             logo.alt = champion.team_name;
             logo.onerror = function() {
                 // Fallback if logo can't be found
@@ -1259,7 +1326,7 @@
         
         const logo = document.createElement('img');
         logo.className = 'team-logo';
-        logo.src = `/images/logos/${team.team_name.toLowerCase().replace(/[^a-z0-9]/g, '-')}.png`;
+        logo.src = `/images/logos/${teamLogoFilename(team.team_name)}.png`;
         logo.alt = team.team_name;
         logo.onerror = function() {
             // Fallback if logo can't be found
@@ -1609,7 +1676,7 @@ function advanceTeam(winner, loser) {
         
         const logo = document.createElement('img');
         logo.className = 'team-logo';
-        logo.src = `/images/logos/${champion.team_name.toLowerCase().replace(/[^a-z0-9]/g, '-')}.png`;
+        logo.src = `/images/logos/${teamLogoFilename(champion.team_name)}.png`;
         logo.alt = champion.team_name;
         logo.onerror = function() {
             // Fallback if logo can't be found
@@ -1874,6 +1941,128 @@ function advanceTeam(winner, loser) {
             });
         });
     }
+</script>
+<script>
+    // ── Re-seed the Field ──────────────────────────────────────────────────
+    let parsedTeams = [];
+
+    document.getElementById('reseedCsvFile').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(ev) {
+            const lines = ev.target.result.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+            parsedTeams = [];
+            const errors = [];
+            const previewBody = document.getElementById('reseedPreviewBody');
+            const errDiv = document.getElementById('reseedPreviewError');
+            previewBody.innerHTML = '';
+            errDiv.style.display = 'none';
+
+            lines.forEach((line, i) => {
+                // Skip header row if present
+                if (i === 0 && line.toLowerCase().startsWith('seed')) return;
+                const parts = line.split(',').map(p => p.trim());
+                if (parts.length < 3) { errors.push(`Line ${i+1}: not enough columns — "${line}"`); return; }
+                const seed = parseInt(parts[0]);
+                // Support both 3-col (seed,team_name,region)
+                // and 4-col (seed,logo_url,team_name,region) formats
+                const hasLogoCol = parts.length >= 4 && (parts[1].startsWith('http') || parts[1] === '');
+                const teamName = hasLogoCol ? parts[2] : parts[1];
+                const region   = hasLogoCol ? parts[3] : parts[2];
+                if (isNaN(seed) || seed < 1 || seed > 16) { errors.push(`Line ${i+1}: invalid seed "${parts[0]}"`); return; }
+                if (!teamName) { errors.push(`Line ${i+1}: missing team name`); return; }
+                if (!['East','West','South','Midwest'].includes(region)) {
+                    errors.push(`Line ${i+1}: region must be East/West/South/Midwest, got "${region}"`);
+                    return;
+                }
+                parsedTeams.push({ seed, team_name: teamName, region });
+                const row = previewBody.insertRow();
+                row.style.borderBottom = '1px solid #eee';
+                row.insertCell().innerHTML = `<td style="padding:5px 10px;">${region}</td>`;
+                row.insertCell().innerHTML = `<td style="padding:5px 10px;text-align:center;">${seed}</td>`;
+                row.insertCell().innerHTML = `<td style="padding:5px 10px;">${teamName}</td>`;
+            });
+
+            document.getElementById('reseedTeamCount').textContent = parsedTeams.length;
+            document.getElementById('reseedPreview').style.display = 'block';
+
+            if (errors.length > 0) {
+                errDiv.textContent = 'Errors found: ' + errors.join(' | ');
+                errDiv.style.display = 'block';
+                document.getElementById('reseedBtn').disabled = true;
+            } else if (parsedTeams.length !== 64) {
+                errDiv.textContent = `Need exactly 64 teams — found ${parsedTeams.length}.`;
+                errDiv.style.display = 'block';
+                document.getElementById('reseedBtn').disabled = true;
+            } else {
+                document.getElementById('reseedBtn').disabled = false;
+            }
+        };
+        reader.readAsText(file);
+    });
+
+    document.getElementById('reseedBtn').addEventListener('click', () => {
+        document.getElementById('reseedConfirmInput').value = '';
+        document.getElementById('reseedConfirmBtn').disabled = true;
+        document.getElementById('reseedOverlay').style.display = 'block';
+        document.getElementById('reseedModal').style.display = 'block';
+        document.getElementById('reseedConfirmInput').focus();
+    });
+
+    document.getElementById('reseedCancelBtn').addEventListener('click', () => {
+        document.getElementById('reseedOverlay').style.display = 'none';
+        document.getElementById('reseedModal').style.display = 'none';
+    });
+    document.getElementById('reseedOverlay').addEventListener('click', () => {
+        document.getElementById('reseedOverlay').style.display = 'none';
+        document.getElementById('reseedModal').style.display = 'none';
+    });
+
+    document.getElementById('reseedConfirmInput').addEventListener('input', function() {
+        document.getElementById('reseedConfirmBtn').disabled = this.value !== 'DELETE';
+    });
+
+    document.getElementById('reseedConfirmBtn').addEventListener('click', () => {
+        if (document.getElementById('reseedConfirmInput').value !== 'DELETE') return;
+        const btn = document.getElementById('reseedConfirmBtn');
+        btn.disabled = true;
+        btn.textContent = 'Replacing...';
+
+        fetch('/api/admin/reseed-teams', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ teams: parsedTeams })
+        })
+        .then(r => r.json())
+        .then(data => {
+            document.getElementById('reseedOverlay').style.display = 'none';
+            document.getElementById('reseedModal').style.display = 'none';
+            const msgEl = document.getElementById('statusMessage');
+            if (data.success) {
+                msgEl.textContent = data.message;
+                msgEl.className = 'status-message success';
+                // Reset the file picker and preview
+                document.getElementById('reseedCsvFile').value = '';
+                document.getElementById('reseedPreview').style.display = 'none';
+                parsedTeams = [];
+                // Reload the bracket view
+                loadTournamentData();
+            } else {
+                msgEl.textContent = 'Error: ' + (data.error || 'Unknown error');
+                msgEl.className = 'status-message error';
+            }
+        })
+        .catch(err => {
+            document.getElementById('reseedOverlay').style.display = 'none';
+            document.getElementById('reseedModal').style.display = 'none';
+            document.getElementById('statusMessage').textContent = 'Request failed: ' + err.message;
+            document.getElementById('statusMessage').className = 'status-message error';
+        })
+        .finally(() => {
+            btn.textContent = 'Replace Bracket';
+        });
+    });
 </script>
 <script>
     // Logout

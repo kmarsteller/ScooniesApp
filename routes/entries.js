@@ -194,7 +194,7 @@ function sendConfirmationEmail(playerName, email, nickname, selectedTeams) {
     <!-- Header -->
     <div style="background:#fff;padding:24px 32px;text-align:center;border-bottom:3px solid #dc3545;">
       <img src="${scooniesLogoSrc}" alt="The Scoonies" style="max-height:80px;max-width:280px;object-fit:contain;">
-      <p style="margin:10px 0 0;color:#999;font-size:14px;">2026 Tournament Challenge</p>
+      <p style="margin:10px 0 0;color:#999;font-size:14px;">${new Date().getFullYear()} Tournament Challenge</p>
     </div>
 
     <!-- Body -->

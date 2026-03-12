@@ -371,6 +371,11 @@
                         <p style="margin:0;color:#555;font-size:14px;">A branded Scoonies email with the full leaderboard table: rank, score, entry name, and submitted-by name. Sent once to every unique email address on record.</p>
                     </div>
 
+                    <div class="form-group">
+                        <label for="scoringMessage">Message (appears above the standings table):</label>
+                        <textarea id="scoringMessage" class="form-control" style="min-height:80px;">Here's how everyone stacks up. Good luck the rest of the way!</textarea>
+                    </div>
+
                     <div class="action-buttons" style="justify-content:flex-end;">
                         <button id="sendScoringBtn" class="primary-button action-button">Send Scoring Update to All</button>
                     </div>
@@ -382,7 +387,7 @@
     </main>
     
     <footer>
-        <p>&copy; 2026 The Scoonies</p>
+        <p>&copy; <script>document.write(new Date().getFullYear())</script> The Scoonies</p>
     </footer>
     
     <script>
@@ -900,24 +905,34 @@
         // Send payment reminders
         function sendReminder() {
             const subject = document.getElementById('reminderSubject').value;
+            const templateValue = document.getElementById('reminderTemplate').value;
             const message = document.getElementById('reminderMessage').value;
-            
-            if (!subject || !message) {
-                showStatus('Please enter a subject and message', 'error');
+
+            if (!subject) {
+                showStatus('Please enter a subject', 'error');
                 return;
             }
-            
+
+            if (templateValue === 'custom' && !message) {
+                showStatus('Please enter a message', 'error');
+                return;
+            }
+
             if (!confirm('Are you sure you want to send payment reminders to all unpaid participants?')) {
                 return;
             }
-            
+
             // Disable buttons
             document.getElementById('sendReminderBtn').disabled = true;
             document.getElementById('previewReminderBtn').disabled = true;
-            
+
             // Show loading status
             showStatus('Sending payment reminders...', 'info');
-            
+
+            // For the default template, send no message body so the backend uses
+            // its rich HTML version with clickable Venmo/PayPal links.
+            const messageToSend = templateValue === 'default' ? '' : message;
+
             // Send request to server
             fetch('/api/communications/send-payment-reminders', {
                 method: 'POST',
@@ -926,7 +941,7 @@
                 },
                 body: JSON.stringify({
                     subject,
-                    message
+                    message: messageToSend
                 }),
             })
             .then(response => {
@@ -975,7 +990,13 @@
             btn.disabled = true;
             showStatus('Sending scoring update...', 'info');
 
-            fetch('/api/communications/send-scoring-update', { method: 'POST' })
+            const scoringMessage = document.getElementById('scoringMessage').value.trim();
+
+            fetch('/api/communications/send-scoring-update', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: scoringMessage })
+            })
                 .then(response => {
                     if (!response.ok) {
                         return response.json().then(err => {
