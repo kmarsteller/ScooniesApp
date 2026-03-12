@@ -79,11 +79,10 @@ router.post('/', (req, res) => {
                         const teamInsertStmt = db.prepare(
                             'INSERT INTO team_selections (entry_id, team_name, seed, region, cost) VALUES (?, ?, ?, ?, ?)'
                         );
-                        
+
                         let hasError = false;
                         let errorMessage = '';
-                        
-                        // Insert each team selection
+
                         selectedTeams.forEach(team => {
                             teamInsertStmt.run(
                                 [entryId, team.teamName, team.seed, team.region, team.cost],
@@ -96,25 +95,28 @@ router.post('/', (req, res) => {
                                 }
                             );
                         });
-                        
-                        teamInsertStmt.finalize();
-                        
-                        if (hasError) {
-                            db.run('ROLLBACK');
-                            return res.status(500).json({ error: 'Error saving team selections: ' + errorMessage });
-                        }
-                        
-                        // Commit transaction
-                        db.run('COMMIT', err => {
-                            if (err) {
-                                console.error("Database error committing transaction:", err);
+
+                        // finalize() callback fires after ALL .run() callbacks complete,
+                        // so hasError is reliable here — unlike checking it synchronously above.
+                        teamInsertStmt.finalize(err => {
+                            if (err || hasError) {
                                 db.run('ROLLBACK');
-                                return res.status(500).json({ error: 'Transaction error: ' + err.message });
+                                return res.status(500).json({
+                                    error: 'Error saving team selections: ' + (errorMessage || (err && err.message))
+                                });
                             }
-                            
-                            res.status(201).json({ 
-                                message: 'Entry submitted successfully',
-                                entryId
+
+                            db.run('COMMIT', err => {
+                                if (err) {
+                                    console.error("Database error committing transaction:", err);
+                                    db.run('ROLLBACK');
+                                    return res.status(500).json({ error: 'Transaction error: ' + err.message });
+                                }
+
+                                res.status(201).json({
+                                    message: 'Entry submitted successfully',
+                                    entryId
+                                });
                             });
                         });
                     }

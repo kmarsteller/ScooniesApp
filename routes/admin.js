@@ -55,7 +55,6 @@ router.post('/login', (req, res) => {
                     console.error('Session save error:', saveErr);
                     return res.status(500).json({ error: 'Session error' });
                 }
-                console.log('Session saved. sessionID:', req.sessionID, 'isAdmin:', req.session.isAdmin);
                 res.json({ success: true, message: 'Login successful' });
             });
         } catch (error) {

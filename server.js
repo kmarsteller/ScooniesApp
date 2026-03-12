@@ -1,4 +1,5 @@
 //The server, run with "node server.js" or "npm run dev"
+require('dotenv').config({ path: require('path').join(__dirname, '.env') });
 const express = require('express');
 const session = require('express-session');
 const path = require('path');
