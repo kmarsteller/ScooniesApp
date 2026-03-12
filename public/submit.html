@@ -68,22 +68,12 @@
             color: white;
             font-size: 14px;
             margin-left: 10px;
-            transition: background-color 0.15s ease, color 0.15s ease;
-        }
-
-        .team-button:hover {
-            background-color: white;
-            color: #28a745;
+            transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
         }
 
         .team-button.unpurchase {
             background-color: #dc3545;
             border-color: #dc3545;
-        }
-
-        .team-button.unpurchase:hover {
-            background-color: white;
-            color: #dc3545;
         }
 
         .team-button.disabled {
@@ -92,9 +82,21 @@
             cursor: not-allowed;
         }
 
-        .team-button.disabled:hover {
-            background-color: #6c757d;
-            color: white;
+        @media (hover: hover) {
+            .team-button:hover {
+                background-color: white;
+                color: #28a745;
+            }
+
+            .team-button.unpurchase:hover {
+                background-color: white;
+                color: #dc3545;
+            }
+
+            .team-button.disabled:hover {
+                background-color: #6c757d;
+                color: white;
+            }
         }
         
         .selected {
