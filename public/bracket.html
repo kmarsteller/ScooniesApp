@@ -352,11 +352,14 @@
             const logo = document.createElement('img');
             logo.className = 'team-logo';
             logo.alt = team.team_name;
-            logo.src = logoSrc(team.team_name);
-            logo.onerror = function() {
-                this.src = '/images/generic-team-logo.png';
-                this.onerror = null;
-            };
+            logo.src = team.logo_url || logoSrc(team.team_name);
+            if (!team.logo_url) {
+                // Real team: fall back through ESPN URL if local file missing
+                logo.onerror = function() {
+                    this.onerror = null;
+                    this.src = '/images/Scoonies.jpg';
+                };
+            }
 
             const name = document.createElement('span');
             name.className = 'team-name';
@@ -541,8 +544,8 @@
 
                 const logo = document.createElement('img');
                 logo.alt = champion.team_name;
-                logo.src = logoSrc(champion.team_name);
-                logo.onerror = function() { this.src = '/images/generic-team-logo.png'; this.onerror = null; };
+                logo.src = champion.logo_url || logoSrc(champion.team_name);
+                logo.onerror = function() { this.onerror = null; this.src = '/images/Scoonies.jpg'; };
 
                 champTeamDiv.appendChild(logo);
                 champTeamDiv.appendChild(document.createTextNode(

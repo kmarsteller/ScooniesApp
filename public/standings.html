@@ -331,7 +331,10 @@
                 
                 const entryRank = document.createElement('div');
                 entryRank.className = 'entry-rank';
-                entryRank.textContent = `#${index + 1}`;
+                const isTournamentComplete = data.tournamentStatus && data.tournamentStatus.currentRound === null;
+                const trophies = ['🥇', '🥈', '🥉'];
+                const trophy = isTournamentComplete && index < 3 ? trophies[index] + ' ' : '';
+                entryRank.textContent = `${trophy}#${index + 1}`;
                 
                 const entryInfo = document.createElement('div');
                 entryInfo.className = 'entry-info';
@@ -422,13 +425,8 @@
                         logoImg.alt = team.team_name;
                         logoImg.src = `/images/logos/${team.team_name.toLowerCase().replace(/[^a-z0-9]/g, '-')}.png`;
                         logoImg.onerror = function() {
-                            // Fallback to remote URL if local file doesn't exist
-                            this.src = team.logo_url;
-                            // If that fails too, use a generic logo
-                            this.onerror = function() {
-                                this.src = '/images/generic-team-logo.png';
-                                this.onerror = null;
-                            };
+                            this.onerror = null;
+                            this.src = team.logo_url || '/images/Scoonies.jpg';
                         };
                         
                         const nameSpan = document.createElement('span');
