@@ -64,6 +64,7 @@ function initializeDatabase() {
                 team_name TEXT NOT NULL,
                 region TEXT NOT NULL,
                 seed INTEGER NOT NULL,
+                logo_url TEXT DEFAULT '',
                 round_reached INTEGER DEFAULT 1,
                 is_eliminated BOOLEAN DEFAULT 0,
                 is_final_four BOOLEAN DEFAULT 0,
@@ -71,6 +72,12 @@ function initializeDatabase() {
                 is_champion BOOLEAN DEFAULT 0
             )
         `);
+        // Migration: add logo_url to existing databases that predate this column
+        db.run("ALTER TABLE tournament_progress ADD COLUMN logo_url TEXT DEFAULT ''", err => {
+            if (err && !err.message.includes('duplicate column')) {
+                console.error('Error adding logo_url column to tournament_progress:', err);
+            }
+        });
         
         
         // Add team visibility setting to system_settings
@@ -153,13 +160,13 @@ function initializeDatabase() {
                         db.run('BEGIN TRANSACTION');
                         
                         const stmt = db.prepare(
-                            'INSERT INTO tournament_progress (team_name, region, seed) VALUES (?, ?, ?)'
+                            'INSERT INTO tournament_progress (team_name, region, seed, logo_url) VALUES (?, ?, ?, ?)'
                         );
-                        
+
                         let errorOccurred = false;
-                        
+
                         teamData.forEach(team => {
-                            stmt.run([team.teamName, team.region, team.seed], err => {
+                            stmt.run([team.teamName, team.region, team.seed, team.logoUrl || ''], err => {
                                 if (err) {
                                     errorOccurred = true;
                                     console.error("Error inserting team:", err.message);

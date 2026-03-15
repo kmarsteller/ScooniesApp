@@ -1278,15 +1278,12 @@
             
             const logo = document.createElement('img');
             logo.className = 'team-logo';
-            logo.src = `/images/logos/${teamLogoFilename(champion.team_name)}.png`;
+            logo.src = champion.logo_url || `/images/logos/${teamLogoFilename(champion.team_name)}.png`;
             logo.alt = champion.team_name;
             logo.onerror = function() {
                 // Fallback if logo can't be found
-                this.src = 'https://a.espncdn.com/combiner/i?img=/i/teamlogos/ncaa/500/'+champion.id+'.png';
-                this.onerror = function() {
-                    this.src = '/images/generic-team-logo.png';
-                    this.onerror = null;
-                };
+                this.onerror = null;
+                this.src = '/images/Scoonies.jpg';
             };
             
             const nameSpan = document.createElement('span');
@@ -1326,15 +1323,12 @@
         
         const logo = document.createElement('img');
         logo.className = 'team-logo';
-        logo.src = `/images/logos/${teamLogoFilename(team.team_name)}.png`;
+        logo.src = team.logo_url || `/images/logos/${teamLogoFilename(team.team_name)}.png`;
         logo.alt = team.team_name;
         logo.onerror = function() {
             // Fallback if logo can't be found
-            this.src = 'https://a.espncdn.com/combiner/i?img=/i/teamlogos/ncaa/500/'+team.id+'.png';
-            this.onerror = function() {
-                this.src = '/images/generic-team-logo.png';
-                this.onerror = null;
-            };
+            this.onerror = null;
+            this.src = '/images/Scoonies.jpg';
         };
         
         const nameSpan = document.createElement('span');
@@ -1676,13 +1670,13 @@ function advanceTeam(winner, loser) {
         
         const logo = document.createElement('img');
         logo.className = 'team-logo';
-        logo.src = `/images/logos/${teamLogoFilename(champion.team_name)}.png`;
+        logo.src = champion.logo_url || `/images/logos/${teamLogoFilename(champion.team_name)}.png`;
         logo.alt = champion.team_name;
         logo.onerror = function() {
             // Fallback if logo can't be found
             this.src = 'https://a.espncdn.com/combiner/i?img=/i/teamlogos/ncaa/500/'+champion.id+'.png';
             this.onerror = function() {
-                this.src = '/images/generic-team-logo.png';
+                this.src = '/images/Scoonies.jpg';
                 this.onerror = null;
             };
         };
@@ -1967,7 +1961,8 @@ function advanceTeam(winner, loser) {
                 const seed = parseInt(parts[0]);
                 // Support both 3-col (seed,team_name,region)
                 // and 4-col (seed,logo_url,team_name,region) formats
-                const hasLogoCol = parts.length >= 4 && (parts[1].startsWith('http') || parts[1] === '');
+                const hasLogoCol = parts.length >= 4 && (parts[1].startsWith('http') || parts[1].startsWith('/') || parts[1] === '');
+                const logoUrl  = hasLogoCol ? parts[1] : '';
                 const teamName = hasLogoCol ? parts[2] : parts[1];
                 const region   = hasLogoCol ? parts[3] : parts[2];
                 if (isNaN(seed) || seed < 1 || seed > 16) { errors.push(`Line ${i+1}: invalid seed "${parts[0]}"`); return; }
@@ -1976,7 +1971,7 @@ function advanceTeam(winner, loser) {
                     errors.push(`Line ${i+1}: region must be East/West/South/Midwest, got "${region}"`);
                     return;
                 }
-                parsedTeams.push({ seed, team_name: teamName, region });
+                parsedTeams.push({ seed, logo_url: logoUrl, team_name: teamName, region });
                 const row = previewBody.insertRow();
                 row.style.borderBottom = '1px solid #eee';
                 row.insertCell().innerHTML = `<td style="padding:5px 10px;">${region}</td>`;

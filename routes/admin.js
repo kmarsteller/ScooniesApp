@@ -1,5 +1,7 @@
 const bcrypt = require('bcrypt');
 const express = require('express');
+const fs = require('fs');
+const path = require('path');
 const router = express.Router();
 const { db } = require('../db/database');
 const { calculatePoints } = require('../utils/scoring');
@@ -863,6 +865,14 @@ router.post('/toggle-entry-status', requireAuth, (req, res) => {
                                 if (err) console.error('Error storing close reason:', err);
                             }
                         );
+                    } else if (newStatus) {
+                        // Clear the close reason when reopening
+                        db.run(
+                            "DELETE FROM system_settings WHERE key = 'entries_close_reason'",
+                            function(err) {
+                                if (err) console.error('Error clearing close reason:', err);
+                            }
+                        );
                     }
 
                     res.json({
@@ -1007,10 +1017,10 @@ router.post('/reseed-teams', requireAuth, (req, res) => {
                 db.run('DELETE FROM tournament_progress', (err) => {
                     if (err) { db.run('ROLLBACK'); return res.status(500).json({ error: err.message }); }
 
-                    const stmt = db.prepare('INSERT INTO tournament_progress (team_name, region, seed) VALUES (?, ?, ?)');
+                    const stmt = db.prepare('INSERT INTO tournament_progress (team_name, region, seed, logo_url) VALUES (?, ?, ?, ?)');
                     let insertError = null;
                     for (const t of teams) {
-                        stmt.run(t.team_name.trim(), t.region.trim(), parseInt(t.seed), (err) => {
+                        stmt.run(t.team_name.trim(), t.region.trim(), parseInt(t.seed), t.logo_url || '', (err) => {
                             if (err) insertError = err;
                         });
                     }
@@ -1021,6 +1031,17 @@ router.post('/reseed-teams', requireAuth, (req, res) => {
                         }
                         db.run('COMMIT', (err) => {
                             if (err) return res.status(500).json({ error: err.message });
+
+                            // Keep teams.csv in sync with the DB
+                            const csvLines = ['seed,logo_url,team_name,region',
+                                ...teams.map(t => `${t.seed},${t.logo_url || ''},${t.team_name.trim()},${t.region.trim()}`)
+                            ];
+                            fs.writeFile(
+                                path.join(__dirname, '../public/teams.csv'),
+                                csvLines.join('\n') + '\n',
+                                err => { if (err) console.error('Error writing teams.csv after reseed:', err); }
+                            );
+
                             console.log(`Bracket reseeded with ${teams.length} teams. All entries cleared.`);
                             res.json({ success: true, message: `Bracket reseeded with ${teams.length} teams. All previous entries have been cleared.` });
                         });

@@ -3,106 +3,109 @@ const express = require('express');
 const router = express.Router();
 const { db } = require('../db/database');
 
-// Update the standings.js route to respect the team visibility setting
-
 // Get current standings
 router.get('/', (req, res) => {
-    // First, check if team selections should be visible
-    db.get(
-        "SELECT value FROM system_settings WHERE key = 'teams_visible'",
-        (err, visibilityRow) => {
+    // Fetch all settings we need in one query
+    db.all(
+        "SELECT key, value FROM system_settings WHERE key IN ('teams_visible', 'entries_open')",
+        (err, settingRows) => {
             if (err) {
-                console.error('Error checking team visibility:', err);
+                console.error('Error checking settings:', err);
                 return res.status(500).json({ error: 'Database error: ' + err.message });
             }
-            
-            // Default to false if no setting exists
-            const teamsVisible = visibilityRow ? visibilityRow.value === 'true' : false;
-            
-            // Get all entries with scores
+
+            const settings = {};
+            (settingRows || []).forEach(r => { settings[r.key] = r.value; });
+            const teamsVisible = settings['teams_visible'] === 'true';
+
+            // Single query: all entries + their team selections + tournament progress
             db.all(
-                `SELECT id, player_name, email, nickname, score, has_paid
-                 FROM entries
-                 ORDER BY score DESC`,
-                (err, entries) => {
+                `SELECT
+                    e.id, e.player_name, e.email, e.nickname, e.score, e.has_paid,
+                    ts.id         AS ts_id,
+                    ts.team_name, ts.seed, ts.region, ts.cost, ts.points_earned,
+                    tp.logo_url, tp.is_eliminated, tp.round_reached
+                 FROM entries e
+                 LEFT JOIN team_selections ts ON ts.entry_id = e.id
+                 LEFT JOIN tournament_progress tp
+                     ON ts.team_name = tp.team_name AND ts.region = tp.region
+                 ORDER BY e.score DESC, e.id, ts.seed`,
+                (err, rows) => {
                     if (err) {
                         return res.status(500).json({ error: 'Database error: ' + err.message });
                     }
-                    
-                    // For each entry, get their team selections with points
-                    const entryPromises = entries.map(entry => {
-                        return new Promise((resolve, reject) => {
-                            db.all(
-                                `SELECT ts.*, tp.is_eliminated, tp.round_reached
-                                 FROM team_selections ts
-                                 LEFT JOIN tournament_progress tp 
-                                 ON ts.team_name = tp.team_name AND ts.region = tp.region
-                                 WHERE ts.entry_id = ?`,
-                                [entry.id],
-                                (err, teams) => {
-                                    if (err) {
-                                        reject(err);
-                                        return;
-                                    }
-                                    
-                                    // If teams should be hidden, indicate that in the response
-                                    if (!teamsVisible) {
-                                        // Count total teams but don't reveal them
-                                        const teamCount = teams.length;
-                                        entry.teamsHidden = true;
-                                        entry.teamCount = teamCount;
-                                        entry.teams = []; // Empty array as we're hiding teams
-                                    } else {
-                                        // Add teams to entry if they should be visible
-                                        entry.teamsHidden = false;
-                                        entry.teams = teams;
-                                    }
-                                    
-                                    resolve(entry);
-                                }
-                            );
-                        });
+
+                    // Group flat rows into entry objects
+                    const entryMap = new Map();
+                    for (const row of rows) {
+                        if (!entryMap.has(row.id)) {
+                            entryMap.set(row.id, {
+                                id: row.id,
+                                player_name: row.player_name,
+                                email: row.email,
+                                nickname: row.nickname,
+                                score: row.score,
+                                has_paid: row.has_paid,
+                                teams: []
+                            });
+                        }
+                        if (row.ts_id !== null) {
+                            entryMap.get(row.id).teams.push({
+                                id: row.ts_id,
+                                team_name: row.team_name,
+                                seed: row.seed,
+                                region: row.region,
+                                cost: row.cost,
+                                points_earned: row.points_earned,
+                                logo_url: row.logo_url,
+                                is_eliminated: row.is_eliminated,
+                                round_reached: row.round_reached
+                            });
+                        }
+                    }
+
+                    const entries = Array.from(entryMap.values());
+
+                    // Apply teams visibility
+                    const completedEntries = entries.map(entry => {
+                        if (!teamsVisible) {
+                            return {
+                                ...entry,
+                                teamsHidden: true,
+                                teamCount: entry.teams.length,
+                                teams: []
+                            };
+                        }
+                        return { ...entry, teamsHidden: false };
                     });
-                    
-                    // Wait for all entries to be processed
-                    Promise.all(entryPromises)
-                        .then(completedEntries => {
-                            // Compute tournament status: games completed per round
-                            db.all(
-                                `SELECT round_reached, COUNT(*) as games_done
-                                 FROM tournament_progress
-                                 WHERE is_eliminated = 1
-                                 GROUP BY round_reached`,
-                                (err, roundData) => {
-                                    const TOTAL_GAMES  = { 1: 32, 2: 16, 3: 8, 4: 4, 5: 2, 6: 1 };
-                                    const ROUND_NAMES  = { 1: 'Round of 64', 2: 'Round of 32', 3: 'Sweet 16', 4: 'Elite Eight', 5: 'Final Four', 6: 'Championship' };
 
-                                    let tournamentStatus = null;
-                                    for (let r = 1; r <= 6; r++) {
-                                        const row = (roundData || []).find(x => x.round_reached === r);
-                                        const done  = row ? row.games_done : 0;
-                                        const total = TOTAL_GAMES[r];
-                                        if (done < total) {
-                                            tournamentStatus = { currentRound: r, gamesCompleted: done, totalGames: total, roundName: ROUND_NAMES[r] };
-                                            break;
-                                        }
-                                    }
-                                    // All 63 games done → champion crowned
-                                    if (!tournamentStatus) {
-                                        tournamentStatus = { currentRound: null, gamesCompleted: 63, totalGames: 63, roundName: 'Complete' };
-                                    }
+                    // Compute tournament status
+                    db.all(
+                        `SELECT round_reached, COUNT(*) as games_done
+                         FROM tournament_progress
+                         WHERE is_eliminated = 1
+                         GROUP BY round_reached`,
+                        (err, roundData) => {
+                            const TOTAL_GAMES = { 1: 32, 2: 16, 3: 8, 4: 4, 5: 2, 6: 1 };
+                            const ROUND_NAMES = { 1: 'Round of 64', 2: 'Round of 32', 3: 'Sweet 16', 4: 'Elite Eight', 5: 'Final Four', 6: 'Championship' };
 
-                                    res.json({
-                                        entries: completedEntries,
-                                        teamsVisible,
-                                        tournamentStatus
-                                    });
+                            let tournamentStatus = null;
+                            for (let r = 1; r <= 6; r++) {
+                                const row = (roundData || []).find(x => x.round_reached === r);
+                                const done  = row ? row.games_done : 0;
+                                const total = TOTAL_GAMES[r];
+                                if (done < total) {
+                                    tournamentStatus = { currentRound: r, gamesCompleted: done, totalGames: total, roundName: ROUND_NAMES[r] };
+                                    break;
                                 }
-                            );
-                        })
-                        .catch(err => {
-                            res.status(500).json({ error: 'Error fetching team data: ' + err.message });
-                        });
+                            }
+                            if (!tournamentStatus) {
+                                tournamentStatus = { currentRound: null, gamesCompleted: 63, totalGames: 63, roundName: 'Complete' };
+                            }
+
+                            res.json({ entries: completedEntries, teamsVisible, tournamentStatus });
+                        }
+                    );
                 }
             );
         }
