@@ -90,4 +90,12 @@ router.get('/picks', (req, res) => {
     });
 });
 
+// Public read of commissioner banner
+router.get('/banner', (req, res) => {
+    db.get("SELECT value FROM system_settings WHERE key = 'commissioner_banner'", (err, row) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ banner: row ? row.value : '' });
+    });
+});
+
 module.exports = router;

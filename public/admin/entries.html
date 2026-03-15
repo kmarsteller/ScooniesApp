@@ -420,6 +420,18 @@
         </div>
     </div>
 
+    <div style="display:flex;align-items:center;gap:12px;margin-top:20px;flex-wrap:wrap;">
+        <div style="position:relative;display:inline-block;">
+            <input type="text" id="entriesSearch" placeholder="Search by name, nickname, or email…"
+                   style="padding:7px 12px;border:1px solid #ccc;border-radius:4px;font-size:0.95rem;width:280px;">
+            <button id="clearEntriesSearch" title="Clear search" style="display:none;position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;font-size:1rem;cursor:pointer;color:#6c757d;padding:0;line-height:1;">✕</button>
+        </div>
+        <label style="display:flex;align-items:center;gap:6px;font-size:0.95rem;cursor:pointer;">
+            <input type="checkbox" id="unpaidFilter"> Show unpaid only
+        </label>
+        <span id="entriesFilterCount" style="font-size:0.85rem;color:#6c757d;font-style:italic;"></span>
+    </div>
+
     <div class="entries-container" id="entriesContainer">
         <div class="loading">Loading entries...</div>
     </div>
@@ -517,13 +529,50 @@
             loadEntries();
         }
 
+                let allEntries = [];
+
         document.addEventListener('DOMContentLoaded', function() {
             // Load entries
             loadEntries();
-            
+
             // Setup form event listeners
             setupEditForm();
+
+            // Filter controls
+            const entriesSearch = document.getElementById('entriesSearch');
+            const clearEntriesSearchBtn = document.getElementById('clearEntriesSearch');
+
+            entriesSearch.addEventListener('input', applyEntryFilters);
+            entriesSearch.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') { this.value = ''; applyEntryFilters(); this.blur(); }
+            });
+            clearEntriesSearchBtn.addEventListener('click', function() {
+                entriesSearch.value = '';
+                applyEntryFilters();
+                entriesSearch.focus();
+            });
+            document.getElementById('unpaidFilter').addEventListener('change', applyEntryFilters);
         });
+
+        function applyEntryFilters() {
+            const query = document.getElementById('entriesSearch').value.trim().toLowerCase();
+            const unpaidOnly = document.getElementById('unpaidFilter').checked;
+            const clearBtn = document.getElementById('clearEntriesSearch');
+            if (clearBtn) clearBtn.style.display = query ? 'block' : 'none';
+            const filtered = allEntries.filter(e => {
+                if (unpaidOnly && e.has_paid) return false;
+                if (query) {
+                    const haystack = `${e.player_name} ${e.nickname} ${e.email}`.toLowerCase();
+                    if (!haystack.includes(query)) return false;
+                }
+                return true;
+            });
+            const count = document.getElementById('entriesFilterCount');
+            count.textContent = (query || unpaidOnly)
+                ? `${filtered.length} of ${allEntries.length} entries`
+                : `${allEntries.length} entries`;
+            renderEntries(filtered, false);
+        }
         
         // Load entries
         function loadEntries() {    
@@ -569,11 +618,12 @@
                         throw new Error('Invalid data format received');
                     }
                     
-                    renderEntries(data.entries);
+                    allEntries = data.entries;
+                    applyEntryFilters();
                 })
                 .catch(error => {
                     console.error('Error loading entries:', error);
-                    document.getElementById('entriesContainer').innerHTML = 
+                    document.getElementById('entriesContainer').innerHTML =
                         `<div class="error">Error loading entries: ${error.message}. <button id="retryBtn">Retry</button></div>`;
                         
                     document.getElementById('retryBtn').addEventListener('click', loadEntries);
@@ -593,11 +643,12 @@
                 })
                 .then(data => {
                     console.log('Standings data:', data);
-                    renderEntries(data.entries || []);
+                    allEntries = data.entries || [];
+                    applyEntryFilters();
                 })
                 .catch(error => {
                     console.error('Error loading standings data:', error);
-                    document.getElementById('entriesContainer').innerHTML = 
+                    document.getElementById('entriesContainer').innerHTML =
                         `<div class="error">Error loading entries from standings: ${error.message}.</div>`;
                 });
         }

@@ -399,7 +399,6 @@
             return `/images/logos/${teamName.toLowerCase().replace(/[^a-z0-9]/g, '-')}.png`;
         }
 
-        // ── Build a team div (read-only) ────────────────────────────────────
         function makeTeamDiv(team, roundNum) {
             const div = document.createElement('div');
             div.className = 'team';
@@ -622,6 +621,11 @@
                 champTeamDiv.appendChild(logo);
                 champTeamDiv.appendChild(document.createTextNode(
                     `#${champion.seed} ${champion.team_name} (${champion.region})`));
+                champTeamDiv.style.cursor = 'pointer';
+                champTeamDiv.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    showPicksPopup(champion.team_name, champion.region, champTeamDiv);
+                });
                 champBanner.appendChild(champTeamDiv);
                 body.appendChild(champBanner);
             }

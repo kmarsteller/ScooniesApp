@@ -46,6 +46,58 @@
             margin: 0 auto 40px;
             line-height: 1.8;
         }
+
+        .commissioner-banner {
+            background: linear-gradient(to right, #a71d2a, #dc3545 40%, #dc3545 60%, #a71d2a);
+            border-radius: 6px;
+            margin-bottom: 24px;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            height: 42px;
+            box-shadow: 0 3px 12px rgba(220,53,69,0.4);
+        }
+
+        .commissioner-banner .banner-label {
+            background: rgba(0,0,0,0.28);
+            color: #fff;
+            font-size: 0.68rem;
+            font-weight: 800;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            padding: 0 16px;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            white-space: nowrap;
+            flex-shrink: 0;
+            border-right: 1px solid rgba(255,255,255,0.25);
+            gap: 6px;
+        }
+
+        .commissioner-banner .banner-track {
+            flex: 1;
+            overflow: hidden;
+            height: 100%;
+            display: flex;
+            align-items: center;
+        }
+
+        .commissioner-banner .banner-scroll {
+            display: inline-block;
+            white-space: nowrap;
+            color: #fff;
+            font-weight: 500;
+            font-size: 0.92rem;
+            letter-spacing: 0.015em;
+            padding-right: 80px;
+            animation: commBannerScroll 20s linear infinite;
+        }
+
+        @keyframes commBannerScroll {
+            0%   { transform: translateX(100vw); }
+            100% { transform: translateX(-100%); }
+        }
     </style>
 </head>
 <body>
@@ -63,6 +115,13 @@
     </header>
     
     <main>
+        <div id="commissionerBanner" class="commissioner-banner" style="display:none;">
+            <div class="banner-label">🏀 Commissioner</div>
+            <div class="banner-track">
+                <span class="banner-scroll" id="bannerMessage"></span>
+            </div>
+        </div>
+
         <section class="hero">
             <h1>Welcome to the 2026 Scoonies!</h1>
         </section>
@@ -96,4 +155,18 @@
             <p>&copy; <script>document.write(new Date().getFullYear())</script> The Scoonies</p>
         </footer>
     </main>
+    <script>
+        fetch('/api/bracket/banner')
+            .then(r => r.json())
+            .then(data => {
+                if (data.banner) {
+                    const el = document.getElementById('bannerMessage');
+                    el.textContent = data.banner;
+                    // Scale scroll speed with text length: ~0.22s per char, min 8s
+                    el.style.animationDuration = Math.max(8, data.banner.length * 0.22) + 's';
+                    document.getElementById('commissionerBanner').style.display = 'flex';
+                }
+            })
+            .catch(() => {});
+    </script>
 </body>

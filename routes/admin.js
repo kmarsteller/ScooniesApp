@@ -1052,4 +1052,34 @@ router.post('/reseed-teams', requireAuth, (req, res) => {
     });
 });
 
+// ── Commissioner's Banner ──────────────────────────────────────────────────
+router.get('/banner', requireAuth, (req, res) => {
+    db.get("SELECT value FROM system_settings WHERE key = 'commissioner_banner'", (err, row) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ banner: row ? row.value : '' });
+    });
+});
+
+router.put('/banner', requireAuth, (req, res) => {
+    const { banner } = req.body;
+    if (banner === undefined) return res.status(400).json({ error: 'banner field required' });
+
+    const text = banner.trim();
+    if (!text) {
+        db.run("DELETE FROM system_settings WHERE key = 'commissioner_banner'", err => {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ success: true, banner: '' });
+        });
+    } else {
+        db.run(
+            "INSERT INTO system_settings (key, value) VALUES ('commissioner_banner', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+            [text],
+            err => {
+                if (err) return res.status(500).json({ error: err.message });
+                res.json({ success: true, banner: text });
+            }
+        );
+    }
+});
+
 module.exports = router;

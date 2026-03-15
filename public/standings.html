@@ -159,6 +159,42 @@
             padding-left: 8px;
         }
 
+        /* ── Status dot + colored points ── */
+        .team-status-wrap {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            margin-left: auto;
+            padding-left: 8px;
+            flex-shrink: 0;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .status-dot.alive {
+            background: #28a745;
+            box-shadow: 0 0 5px 2px rgba(40,167,69,0.7);
+            animation: pulse-green 2s ease-in-out infinite;
+        }
+
+        .status-dot.elim {
+            background: #dc3545;
+            box-shadow: 0 0 4px 2px rgba(220,53,69,0.5);
+        }
+
+        @keyframes pulse-green {
+            0%, 100% { box-shadow: 0 0 5px 2px rgba(40,167,69,0.7); }
+            50%       { box-shadow: 0 0 10px 5px rgba(40,167,69,1); }
+        }
+
+        .team-points.alive { color: #28a745; }
+        .team-points.elim  { color: #dc3545; }
+
         .team-breakdown {
             font-size: 0.68em;
             color: #6c757d;
@@ -225,7 +261,10 @@
 
         <div class="standings-container">
             <div class="standings-filter">
-                <input type="text" id="searchInput" class="standings-search" placeholder="Search by name or email…">
+                <div style="position:relative;display:inline-block;">
+                    <input type="text" id="searchInput" class="standings-search" placeholder="Search by name or email…">
+                    <button id="clearSearch" title="Clear search" style="display:none;position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;font-size:1rem;cursor:pointer;color:#6c757d;padding:0;line-height:1;">✕</button>
+                </div>
                 <button id="refreshBtn" class="action-button">Refresh Standings</button>
             </div>
 
@@ -248,18 +287,21 @@
             document.getElementById('refreshBtn').addEventListener('click', loadStandings);
 
             // Search filter
-            document.getElementById('searchInput').addEventListener('input', function() {
-                const query = this.value.trim().toLowerCase();
+            const searchInput = document.getElementById('searchInput');
+            const clearSearchBtn = document.getElementById('clearSearch');
+
+            function applySearch(query) {
+                const q = query.trim().toLowerCase();
                 const cards = document.querySelectorAll('#standingsContent .entry-card');
                 let anyVisible = false;
                 cards.forEach(card => {
-                    const matches = !query || card.dataset.search.includes(query);
+                    const matches = !q || card.dataset.search.includes(q);
                     card.style.display = matches ? '' : 'none';
                     if (matches) anyVisible = true;
                 });
-                // Show/hide no-results message
+                clearSearchBtn.style.display = q ? 'block' : 'none';
                 let noResults = document.getElementById('noSearchResults');
-                if (!anyVisible && query) {
+                if (!anyVisible && q) {
                     if (!noResults) {
                         noResults = document.createElement('div');
                         noResults.id = 'noSearchResults';
@@ -271,9 +313,30 @@
                 } else if (noResults) {
                     noResults.style.display = 'none';
                 }
+            }
+
+            searchInput.addEventListener('input', function() { applySearch(this.value); });
+
+            searchInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') { this.value = ''; applySearch(''); this.blur(); }
+            });
+
+            clearSearchBtn.addEventListener('click', function() {
+                searchInput.value = '';
+                applySearch('');
+                searchInput.focus();
             });
         });
         
+        function maskEmail(email) {
+            if (!email || email.length <= 10) return 'email hidden';
+            const atIndex = email.indexOf('@');
+            if (atIndex <= 4) {
+                return email.substring(0, atIndex) + '...@...' + email.substring(atIndex + 1);
+            }
+            return `${email.substring(0, 4)}...@...${email.substring(email.length - 6)}`;
+        }
+
         // Ordinal suffix helper: 1 → "1st", 2 → "2nd", etc.
         function ordinal(n) {
             const s = ['th','st','nd','rd'];
@@ -329,6 +392,7 @@
         function renderStandings(data) {
             const standingsContent = document.getElementById('standingsContent');
             document.getElementById('searchInput').value = '';
+            document.getElementById('clearSearch').style.display = 'none';
 
             // Update tournament status line
             const statusEl = document.getElementById('tournamentStatus');
@@ -394,22 +458,6 @@
                 entryNickname.className = 'entry-nickname';
                 entryNickname.textContent = entry.nickname;
                 
-                function maskEmail(email) {
-                    if (!email || email.length <= 10) return "email hidden"; // Return as is if too short
-                    
-                    const atIndex = email.indexOf('@');
-                    if (atIndex <= 4) {
-                        // Handle short usernames (before @)
-                        const firstPart = email.substring(0, atIndex);
-                        const domain = email.substring(atIndex);
-                        return firstPart + '...' + '@' + '...' + domain;
-                    } else {
-                        // Normal case
-                        const first4 = email.substring(0, 4);
-                        const last6 = email.substring(email.length - 6);
-                        return `${first4}...@...${last6}`;
-                    }
-                }
                 const entryPlayer = document.createElement('div');
                 entryPlayer.className = 'entry-player';
                 entryPlayer.textContent = `${entry.player_name} (${maskEmail(entry.email)})`;
@@ -488,17 +536,32 @@
                         regionSpan.className = 'team-region';
                         regionSpan.textContent = `(${team.region})`;
                         
-                        const pointsSpan = document.createElement('span');
-                        pointsSpan.className = 'team-points';
-                        pointsSpan.textContent = `[${team.points_earned} pts]`;
-
                         const mainRow = document.createElement('div');
                         mainRow.className = 'team-main-row';
                         mainRow.appendChild(seedSpan);
                         mainRow.appendChild(logoImg);
                         mainRow.appendChild(nameSpan);
                         mainRow.appendChild(regionSpan);
-                        mainRow.appendChild(pointsSpan);
+
+                        // Status dot + points — colored only once the team has played
+                        const hasPlayed = team.round_reached > 1 || team.is_eliminated;
+                        const statusWrap = document.createElement('div');
+                        statusWrap.className = 'team-status-wrap';
+
+                        if (hasPlayed) {
+                            const isAlive = !team.is_eliminated;
+                            const dot = document.createElement('span');
+                            dot.className = 'status-dot ' + (isAlive ? 'alive' : 'elim');
+                            statusWrap.appendChild(dot);
+                        }
+
+                        const pointsSpan = document.createElement('span');
+                        pointsSpan.className = 'team-points' +
+                            (hasPlayed ? (team.is_eliminated ? ' elim' : ' alive') : '');
+                        pointsSpan.textContent = `[${team.points_earned} pts]`;
+                        statusWrap.appendChild(pointsSpan);
+
+                        mainRow.appendChild(statusWrap);
                         teamItem.appendChild(mainRow);
 
                         const breakdown = buildBreakdown(team);

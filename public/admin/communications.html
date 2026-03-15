@@ -236,8 +236,31 @@
             
             <div class="section-content">
                 <h3>League Communications</h3>
-                <p>Send emails to league participants. Use this tool to send announcements, payment reminders, or other important communications.</p>
-                
+
+                <!-- Commissioner's Banner -->
+                <div style="background:#fff;border:1px solid #ddd;border-radius:6px;padding:18px 20px;margin-bottom:10px;">
+                    <h4 style="margin:0 0 6px;color:#dc3545;">Commissioner's Banner</h4>
+                    <p style="margin:0 0 14px;color:#555;font-size:0.9rem;">Display a message banner at the top of the home page. Leave blank to show no banner.</p>
+                    <div class="form-group" style="margin-bottom:12px;">
+                        <textarea id="bannerText" class="form-control" rows="2" placeholder="e.g. Entries are now open! Submit your Scoonie before tip-off on March 20th." style="min-height:unset;"></textarea>
+                    </div>
+                    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+                        <button id="saveBannerBtn" class="primary-button action-button" style="padding:8px 18px;">Save Banner</button>
+                        <button id="clearBannerBtn" class="action-button" style="background-color:#6c757d;padding:8px 18px;">Clear Banner</button>
+                        <span id="bannerStatus" style="font-size:0.9rem;color:#6c757d;font-style:italic;"></span>
+                    </div>
+                    <div id="bannerPreview" style="display:none;margin-top:14px;padding:10px 16px;background:#fff3cd;border:1px solid #ffc107;border-radius:6px;color:#856404;font-weight:500;">
+                        <strong>Preview:</strong> <span id="bannerPreviewText"></span>
+                    </div>
+                </div>
+
+                <!-- Email Section Divider -->
+                <div style="display:flex;align-items:center;gap:16px;margin:24px 0 20px;">
+                    <div style="flex:1;height:2px;background:linear-gradient(to right,#dc3545,#e07b85,transparent);"></div>
+                    <span style="font-size:0.85rem;font-weight:700;color:#dc3545;letter-spacing:0.08em;text-transform:uppercase;white-space:nowrap;">📧 Email</span>
+                    <div style="flex:1;height:2px;background:linear-gradient(to left,#dc3545,#e07b85,transparent);"></div>
+                </div>
+
                 <div class="tab-controls">
                     <div class="admin-nav" style="margin: 20px 0;">
                         <a href="#" class="tab-link active" data-tab="specific">Specific Recipients</a>
@@ -384,6 +407,7 @@
                 <div id="statusMessage" class="status-message"></div>
             </div>
         </div>
+
     </main>
     
     <footer>
@@ -1044,6 +1068,67 @@
                 }, 10000);
             }
         }
+    </script>
+    <script>
+        // ── Commissioner's Banner ──────────────────────────────────────────
+        (function() {
+            const textarea = document.getElementById('bannerText');
+            const saveBtn  = document.getElementById('saveBannerBtn');
+            const clearBtn = document.getElementById('clearBannerBtn');
+            const status   = document.getElementById('bannerStatus');
+            const preview  = document.getElementById('bannerPreview');
+            const previewText = document.getElementById('bannerPreviewText');
+
+            // Load current banner
+            fetch('/api/admin/banner')
+                .then(r => r.json())
+                .then(data => {
+                    textarea.value = data.banner || '';
+                    updatePreview(data.banner || '');
+                });
+
+            textarea.addEventListener('input', () => updatePreview(textarea.value));
+
+            function updatePreview(text) {
+                const t = text.trim();
+                if (t) {
+                    previewText.textContent = t;
+                    preview.style.display = 'block';
+                } else {
+                    preview.style.display = 'none';
+                }
+            }
+
+            saveBtn.addEventListener('click', () => {
+                fetch('/api/admin/banner', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ banner: textarea.value }),
+                })
+                .then(r => r.json())
+                .then(data => {
+                    status.textContent = data.banner ? 'Banner saved!' : 'Banner cleared.';
+                    status.style.color = '#28a745';
+                    setTimeout(() => { status.textContent = ''; }, 4000);
+                })
+                .catch(() => { status.textContent = 'Error saving banner.'; status.style.color = '#dc3545'; });
+            });
+
+            clearBtn.addEventListener('click', () => {
+                textarea.value = '';
+                updatePreview('');
+                fetch('/api/admin/banner', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ banner: '' }),
+                })
+                .then(() => {
+                    status.textContent = 'Banner cleared.';
+                    status.style.color = '#6c757d';
+                    setTimeout(() => { status.textContent = ''; }, 3000);
+                });
+            });
+        })();
     </script>
     <script>
         // Logout
