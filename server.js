@@ -72,8 +72,8 @@ app.get(['/admin', '/admin/'], (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'admin', 'index.html'));
 });
 
-// Serve teams.csv — use pre-tourney placeholder when entries are not yet open
-app.get('/teams.csv', (req, res) => {
+// Serve teams data — use pre-tourney placeholder when entries are not yet open
+app.get('/api/teams', (req, res) => {
     db.all(
         "SELECT key, value FROM system_settings WHERE key IN ('entries_open', 'entries_close_reason')",
         (err, rows) => {

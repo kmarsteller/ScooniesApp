@@ -624,7 +624,7 @@
             }
             
             // Load teams from CSV
-            fetch('/teams.csv')
+            fetch('/api/teams')
                 .then(response => response.text())
                 .then(data => {
                     debug('Teams CSV data loaded');
