@@ -72,13 +72,24 @@ app.get(['/admin', '/admin/'], (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'admin', 'index.html'));
 });
 
+// Serve teams.csv — use pre-tourney placeholder when entries are not yet open
+app.get('/teams.csv', (req, res) => {
+    db.all(
+        "SELECT key, value FROM system_settings WHERE key IN ('entries_open', 'entries_close_reason')",
+        (err, rows) => {
+            const settings = {};
+            (rows || []).forEach(r => { settings[r.key] = r.value; });
+            const entriesOpen = settings['entries_open'] !== undefined ? settings['entries_open'] === 'true' : true;
+            const closeReason = settings['entries_close_reason'];
+            const usePreTourney = !entriesOpen && closeReason === 'not_yet_open';
+            const csvFile = usePreTourney ? 'pre-tourney-teams.csv' : 'teams.csv';
+            res.sendFile(path.join(__dirname, 'public', csvFile));
+        }
+    );
+});
+
 // Serve static files
 app.use(express.static(path.join(__dirname, 'public')));
-
-// Serve teams.csv directly
-app.get('/teams.csv', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public/teams.csv'));
-});
 
 app.get('/admin/tournament', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'admin', 'tournament.html'));

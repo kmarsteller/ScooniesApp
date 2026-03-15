@@ -391,7 +391,13 @@
             
             <div class="entry-status-control">
                 <div id="statusDisplay" class="status-message" style="margin-bottom: 10px;">Checking entry status...</div>
-                <button id="toggleEntryStatusBtn" class="action-button" disabled>Loading...</button>
+                <!-- Shown when entries are OPEN: pick a close reason -->
+                <div id="closeEntryBtns" style="display:none; gap:10px; flex-wrap:wrap;">
+                    <button id="closeNotYetBtn" class="action-button" style="background-color:#fd7e14;">CLOSE — Not Yet Open</button>
+                    <button id="closeDeadlineBtn" class="action-button" style="background-color:#dc3545;">CLOSE — Tournament Has Begun</button>
+                </div>
+                <!-- Shown when entries are CLOSED: open them -->
+                <button id="toggleEntryStatusBtn" class="action-button" style="display:none;" disabled>Loading...</button>
             </div>
             <div class="admin-section" style="margin-top: 20px;">
                 <div class="section-header">Team Visibility Control</div>
@@ -1026,17 +1032,36 @@
             // Check initial entry status
             checkEntryStatus();
             
-            // Toggle entry status button
+            // Toggle entry status button (open entries)
             const toggleButton = document.getElementById('toggleEntryStatusBtn');
             if (toggleButton) {
                 toggleButton.addEventListener('click', function() {
                     console.log("Toggle button clicked");
-                    if (confirm('Are you sure you want to change the entry submission status?')) {
+                    if (confirm('Are you sure you want to open entry submissions?')) {
                         toggleEntryStatus();
                     }
                 });
             } else {
                 console.error("Toggle button element not found!");
+            }
+
+            // Close buttons
+            const closeNotYetBtn = document.getElementById('closeNotYetBtn');
+            if (closeNotYetBtn) {
+                closeNotYetBtn.addEventListener('click', function() {
+                    if (confirm('Close entries as "Not Yet Open"? The Make a Scoonie page will show a "check back soon" message.')) {
+                        toggleEntryStatus('not_yet_open');
+                    }
+                });
+            }
+
+            const closeDeadlineBtn = document.getElementById('closeDeadlineBtn');
+            if (closeDeadlineBtn) {
+                closeDeadlineBtn.addEventListener('click', function() {
+                    if (confirm('Close entries as "Tournament Has Begun"? The Make a Scoonie page will show a deadline-passed message.')) {
+                        toggleEntryStatus('deadline_passed');
+                    }
+                });
             }
         });
 
@@ -1053,7 +1078,7 @@
                 })
                 .then(data => {
                     console.log("Entry status data:", data);
-                    updateEntryStatusDisplay(data.entriesOpen);
+                    updateEntryStatusDisplay(data.entriesOpen, data.closeReason);
                 })
                 .catch(error => {
                     console.error('Error fetching entry status:', error);
@@ -1075,71 +1100,64 @@
                 });
         }
 
-        // Toggle entry status
-        function toggleEntryStatus() {
-            console.log("Toggling entry status...");
-            // Show loading state
+        // Toggle entry status; reason is only needed when closing ('not_yet_open' | 'deadline_passed')
+        function toggleEntryStatus(reason) {
+            console.log("Toggling entry status, reason:", reason);
+
+            // Disable all close buttons and the open button during the request
             const toggleBtn = document.getElementById('toggleEntryStatusBtn');
-            if (toggleBtn) {
-                toggleBtn.textContent = 'Updating...';
-                toggleBtn.disabled = true;
-            }
-            
+            const closeNotYetBtn = document.getElementById('closeNotYetBtn');
+            const closeDeadlineBtn = document.getElementById('closeDeadlineBtn');
+            [toggleBtn, closeNotYetBtn, closeDeadlineBtn].forEach(btn => { if (btn) btn.disabled = true; });
+
             fetch('/api/admin/toggle-entry-status', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({}),
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(reason ? { reason } : {}),
             })
             .then(response => {
-                console.log("Toggle response:", response.status);
-                if (!response.ok) {
-                    throw new Error('Failed to toggle entry status');
-                }
+                if (!response.ok) throw new Error('Failed to toggle entry status');
                 return response.json();
             })
             .then(data => {
                 console.log("Toggle data:", data);
-                updateEntryStatusDisplay(data.entriesOpen);
+                updateEntryStatusDisplay(data.entriesOpen, data.closeReason);
                 showStatusMessage(data.message, 'success');
             })
             .catch(error => {
                 console.error('Error toggling entry status:', error);
                 showStatusMessage('Error toggling entry status: ' + error.message, 'error');
-                
-                // Re-enable button
-                if (toggleBtn) {
-                    toggleBtn.disabled = false;
-                }
+                [toggleBtn, closeNotYetBtn, closeDeadlineBtn].forEach(btn => { if (btn) btn.disabled = false; });
             });
         }
 
         // Update entry status display
-        function updateEntryStatusDisplay(entriesOpen) {
-            console.log("Updating display for entries open:", entriesOpen);
+        function updateEntryStatusDisplay(entriesOpen, closeReason) {
+            console.log("Updating display for entries open:", entriesOpen, "reason:", closeReason);
             const statusDisplay = document.getElementById('statusDisplay');
             const toggleBtn = document.getElementById('toggleEntryStatusBtn');
-            
-            if (!statusDisplay || !toggleBtn) {
+            const closeEntryBtns = document.getElementById('closeEntryBtns');
+
+            if (!statusDisplay || !toggleBtn || !closeEntryBtns) {
                 console.error("Could not find status display or toggle button elements");
                 return;
             }
-            
+
             if (entriesOpen) {
                 statusDisplay.textContent = 'Entry Submissions are OPEN';
                 statusDisplay.className = 'status-message success';
-                toggleBtn.textContent = 'CLOSE ENTRIES';
-                toggleBtn.style.backgroundColor = '#dc3545'; // Red
+                closeEntryBtns.style.display = 'flex';
+                toggleBtn.style.display = 'none';
             } else {
-                statusDisplay.textContent = 'Entry Submissions are CLOSED';
+                const reasonLabel = closeReason === 'not_yet_open' ? 'Not Yet Open' : 'Deadline Passed';
+                statusDisplay.textContent = `Entry Submissions are CLOSED (${reasonLabel})`;
                 statusDisplay.className = 'status-message error';
+                closeEntryBtns.style.display = 'none';
+                toggleBtn.style.display = 'inline-flex';
                 toggleBtn.textContent = 'OPEN ENTRIES';
-                toggleBtn.style.backgroundColor = '#28a745'; // Green
+                toggleBtn.style.backgroundColor = '#28a745';
+                toggleBtn.disabled = false;
             }
-            
-            // Make sure button is enabled
-            toggleBtn.disabled = false;
         }
         // Team visibility toggle
         document.addEventListener('DOMContentLoaded', function() {

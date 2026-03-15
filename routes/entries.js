@@ -7,20 +7,20 @@ const { teamLogoFilename } = require('../utils/filename');
 
 // Check if entries are open
 router.get('/status', (req, res) => {
-    db.get(
-        "SELECT value FROM system_settings WHERE key = 'entries_open'",
-        (err, row) => {
+    db.all(
+        "SELECT key, value FROM system_settings WHERE key IN ('entries_open', 'entries_close_reason')",
+        (err, rows) => {
             if (err) {
                 console.error('Error fetching entry status:', err);
                 return res.status(500).json({ error: 'Database error: ' + err.message });
             }
-            
-            // Default to true if no setting exists
-            const entriesOpen = row ? row.value === 'true' : true;
-            
-            res.json({ 
-                entriesOpen: entriesOpen
-            });
+
+            const settings = {};
+            (rows || []).forEach(r => { settings[r.key] = r.value; });
+            const entriesOpen = settings['entries_open'] !== undefined ? settings['entries_open'] === 'true' : true;
+            const closeReason = settings['entries_close_reason'] || 'deadline_passed';
+
+            res.json({ entriesOpen, closeReason });
         }
     );
 });

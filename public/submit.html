@@ -769,21 +769,26 @@
                     .then(data => {
                         debug(`Entry status received: entriesOpen=${data.entriesOpen}`);
                         if (!data.entriesOpen) {
-                            // Entries are closed
-                            disableSubmission("SUBMIT DEADLINE HAS PASSED");
-                            
-                            // Show message
+                            const notYetOpen = data.closeReason === 'not_yet_open';
+                            disableSubmission(notYetOpen ? "ENTRIES NOT YET OPEN" : "SUBMIT DEADLINE HAS PASSED");
+
                             const messageDiv = document.createElement('div');
                             messageDiv.className = 'error';
                             messageDiv.style.textAlign = 'center';
                             messageDiv.style.padding = '20px';
                             messageDiv.style.marginBottom = '20px';
-                            messageDiv.style.backgroundColor = '#f8d7da';
-                            messageDiv.style.color = '#721c24';
                             messageDiv.style.borderRadius = '4px';
-                            messageDiv.textContent = 'The deadline for submitting entries has passed. You can no longer make new entries.';
-                            
-                            // Insert after the form title
+
+                            if (notYetOpen) {
+                                messageDiv.style.backgroundColor = '#fff3cd';
+                                messageDiv.style.color = '#856404';
+                                messageDiv.textContent = 'Entries are not yet open. Check back soon — we\'ll announce when the Scoonies are ready!';
+                            } else {
+                                messageDiv.style.backgroundColor = '#f8d7da';
+                                messageDiv.style.color = '#721c24';
+                                messageDiv.textContent = 'The deadline for submitting entries has passed. You can no longer make new entries.';
+                            }
+
                             const formTitle = document.querySelector('.main-title');
                             formTitle.parentNode.insertBefore(messageDiv, formTitle.nextSibling);
                         }

@@ -792,20 +792,20 @@ router.delete('/entry/:id', requireAuth, (req, res) => {
 
 // Get entry status
 router.get('/entry-status', requireAuth, (req, res) => {
-    db.get(
-        "SELECT value FROM system_settings WHERE key = 'entries_open'",
-        (err, row) => {
+    db.all(
+        "SELECT key, value FROM system_settings WHERE key IN ('entries_open', 'entries_close_reason')",
+        (err, rows) => {
             if (err) {
                 console.error('Error fetching entry status:', err);
                 return res.status(500).json({ error: 'Database error: ' + err.message });
             }
-            
-            // Default to true if no setting exists
-            const entriesOpen = row ? row.value === 'true' : true;
-            
-            res.json({ 
-                entriesOpen: entriesOpen
-            });
+
+            const settings = {};
+            (rows || []).forEach(r => { settings[r.key] = r.value; });
+            const entriesOpen = settings['entries_open'] !== undefined ? settings['entries_open'] === 'true' : true;
+            const closeReason = settings['entries_close_reason'] || 'deadline_passed';
+
+            res.json({ entriesOpen, closeReason });
         }
     );
 });
@@ -832,7 +832,8 @@ router.get('/check-times', requireAuth, (req, res) => {
 });
 // Toggle entry status
 router.post('/toggle-entry-status', requireAuth, (req, res) => {
-    // First, get current status
+    const { reason } = req.body; // 'not_yet_open' | 'deadline_passed' — only needed when closing
+
     db.get(
         "SELECT value FROM system_settings WHERE key = 'entries_open'",
         (err, row) => {
@@ -840,13 +841,10 @@ router.post('/toggle-entry-status', requireAuth, (req, res) => {
                 console.error('Error fetching entry status:', err);
                 return res.status(500).json({ error: 'Database error: ' + err.message });
             }
-            
-            // Default to true if no setting exists
+
             const currentStatus = row ? row.value === 'true' : true;
-            // New status is the opposite
             const newStatus = !currentStatus;
-            
-            // Update the status
+
             db.run(
                 "INSERT OR REPLACE INTO system_settings (key, value) VALUES (?, ?)",
                 ['entries_open', newStatus.toString()],
@@ -855,9 +853,21 @@ router.post('/toggle-entry-status', requireAuth, (req, res) => {
                         console.error('Error updating entry status:', err);
                         return res.status(500).json({ error: 'Database error: ' + err.message });
                     }
-                    
-                    res.json({ 
+
+                    if (!newStatus && reason) {
+                        // Store the close reason
+                        db.run(
+                            "INSERT OR REPLACE INTO system_settings (key, value) VALUES (?, ?)",
+                            ['entries_close_reason', reason],
+                            function(err) {
+                                if (err) console.error('Error storing close reason:', err);
+                            }
+                        );
+                    }
+
+                    res.json({
                         entriesOpen: newStatus,
+                        closeReason: newStatus ? null : (reason || 'deadline_passed'),
                         message: newStatus ? 'Entries are now open' : 'Entries are now closed'
                     });
                 }
