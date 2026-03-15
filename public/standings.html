@@ -23,9 +23,31 @@
         
         .standings-filter {
             display: flex;
+            align-items: center;
             justify-content: flex-end;
             margin-bottom: 20px;
             gap: 10px;
+        }
+
+        .standings-search {
+            padding: 7px 12px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 0.95rem;
+            width: 240px;
+        }
+
+        .standings-search:focus {
+            outline: none;
+            border-color: #dc3545;
+            box-shadow: 0 0 0 2px rgba(220,53,69,0.15);
+        }
+
+        .no-search-results {
+            text-align: center;
+            padding: 40px;
+            color: #6c757d;
+            font-style: italic;
         }
         
         .entry-card {
@@ -203,6 +225,7 @@
 
         <div class="standings-container">
             <div class="standings-filter">
+                <input type="text" id="searchInput" class="standings-search" placeholder="Search by name or email…">
                 <button id="refreshBtn" class="action-button">Refresh Standings</button>
             </div>
 
@@ -220,9 +243,35 @@
         document.addEventListener('DOMContentLoaded', function() {
             // Load standings data
             loadStandings();
-            
+
             // Refresh button
             document.getElementById('refreshBtn').addEventListener('click', loadStandings);
+
+            // Search filter
+            document.getElementById('searchInput').addEventListener('input', function() {
+                const query = this.value.trim().toLowerCase();
+                const cards = document.querySelectorAll('#standingsContent .entry-card');
+                let anyVisible = false;
+                cards.forEach(card => {
+                    const matches = !query || card.dataset.search.includes(query);
+                    card.style.display = matches ? '' : 'none';
+                    if (matches) anyVisible = true;
+                });
+                // Show/hide no-results message
+                let noResults = document.getElementById('noSearchResults');
+                if (!anyVisible && query) {
+                    if (!noResults) {
+                        noResults = document.createElement('div');
+                        noResults.id = 'noSearchResults';
+                        noResults.className = 'no-search-results';
+                        noResults.textContent = 'No entries match your search.';
+                        document.getElementById('standingsContent').appendChild(noResults);
+                    }
+                    noResults.style.display = '';
+                } else if (noResults) {
+                    noResults.style.display = 'none';
+                }
+            });
         });
         
         // Ordinal suffix helper: 1 → "1st", 2 → "2nd", etc.
@@ -279,6 +328,7 @@
         
         function renderStandings(data) {
             const standingsContent = document.getElementById('standingsContent');
+            document.getElementById('searchInput').value = '';
 
             // Update tournament status line
             const statusEl = document.getElementById('tournamentStatus');
@@ -324,6 +374,7 @@
             sortedEntries.forEach((entry, index) => {
                 const entryCard = document.createElement('div');
                 entryCard.className = 'entry-card';
+                entryCard.dataset.search = `${entry.player_name} ${entry.nickname} ${entry.email}`.toLowerCase();
                 
                 // Entry header
                 const entryHeader = document.createElement('div');

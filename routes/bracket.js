@@ -60,4 +60,34 @@ router.get('/', (req, res) => {
     );
 });
 
+// Who picked this team? — respects teams_visible setting
+router.get('/picks', (req, res) => {
+    const { team, region } = req.query;
+    if (!team || !region) {
+        return res.status(400).json({ error: 'team and region are required' });
+    }
+
+    db.get("SELECT value FROM system_settings WHERE key = 'teams_visible'", (err, row) => {
+        if (err) return res.status(500).json({ error: err.message });
+
+        const teamsVisible = row ? row.value === 'true' : false;
+        if (!teamsVisible) {
+            return res.json({ picks: [], hidden: true });
+        }
+
+        db.all(
+            `SELECT e.nickname, e.player_name, e.score
+             FROM team_selections ts
+             JOIN entries e ON ts.entry_id = e.id
+             WHERE ts.team_name = ? AND ts.region = ?
+             ORDER BY e.score DESC`,
+            [team, region],
+            (err, rows) => {
+                if (err) return res.status(500).json({ error: err.message });
+                res.json({ picks: rows, hidden: false });
+            }
+        );
+    });
+});
+
 module.exports = router;
