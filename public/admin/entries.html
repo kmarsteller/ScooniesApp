@@ -768,11 +768,8 @@
                         logoImg.src = `/images/logos/${team.team_name.toLowerCase().replace(/[^a-z0-9.()]/g, '-')}.png`;
                         logoImg.alt = team.team_name;
                         logoImg.onerror = function() {
-                            this.src = 'https://a.espncdn.com/combiner/i?img=/i/teamlogos/ncaa/500/'+team.id+'.png';
-                            this.onerror = function() {
-                                this.src = '/images/generic-team-logo.png';
-                                this.onerror = null;
-                            };
+                            this.src = '/images/generic-team-logo.png';
+                            this.onerror = null;
                         };
                         
                         const nameSpan = document.createElement('span');
