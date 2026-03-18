@@ -765,7 +765,7 @@
                         
                         const logoImg = document.createElement('img');
                         logoImg.className = 'team-logo';
-                        logoImg.src = `/images/logos/${team.team_name.toLowerCase().replace(/[^a-z0-9]/g, '-')}.png`;
+                        logoImg.src = `/images/logos/${team.team_name.toLowerCase().replace(/[^a-z0-9.()]/g, '-')}.png`;
                         logoImg.alt = team.team_name;
                         logoImg.onerror = function() {
                             this.src = 'https://a.espncdn.com/combiner/i?img=/i/teamlogos/ncaa/500/'+team.id+'.png';
