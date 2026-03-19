@@ -57,6 +57,52 @@
         .legend-swatch.pending { background-color: #fff; }
         .legend-swatch.tbd     { background-color: #f0f0f0; }
 
+        /* ── Region tabs ── */
+        #bracket-tabs {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 16px;
+            flex-wrap: nowrap;
+        }
+
+        .bracket-tab {
+            flex: 1;
+            padding: 10px 8px;
+            text-align: center;
+            background: #f8f9fa;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 0.9em;
+            color: #495057;
+            cursor: pointer;
+            transition: background 0.15s, border-color 0.15s, color 0.15s;
+            user-select: none;
+            white-space: nowrap;
+        }
+
+        .bracket-tab:hover {
+            background: #f0f0f0;
+            border-color: #aaa;
+        }
+
+        .bracket-tab.active {
+            background: #dc3545;
+            border-color: #dc3545;
+            color: #fff;
+        }
+
+        .tab-short { display: none; }
+
+        @media (max-width: 600px) {
+            .bracket-tab {
+                font-size: 0.75em;
+                padding: 10px 4px;
+            }
+            .tab-full  { display: none; }
+            .tab-short { display: inline; }
+        }
+
         .refresh-row {
             display: flex;
             align-items: center;
@@ -415,6 +461,8 @@
             <div class="legend-item"><div class="legend-swatch tbd"></div> TBD</div>
         </div>
 
+        <div id="bracket-tabs"></div>
+
         <div class="refresh-row">
             <span class="bracket-hint">Click any team to see who picked them</span>
             <button id="refreshBtn" class="action-button">Refresh</button>
@@ -569,6 +617,7 @@
         function makeRegionSection(regionName, regionTeams) {
             const section = document.createElement('div');
             section.className = 'region-section';
+            section.dataset.region = regionName;
 
             const title = document.createElement('div');
             title.className = 'region-title';
@@ -602,6 +651,7 @@
         function makeFinalFourSection(allTeams, finalFourMatchups) {
             const section = document.createElement('div');
             section.className = 'final-four-section';
+            section.dataset.region = 'Final Four';
 
             const title = document.createElement('div');
             title.className = 'final-four-title';
@@ -694,6 +744,38 @@
             return section;
         }
 
+        // ── Tab switching ────────────────────────────────────────────────────
+        const SHORT_LABELS = { 'Midwest': 'Mid', 'Final Four': 'FF' };
+
+        function buildTabs(regionNames) {
+            const tabBar = document.getElementById('bracket-tabs');
+            tabBar.innerHTML = '';
+
+            const allTabs = [...regionNames, 'Final Four'];
+            allTabs.forEach((name, i) => {
+                const short = SHORT_LABELS[name] || name;
+                const tab = document.createElement('div');
+                tab.className = 'bracket-tab' + (i === 0 ? ' active' : '');
+                tab.innerHTML = `<span class="tab-full">${name}</span><span class="tab-short">${short}</span>`;
+                tab.addEventListener('click', () => switchTab(name));
+                tabBar.appendChild(tab);
+            });
+        }
+
+        function switchTab(regionName) {
+            // Update tab active state
+            document.querySelectorAll('.bracket-tab').forEach(t => {
+                t.classList.toggle('active', t.textContent === regionName);
+            });
+
+            // Show/hide sections
+            document.querySelectorAll('#bracketContent [data-region]').forEach(s => {
+                s.style.display = s.dataset.region === regionName ? '' : 'none';
+            });
+
+            closePopup();
+        }
+
         // ── Main render ──────────────────────────────────────────────────────
         function renderBracket(data) {
             const content = document.getElementById('bracketContent');
@@ -706,11 +788,16 @@
                 regionMap[t.region].push(t);
             });
 
-            Object.keys(regionMap).sort().forEach(region => {
+            const regionNames = Object.keys(regionMap).sort();
+            regionNames.forEach(region => {
                 content.appendChild(makeRegionSection(region, regionMap[region]));
             });
 
             content.appendChild(makeFinalFourSection(data.teams, data.finalFourMatchups));
+
+            // Build tabs and show first region by default
+            buildTabs(regionNames);
+            switchTab(regionNames[0]);
         }
 
         // ── Fetch & load ─────────────────────────────────────────────────────
