@@ -448,9 +448,13 @@
             }
             
             // Calculate standard ranks (1224 — tied entries share the same rank)
-            const ranks = sortedEntries.map((entry, index, arr) => {
-                if (index === 0 || entry.score !== arr[index - 1].score) return index + 1;
-                return ranks[index - 1];
+            const ranks = [];
+            sortedEntries.forEach((entry, index, arr) => {
+                if (index === 0 || entry.score !== arr[index - 1].score) {
+                    ranks.push(index + 1);
+                } else {
+                    ranks.push(ranks[index - 1]);
+                }
             });
 
             // Create entry cards
