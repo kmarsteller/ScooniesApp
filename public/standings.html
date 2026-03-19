@@ -447,22 +447,29 @@
                 standingsContent.appendChild(noticeDiv);
             }
             
+            // Calculate standard ranks (1224 — tied entries share the same rank)
+            const ranks = sortedEntries.map((entry, index, arr) => {
+                if (index === 0 || entry.score !== arr[index - 1].score) return index + 1;
+                return ranks[index - 1];
+            });
+
             // Create entry cards
+            const isTournamentComplete = data.tournamentStatus && data.tournamentStatus.currentRound === null;
             sortedEntries.forEach((entry, index) => {
                 const entryCard = document.createElement('div');
                 entryCard.className = 'entry-card';
                 entryCard.dataset.search = `${entry.player_name} ${entry.nickname} ${entry.email}`.toLowerCase();
-                
+
                 // Entry header
                 const entryHeader = document.createElement('div');
                 entryHeader.className = 'entry-header';
-                
+
                 const entryRank = document.createElement('div');
                 entryRank.className = 'entry-rank';
-                const isTournamentComplete = data.tournamentStatus && data.tournamentStatus.currentRound === null;
-                const trophies = ['🥇', '🥈', '🥉'];
-                const trophy = isTournamentComplete && index < 3 ? trophies[index] + ' ' : '';
-                entryRank.textContent = `${trophy}#${index + 1}`;
+                const rank = ranks[index];
+                const trophyMap = { 1: '🥇', 2: '🥈', 3: '🥉' };
+                const trophy = isTournamentComplete && rank <= 3 ? trophyMap[rank] + ' ' : '';
+                entryRank.textContent = `${trophy}#${rank}`;
                 
                 const entryInfo = document.createElement('div');
                 entryInfo.className = 'entry-info';
