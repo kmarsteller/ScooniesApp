@@ -301,6 +301,14 @@
             filter: brightness(0.95);
         }
 
+        #picks-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.4);
+            z-index: 999;
+        }
+
         #picks-popup {
             display: none;
             position: fixed;
@@ -313,6 +321,9 @@
             max-width: 280px;
             box-shadow: 0 4px 16px rgba(0,0,0,0.18);
             font-size: 0.9em;
+        }
+        #picks-popup .picks-handle {
+            display: none;
         }
         #picks-popup .picks-header {
             font-weight: bold;
@@ -343,6 +354,40 @@
         #picks-popup .picks-none {
             color: #6c757d;
             font-style: italic;
+        }
+
+        /* ── Mobile: transform popup into a bottom sheet ── */
+        @media (max-width: 600px) {
+            #picks-popup {
+                left: 0 !important;
+                right: 0 !important;
+                top: auto !important;
+                bottom: 0 !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                min-width: unset !important;
+                border-radius: 16px 16px 0 0 !important;
+                border-left: none !important;
+                border-right: none !important;
+                border-bottom: none !important;
+                padding: 8px 20px 36px !important;
+            }
+            #picks-popup .picks-handle {
+                display: block;
+                width: 40px;
+                height: 4px;
+                background: #ddd;
+                border-radius: 2px;
+                margin: 0 auto 14px;
+            }
+            #picks-popup .picks-header {
+                font-size: 1.1em;
+                margin-bottom: 12px;
+            }
+            #picks-popup .picks-list li {
+                padding: 8px 0;
+                font-size: 1em;
+            }
         }
     </style>
 </head>
@@ -380,7 +425,9 @@
         </div>
     </main>
 
+    <div id="picks-overlay"></div>
     <div id="picks-popup">
+        <div class="picks-handle"></div>
         <div class="picks-header" id="picks-title"></div>
         <ul class="picks-list" id="picks-list"></ul>
     </div>
@@ -682,8 +729,13 @@
 
         // ── Who picked this team popup ────────────────────────────────────────
         const popup = document.getElementById('picks-popup');
+        const overlay = document.getElementById('picks-overlay');
         const popupTitle = document.getElementById('picks-title');
         const popupList = document.getElementById('picks-list');
+
+        function isMobile() {
+            return window.innerWidth <= 600;
+        }
 
         function showPicksPopup(teamName, region, anchorEl) {
             // If same team clicked again, close
@@ -695,7 +747,12 @@
             popupTitle.textContent = `${teamName} picks`;
             popupList.innerHTML = '<li style="color:#6c757d;font-style:italic;">Loading…</li>';
             popup.dataset.team = teamName + region;
-            positionPopup(anchorEl);
+
+            if (isMobile()) {
+                overlay.style.display = 'block';
+            } else {
+                positionPopup(anchorEl);
+            }
             popup.style.display = 'block';
 
             fetch(`/api/bracket/picks?team=${encodeURIComponent(teamName)}&region=${encodeURIComponent(region)}`)
@@ -739,11 +796,13 @@
 
         function closePopup() {
             popup.style.display = 'none';
+            overlay.style.display = 'none';
             popup.dataset.team = '';
         }
 
-        // Close on outside click
+        // Close on outside click (desktop) or overlay tap (mobile)
         document.addEventListener('click', closePopup);
+        overlay.addEventListener('click', closePopup);
     </script>
 </body>
 </html>
