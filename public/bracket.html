@@ -756,6 +756,7 @@
                 const short = SHORT_LABELS[name] || name;
                 const tab = document.createElement('div');
                 tab.className = 'bracket-tab' + (i === 0 ? ' active' : '');
+                tab.dataset.region = name;
                 tab.innerHTML = `<span class="tab-full">${name}</span><span class="tab-short">${short}</span>`;
                 tab.addEventListener('click', () => switchTab(name));
                 tabBar.appendChild(tab);
@@ -765,7 +766,7 @@
         function switchTab(regionName) {
             // Update tab active state
             document.querySelectorAll('.bracket-tab').forEach(t => {
-                t.classList.toggle('active', t.textContent === regionName);
+                t.classList.toggle('active', t.dataset.region === regionName);
             });
 
             // Show/hide sections
