@@ -587,6 +587,7 @@
         }
 
         // ── Build a matchup box from a list of teams ─────────────────────────
+        // teams may contain null entries to represent TBD placeholders at a specific position
         function makeMatchup(teams, roundNum) {
             const box = document.createElement('div');
             box.className = 'matchup';
@@ -594,11 +595,8 @@
             if (teams.length === 0) {
                 box.appendChild(makeTBD());
                 box.appendChild(makeTBD());
-            } else if (teams.length === 1) {
-                box.appendChild(makeTeamDiv(teams[0], roundNum));
-                box.appendChild(makeTBD());
             } else {
-                teams.forEach(t => box.appendChild(makeTeamDiv(t, roundNum)));
+                teams.forEach(t => box.appendChild(t ? makeTeamDiv(t, roundNum) : makeTBD()));
             }
             return box;
         }
@@ -644,6 +642,13 @@
                         (topGroups[i].includes(a.seed) ? 0 : 1) - (topGroups[i].includes(b.seed) ? 0 : 1)
                     );
                 }
+                // Always return a 2-slot array with null for missing opponents,
+                // so each team stays in its correct top/bottom position
+                if (filtered.length === 0) return [null, null];
+                if (filtered.length === 1) {
+                    const isTop = topGroups && topGroups[i] && topGroups[i].includes(filtered[0].seed);
+                    return isTop ? [filtered[0], null] : [null, filtered[0]];
+                }
                 return filtered;
             });
         }
@@ -681,7 +686,11 @@
             // Round 4 — single slot, whole region
             const r4Teams = regionTeams.filter(t => t.round_reached >= 4)
                 .sort((a, b) => (R4_TOP.includes(a.seed) ? 0 : 1) - (R4_TOP.includes(b.seed) ? 0 : 1));
-            container.appendChild(makeRound(4, 'Elite 8', [r4Teams]));
+            // Pad to 2 slots so each team holds its correct top/bottom position
+            const r4Slot = r4Teams.length === 0 ? [null, null]
+                : r4Teams.length === 1 ? (R4_TOP.includes(r4Teams[0].seed) ? [r4Teams[0], null] : [null, r4Teams[0]])
+                : r4Teams;
+            container.appendChild(makeRound(4, 'Elite 8', [r4Slot]));
 
             // Regional Champion column — continues the bracket flow
             const r5Col = document.createElement('div');
@@ -704,7 +713,12 @@
 
             const regionalChamp = regionTeams.find(t => t.round_reached >= 5);
             if (regionalChamp) {
-                r5Matchup.appendChild(makeTeamDiv(regionalChamp, 5));
+                const champDiv = makeTeamDiv(regionalChamp, 5);
+                const medal = document.createElement('span');
+                medal.textContent = '🥇';
+                medal.style.marginLeft = '4px';
+                champDiv.appendChild(medal);
+                r5Matchup.appendChild(champDiv);
             } else {
                 r5Matchup.appendChild(makeTBD());
             }

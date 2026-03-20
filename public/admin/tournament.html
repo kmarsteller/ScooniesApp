@@ -370,6 +370,10 @@
             z-index: 0;
         }
 
+        .matchup.no-divider::after {
+            display: none;
+        }
+
         .team {
             position: relative;
             z-index: 1;
@@ -1039,7 +1043,7 @@
                         // Add teams to the matchup
                         teamsInMatchup.forEach(team => {
                             const teamDiv = createTeamDiv(team, 2);
-                            
+
                             // Add click event to non-eliminated teams, or correction click to eliminated teams
                             if (!team.is_eliminated) {
                                 // Find potential opponents
@@ -1066,12 +1070,21 @@
 
                             matchupDiv.appendChild(teamDiv);
                         });
+                        // If only one team has advanced, add a TBD placeholder in the correct slot position
+                        if (teamsInMatchup.length === 1) {
+                            const tbd = document.createElement('div');
+                            tbd.className = 'empty-slot';
+                            tbd.textContent = 'TBD';
+                            if (R32_TOP_SEEDS[i].includes(teamsInMatchup[0].seed)) {
+                                matchupDiv.appendChild(tbd);  // top team present, TBD at bottom
+                            } else {
+                                matchupDiv.prepend(tbd);      // bottom team present, TBD at top
+                            }
+                        }
                     } else {
-                        // Empty slot
-                        const emptySlot = document.createElement('div');
-                        emptySlot.className = 'empty-slot';
-                        emptySlot.textContent = 'TBD';
-                        matchupDiv.appendChild(emptySlot);
+                        // Empty slot — two TBDs to maintain consistent container height
+                        matchupDiv.appendChild(Object.assign(document.createElement('div'), { className: 'empty-slot', textContent: 'TBD' }));
+                        matchupDiv.appendChild(Object.assign(document.createElement('div'), { className: 'empty-slot', textContent: 'TBD' }));
                     }
 
                     matchupSlot.appendChild(matchupDiv);
@@ -1112,7 +1125,7 @@
                         // Add teams to the matchup
                         teamsInMatchup.forEach(team => {
                             const teamDiv = createTeamDiv(team, 3);
-                            
+
                             // Add click event to non-eliminated teams, or correction click to eliminated teams
                             if (!team.is_eliminated) {
                                 // Find potential opponents
@@ -1139,14 +1152,23 @@
 
                             matchupDiv.appendChild(teamDiv);
                         });
+                        // If only one team has advanced, add a TBD placeholder in the correct slot position
+                        if (teamsInMatchup.length === 1) {
+                            const tbd = document.createElement('div');
+                            tbd.className = 'empty-slot';
+                            tbd.textContent = 'TBD';
+                            if (S16_TOP_SEEDS[i].includes(teamsInMatchup[0].seed)) {
+                                matchupDiv.appendChild(tbd);  // top team present, TBD at bottom
+                            } else {
+                                matchupDiv.prepend(tbd);      // bottom team present, TBD at top
+                            }
+                        }
                     } else {
-                        // Empty slot
-                        const emptySlot = document.createElement('div');
-                        emptySlot.className = 'empty-slot';
-                        emptySlot.textContent = 'TBD';
-                        matchupDiv.appendChild(emptySlot);
+                        // Empty slot — two TBDs to maintain consistent container height
+                        matchupDiv.appendChild(Object.assign(document.createElement('div'), { className: 'empty-slot', textContent: 'TBD' }));
+                        matchupDiv.appendChild(Object.assign(document.createElement('div'), { className: 'empty-slot', textContent: 'TBD' }));
                     }
-                    
+
                     matchupSlot.appendChild(matchupDiv);
                     roundContent.appendChild(matchupSlot);
                 }
@@ -1176,7 +1198,7 @@
                     // Add teams to the matchup
                     teamsInMatchup.forEach(team => {
                         const teamDiv = createTeamDiv(team, 4);
-                        
+
                         // Add click event to non-eliminated teams, or correction click to eliminated teams
                         if (!team.is_eliminated) {
                             // Find potential opponents
@@ -1203,14 +1225,23 @@
 
                         matchupDiv.appendChild(teamDiv);
                     });
+                    // If only one team has advanced, add a TBD placeholder in the correct slot position
+                    if (teamsInMatchup.length === 1) {
+                        const tbd = document.createElement('div');
+                        tbd.className = 'empty-slot';
+                        tbd.textContent = 'TBD';
+                        if (E8_TOP_SEEDS.includes(teamsInMatchup[0].seed)) {
+                            matchupDiv.appendChild(tbd);  // top team present, TBD at bottom
+                        } else {
+                            matchupDiv.prepend(tbd);      // bottom team present, TBD at top
+                        }
+                    }
                 } else {
-                    // Empty slot
-                    const emptySlot = document.createElement('div');
-                    emptySlot.className = 'empty-slot';
-                    emptySlot.textContent = 'TBD';
-                    matchupDiv.appendChild(emptySlot);
+                    // Empty slot — two TBDs to maintain consistent container height
+                    matchupDiv.appendChild(Object.assign(document.createElement('div'), { className: 'empty-slot', textContent: 'TBD' }));
+                    matchupDiv.appendChild(Object.assign(document.createElement('div'), { className: 'empty-slot', textContent: 'TBD' }));
                 }
-                
+
                 matchupSlot.appendChild(matchupDiv);
                 roundContent.appendChild(matchupSlot);
             }
@@ -1235,11 +1266,15 @@
         r5Slot.className = 'matchup-slot';
 
         const r5Matchup = document.createElement('div');
-        r5Matchup.className = 'matchup';
+        r5Matchup.className = 'matchup no-divider';
 
         const regionalChamp = allTeams.find(t => t.region === region && t.round_reached >= 5);
         if (regionalChamp) {
             const teamDiv = createTeamDiv(regionalChamp, 5);
+            const medal = document.createElement('span');
+            medal.textContent = '🥇';
+            medal.style.marginLeft = '4px';
+            teamDiv.appendChild(medal);
             r5Matchup.appendChild(teamDiv);
         } else {
             const emptySlot = document.createElement('div');
@@ -1364,7 +1399,7 @@
         if (semifinal1Teams.length > 0) {
             semifinal1Teams.forEach(team => {
                 const teamDiv = createTeamDiv(team, 5);
-                
+
                 // Add click event to non-eliminated teams, or correction click to eliminated teams
                 if (!team.is_eliminated) {
                     const opponent = semifinal1Teams.find(t =>
@@ -1384,13 +1419,22 @@
 
                 semifinal1Matchup.appendChild(teamDiv);
             });
+            // If only one team has advanced, add TBD for the missing opponent
+            if (semifinal1Teams.length === 1) {
+                const tbd = document.createElement('div');
+                tbd.className = 'empty-slot';
+                tbd.textContent = 'TBD';
+                if (semifinal1Teams[0].region === matchups.semifinal1[0]) {
+                    semifinal1Matchup.appendChild(tbd);  // first-region team present, TBD at bottom
+                } else {
+                    semifinal1Matchup.prepend(tbd);      // second-region team present, TBD at top
+                }
+            }
         } else {
-            const emptySlot = document.createElement('div');
-            emptySlot.className = 'empty-slot';
-            emptySlot.textContent = 'TBD';
-            semifinal1Matchup.appendChild(emptySlot);
+            semifinal1Matchup.appendChild(Object.assign(document.createElement('div'), { className: 'empty-slot', textContent: 'TBD' }));
+            semifinal1Matchup.appendChild(Object.assign(document.createElement('div'), { className: 'empty-slot', textContent: 'TBD' }));
         }
-        
+
         semifinal1.appendChild(semifinal1Matchup);
         semifinalContainer.appendChild(semifinal1);
         
@@ -1414,7 +1458,7 @@
         if (semifinal2Teams.length > 0) {
             semifinal2Teams.forEach(team => {
                 const teamDiv = createTeamDiv(team, 5);
-                
+
                 // Add click event to non-eliminated teams, or correction click to eliminated teams
                 if (!team.is_eliminated) {
                     const opponent = semifinal2Teams.find(t =>
@@ -1434,13 +1478,22 @@
 
                 semifinal2Matchup.appendChild(teamDiv);
             });
+            // If only one team has advanced, add TBD for the missing opponent
+            if (semifinal2Teams.length === 1) {
+                const tbd = document.createElement('div');
+                tbd.className = 'empty-slot';
+                tbd.textContent = 'TBD';
+                if (semifinal2Teams[0].region === matchups.semifinal2[0]) {
+                    semifinal2Matchup.appendChild(tbd);  // first-region team present, TBD at bottom
+                } else {
+                    semifinal2Matchup.prepend(tbd);      // second-region team present, TBD at top
+                }
+            }
         } else {
-            const emptySlot = document.createElement('div');
-            emptySlot.className = 'empty-slot';
-            emptySlot.textContent = 'TBD';
-            semifinal2Matchup.appendChild(emptySlot);
+            semifinal2Matchup.appendChild(Object.assign(document.createElement('div'), { className: 'empty-slot', textContent: 'TBD' }));
+            semifinal2Matchup.appendChild(Object.assign(document.createElement('div'), { className: 'empty-slot', textContent: 'TBD' }));
         }
-        
+
         semifinal2.appendChild(semifinal2Matchup);
         semifinalContainer.appendChild(semifinal2);
         
@@ -1467,7 +1520,7 @@
         if (finalists.length > 0) {
             finalists.forEach(team => {
                 const teamDiv = createTeamDiv(team, 6);
-                
+
                 // Add click event to non-eliminated teams, or correction click to eliminated teams
                 if (!team.is_eliminated) {
                     const opponent = finalists.find(t =>
@@ -1487,13 +1540,23 @@
 
                 championshipMatchup.appendChild(teamDiv);
             });
+            // If only one finalist so far, add TBD for the other spot
+            if (finalists.length === 1) {
+                const tbd = document.createElement('div');
+                tbd.className = 'empty-slot';
+                tbd.textContent = 'TBD';
+                // Semi1 winner is the top finalist
+                if (matchups.semifinal1.includes(finalists[0].region)) {
+                    championshipMatchup.appendChild(tbd);
+                } else {
+                    championshipMatchup.prepend(tbd);
+                }
+            }
         } else {
-            const emptySlot = document.createElement('div');
-            emptySlot.className = 'empty-slot';
-            emptySlot.textContent = 'TBD';
-            championshipMatchup.appendChild(emptySlot);
+            championshipMatchup.appendChild(Object.assign(document.createElement('div'), { className: 'empty-slot', textContent: 'TBD' }));
+            championshipMatchup.appendChild(Object.assign(document.createElement('div'), { className: 'empty-slot', textContent: 'TBD' }));
         }
-        
+
         championshipContainer.appendChild(championshipMatchup);
         finalFourContainer.appendChild(championshipContainer);
         
@@ -1808,10 +1871,8 @@ function advanceTeam(winner, loser) {
                             championshipMatchup.appendChild(teamDiv);
                         });
                     } else {
-                        const emptySlot = document.createElement('div');
-                        emptySlot.className = 'empty-slot';
-                        emptySlot.textContent = 'TBD';
-                        championshipMatchup.appendChild(emptySlot);
+                        championshipMatchup.appendChild(Object.assign(document.createElement('div'), { className: 'empty-slot', textContent: 'TBD' }));
+                        championshipMatchup.appendChild(Object.assign(document.createElement('div'), { className: 'empty-slot', textContent: 'TBD' }));
                     }
                 }
             })
