@@ -979,8 +979,8 @@
                     matchupDiv.dataset.slotIndex = i;
                     
                     // Find teams that have reached or passed this round
-                    const teamsInMatchup = allTeams.filter(team => 
-                        team.region === region && 
+                    const teamsInMatchup = allTeams.filter(team =>
+                        team.region === region &&
                         team.round_reached >= 2 &&
                         (
                             // For proper seeding pattern in each matchup
@@ -989,6 +989,12 @@
                             (i === 2 && (team.seed === 3 || team.seed === 6 || team.seed === 11 || team.seed === 14)) ||
                             (i === 3 && (team.seed === 2 || team.seed === 7 || team.seed === 10 || team.seed === 15))
                         )
+                    );
+
+                    // Sort by bracket path: winner of upper R1 slot goes on top
+                    const R32_TOP_SEEDS = [[1,16],[5,12],[6,11],[7,10]];
+                    teamsInMatchup.sort((a, b) =>
+                        (R32_TOP_SEEDS[i].includes(a.seed) ? 0 : 1) - (R32_TOP_SEEDS[i].includes(b.seed) ? 0 : 1)
                     );
 
                     if (teamsInMatchup.length > 0) {
@@ -1046,16 +1052,22 @@
                     matchupDiv.dataset.slotIndex = i;
                     
                     // Find teams that have reached or passed this round
-                    const teamsInMatchup = allTeams.filter(team => 
-                        team.region === region && 
+                    const teamsInMatchup = allTeams.filter(team =>
+                        team.region === region &&
                         team.round_reached >= 3 &&
                         (
                             // For proper seeding pattern in each matchup
-                            (i === 0 && (team.seed === 1 || team.seed === 4 || team.seed === 5 || team.seed === 8 || 
+                            (i === 0 && (team.seed === 1 || team.seed === 4 || team.seed === 5 || team.seed === 8 ||
                                           team.seed === 9 || team.seed === 12 || team.seed === 13 || team.seed === 16)) ||
                             (i === 1 && (team.seed === 2 || team.seed === 3 || team.seed === 6 || team.seed === 7 ||
                                           team.seed === 10 || team.seed === 11 || team.seed === 14 || team.seed === 15))
                         )
+                    );
+
+                    // Sort by bracket path: winner of upper R2 slot goes on top
+                    const S16_TOP_SEEDS = [[1,8,9,16],[3,6,11,14]];
+                    teamsInMatchup.sort((a, b) =>
+                        (S16_TOP_SEEDS[i].includes(a.seed) ? 0 : 1) - (S16_TOP_SEEDS[i].includes(b.seed) ? 0 : 1)
                     );
 
                     if (teamsInMatchup.length > 0) {
@@ -1111,11 +1123,17 @@
                 matchupDiv.dataset.slotIndex = 0;
                 
                 // Find teams that have reached or passed this round (including eliminated ones)
-                const teamsInMatchup = allTeams.filter(team => 
-                    team.region === region && 
+                const teamsInMatchup = allTeams.filter(team =>
+                    team.region === region &&
                     team.round_reached >= 4
                 );
-                
+
+                // Sort by bracket path: winner of upper S16 slot goes on top
+                const E8_TOP_SEEDS = [1,4,5,8,9,12,13,16];
+                teamsInMatchup.sort((a, b) =>
+                    (E8_TOP_SEEDS.includes(a.seed) ? 0 : 1) - (E8_TOP_SEEDS.includes(b.seed) ? 0 : 1)
+                );
+
                 if (teamsInMatchup.length > 0) {
                     // Add teams to the matchup
                     teamsInMatchup.forEach(team => {
