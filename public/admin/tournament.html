@@ -1307,6 +1307,8 @@
         const regionalChamp = allTeams.find(t => t.region === region && t.round_reached >= 5);
         if (regionalChamp) {
             const teamDiv = createTeamDiv(regionalChamp, 5);
+            teamDiv.classList.remove('eliminated');
+            teamDiv.classList.add('winner');
             const medal = document.createElement('span');
             medal.textContent = '🥇';
             medal.style.marginLeft = '4px';
@@ -1338,8 +1340,28 @@
         
         const finalFourTitle = document.createElement('div');
         finalFourTitle.className = 'final-four-title';
-        finalFourTitle.style.cssText = 'display:flex;align-items:center;gap:12px';
+        finalFourTitle.style.cssText = 'display:flex;align-items:center;gap:12px;justify-content:space-between';
         finalFourTitle.innerHTML = makeBracketIcon('Final Four') + `<span>Final Four</span>`;
+
+        const resetFFBtn = document.createElement('button');
+        resetFFBtn.className = 'reset-region-btn';
+        resetFFBtn.textContent = 'Reset Final Four';
+        resetFFBtn.addEventListener('click', () => {
+            scConfirm('Reset the Final Four? This will clear all semifinal and championship results but keep the 4 regional champs.', function() {
+                fetch('/api/admin/reset-final-four', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({}),
+                })
+                .then(r => { if (!r.ok) throw new Error('Failed'); return r.json(); })
+                .then(() => {
+                    showStatusMessage('Final Four reset successfully!', 'success');
+                    loadTournamentData(true);
+                })
+                .catch(() => showStatusMessage('Error resetting Final Four. Please try again.', 'error'));
+            }, { confirmText: 'Yes, Reset Final Four', danger: true });
+        });
+        finalFourTitle.appendChild(resetFFBtn);
         finalFourSection.appendChild(finalFourTitle);
         
         const finalFourContainer = document.createElement('div');

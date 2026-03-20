@@ -744,31 +744,92 @@ router.post('/reset-region', requireAuth, (req, res) => {
     db.serialize(() => {
         db.run('BEGIN TRANSACTION');
 
+        // Step 1: Clear all FF-stage results across all regions (prevents broken opponent state)
         db.run(
             `UPDATE tournament_progress SET
-             round_reached = 1,
+             round_reached = 5,
              is_eliminated = 0,
-             is_final_four = 0,
              is_finalist = 0,
              is_champion = 0
-             WHERE region = ?`,
-            [region],
+             WHERE round_reached >= 5`,
             err => {
                 if (err) {
                     db.run('ROLLBACK');
-                    return res.status(500).json({ error: 'Error resetting region: ' + err.message });
+                    return res.status(500).json({ error: 'Error clearing FF state: ' + err.message });
+                }
+
+                // Step 2: Reset the target region all the way back to round 1
+                db.run(
+                    `UPDATE tournament_progress SET
+                     round_reached = 1,
+                     is_eliminated = 0,
+                     is_final_four = 0,
+                     is_finalist = 0,
+                     is_champion = 0
+                     WHERE region = ?`,
+                    [region],
+                    err => {
+                        if (err) {
+                            db.run('ROLLBACK');
+                            return res.status(500).json({ error: 'Error resetting region: ' + err.message });
+                        }
+
+                        // Step 3: Zero out points for all affected teams
+                        db.run(
+                            `UPDATE team_selections SET points_earned = 0
+                             WHERE team_name IN (
+                                 SELECT team_name FROM tournament_progress WHERE region = ?
+                             )`,
+                            [region],
+                            err => {
+                                if (err) {
+                                    db.run('ROLLBACK');
+                                    return res.status(500).json({ error: 'Error resetting region scores: ' + err.message });
+                                }
+
+                                db.run('COMMIT', err => {
+                                    if (err) {
+                                        db.run('ROLLBACK');
+                                        return res.status(500).json({ error: 'Transaction error: ' + err.message });
+                                    }
+                                    res.json({ message: `${region} region reset successfully` });
+                                });
+                            }
+                        );
+                    }
+                );
+            }
+        );
+    });
+});
+
+// Reset Final Four (preserves regional champs, clears semi/championship results)
+router.post('/reset-final-four', requireAuth, (req, res) => {
+    db.serialize(() => {
+        db.run('BEGIN TRANSACTION');
+
+        db.run(
+            `UPDATE tournament_progress SET
+             round_reached = 5,
+             is_eliminated = 0,
+             is_finalist = 0,
+             is_champion = 0
+             WHERE round_reached >= 5`,
+            err => {
+                if (err) {
+                    db.run('ROLLBACK');
+                    return res.status(500).json({ error: 'Error resetting Final Four: ' + err.message });
                 }
 
                 db.run(
                     `UPDATE team_selections SET points_earned = 0
                      WHERE team_name IN (
-                         SELECT team_name FROM tournament_progress WHERE region = ?
+                         SELECT team_name FROM tournament_progress WHERE round_reached >= 5
                      )`,
-                    [region],
                     err => {
                         if (err) {
                             db.run('ROLLBACK');
-                            return res.status(500).json({ error: 'Error resetting region scores: ' + err.message });
+                            return res.status(500).json({ error: 'Error resetting FF scores: ' + err.message });
                         }
 
                         db.run('COMMIT', err => {
@@ -776,7 +837,7 @@ router.post('/reset-region', requireAuth, (req, res) => {
                                 db.run('ROLLBACK');
                                 return res.status(500).json({ error: 'Transaction error: ' + err.message });
                             }
-                            res.json({ message: `${region} region reset successfully` });
+                            res.json({ message: 'Final Four reset successfully' });
                         });
                     }
                 );

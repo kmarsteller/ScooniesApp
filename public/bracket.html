@@ -714,6 +714,8 @@
             const regionalChamp = regionTeams.find(t => t.round_reached >= 5);
             if (regionalChamp) {
                 const champDiv = makeTeamDiv(regionalChamp, 5);
+                champDiv.classList.remove('eliminated');
+                champDiv.classList.add('winner');
                 const medal = document.createElement('span');
                 medal.textContent = '🥇';
                 medal.style.marginLeft = '4px';
