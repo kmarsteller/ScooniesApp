@@ -197,6 +197,14 @@
         .scenario-team-clash { font-size: 12px; color: #856404; font-style: italic; }
         .max-modal-loading { text-align: center; padding: 40px; color: #6c757d; }
         .max-modal-eliminated { text-align: center; padding: 24px; color: #6c757d; font-style: italic; }
+        .max-modal-methodology { border-top: 1px solid #dee2e6; margin-top: 8px; padding: 10px 16px 4px; }
+        .methodology-toggle { background: none; border: none; cursor: pointer; font-size: 12px; color: #6c757d; padding: 0; display: flex; align-items: center; gap: 5px; }
+        .methodology-toggle:hover { color: #343a40; }
+        .max-modal-methodology.open .methodology-toggle { color: #343a40; }
+        .max-modal-methodology.open .methodology-toggle::first-letter { content: '▼'; }
+        .methodology-body { display: none; padding-top: 8px; }
+        .max-modal-methodology.open .methodology-body { display: block; }
+        .methodology-body p { font-size: 12px; color: #495057; margin: 0 0 8px; line-height: 1.5; }
         
         .entry-teams {
             padding: 15px;
@@ -826,24 +834,54 @@
 
                         html += `<div class="max-modal-scenario"><h3>𝔐 Optimal Scenario <span style="font-weight:normal;font-size:11px;color:#adb5bd;">(beta)</span></h3>`;
                         sorted.forEach(t => {
-                            const winsText = t.rounds.length === 1
-                                ? `Needs one more win (${t.rounds[0]})`
-                                : `Wins: ${t.rounds.join(' → ')}`;
                             const clash = losesTo.get(t.team);
+                            const winWord = t.rounds.length === 1 ? 'win' : 'wins';
+                            const reachRounds = t.rounds.map(r => r === 'Champion' ? 'win the Championship' : `reach the ${r}`);
+                            if (clash) reachRounds.push(`where it will collide with your (${clash.opponent.seed}) ${clash.opponent.team} and must lose`);
+                            const winsText = `To optimize points, (${t.seed}) ${t.team} needs ${t.rounds.length} more ${winWord}: ${reachRounds.join(', ')}.`;
                             html += `
                                 <div class="scenario-team-block">
                                     <div class="scenario-team-header">
-                                        <span class="scenario-team-name"><strong>${t.team}</strong> <span class="scenario-seed">(${t.seed})</span></span>
+                                        <span class="scenario-team-name"><span class="scenario-seed">(${t.seed})</span> <strong>${t.team}</strong></span>
                                         <span class="scenario-region-tag">${t.region}</span>
                                         <span class="scenario-team-pts">+${t.totalGain} pts</span>
                                     </div>
                                     <div class="scenario-team-wins">${winsText}</div>
                                     <div class="scenario-team-breakdown">${t.breakdown}</div>
-                                    ${clash ? `<div class="scenario-team-clash">must lose to your (${clash.opponent.seed}) ${clash.opponent.team} in the ${clash.roundName}</div>` : ''}
                                 </div>`;
                         });
                         html += `</div>`;
+
+                        // Show blocked picks (alive but immediately face another pick)
+                        if (data.blocked && data.blocked.length > 0) {
+                            html += `<div class="max-modal-scenario" style="padding-top:0">`;
+                            data.blocked.forEach(b => {
+                                html += `
+                                    <div class="scenario-team-block">
+                                        <div class="scenario-team-header">
+                                            <span class="scenario-team-name"><span class="scenario-seed">(${b.seed})</span> <strong>${b.team}</strong></span>
+                                            <span class="scenario-region-tag">${b.region}</span>
+                                            <span class="scenario-team-pts" style="color:#6c757d">+0 pts</span>
+                                        </div>
+                                        <div class="scenario-team-clash"><strong>Collision:</strong> must lose to your (${b.blockedBySeed}) ${b.blockedBy} in the ${b.roundName}</div>
+                                    </div>`;
+                            });
+                            html += `</div>`;
+                        }
                     }
+
+                    html += `
+                        <div class="max-modal-methodology">
+                            <button class="methodology-toggle" onclick="const p=this.parentElement; p.classList.toggle('open'); this.childNodes[0].textContent=p.classList.contains('open')?'▼ ':'▶ ';">
+                                ▶ How is this calculated?
+                            </button>
+                            <div class="methodology-body">
+                                <p>This calculator looks at every pick you still have alive and traces the best possible path through the remaining bracket.</p>
+                                <p><strong>Regional bracket:</strong> When two (or more) of your picks are in the same region, it figures out the latest round they can both win independently before they must face each other — then sends the higher-value pick forward. The other pick still earns points for every win it gets before that collision.</p>
+                                <p><strong>Final Four:</strong> It tries all combinations of your picks that could reach the Final Four and the Championship, choosing whichever combination produces the highest total score.</p>
+                                <p><strong>The result</strong> is the highest score mathematically possible for your entry given today's bracket state — assuming everything breaks your way.</p>
+                            </div>
+                        </div>`;
 
                     body.innerHTML = html;
                 })
