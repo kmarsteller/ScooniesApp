@@ -301,32 +301,50 @@
         }
 
         .champion-block {
-            text-align: center;
+            width: 280px;
             margin-top: 10px;
+            text-align: center;
         }
 
         .champion-label {
-            font-size: 1.1em;
-            color: #dc3545;
-            font-weight: bold;
+            text-align: center;
+            padding: 8px;
+            background-color: #ffc107;
+            color: #212529;
+            border-radius: 4px;
             margin-bottom: 8px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
         }
 
         .champion-team {
-            display: inline-flex;
+            display: flex;
             align-items: center;
-            gap: 10px;
+            justify-content: center;
+            gap: 8px;
             padding: 12px 20px;
             background-color: gold;
             border-radius: 8px;
             font-weight: bold;
             font-size: 1.1em;
+            cursor: pointer;
         }
 
         .champion-team img {
             width: 36px;
             height: 36px;
             object-fit: contain;
+        }
+
+        .champion-tbd {
+            padding: 12px;
+            background-color: #f0f0f0;
+            border-radius: 8px;
+            color: #aaa;
+            font-style: italic;
         }
 
         .loading-message {
@@ -702,21 +720,20 @@
             const sfRow = document.createElement('div');
             sfRow.className = 'semifinals-row';
 
-            function makeSFBlock(teams, label) {
+            function makeSFBlock(teams, regions) {
                 const block = document.createElement('div');
                 block.className = 'semifinal-block';
                 const lbl = document.createElement('div');
                 lbl.className = 'semifinal-label';
-                lbl.textContent = label;
+                lbl.style.cssText = 'display:flex;align-items:center;justify-content:center;gap:4px;flex-wrap:wrap';
+                lbl.innerHTML = `${makeBracketIcon(regions[0], 20)}<span>${regions[0]}</span><span>vs</span>${makeBracketIcon(regions[1], 20)}<span>${regions[1]}</span>`;
                 block.appendChild(lbl);
                 block.appendChild(makeMatchup(teams, 5));
                 return block;
             }
 
-            sfRow.appendChild(makeSFBlock(sf1Teams,
-                `${sf1Regions[0]} vs ${sf1Regions[1]}`));
-            sfRow.appendChild(makeSFBlock(sf2Teams,
-                `${sf2Regions[0]} vs ${sf2Regions[1]}`));
+            sfRow.appendChild(makeSFBlock(sf1Teams, sf1Regions));
+            sfRow.appendChild(makeSFBlock(sf2Teams, sf2Regions));
 
             body.appendChild(sfRow);
 
@@ -726,41 +743,49 @@
             champBlock.className = 'championship-block';
             const champLabel = document.createElement('div');
             champLabel.className = 'championship-label';
-            champLabel.textContent = 'Championship';
+            champLabel.style.cssText = 'display:flex;align-items:center;justify-content:center;gap:6px';
+            champLabel.innerHTML = `${makeBracketIcon(sf1Regions, 24)}<span>Championship</span>${makeBracketIcon(sf2Regions, 24)}`;
             champBlock.appendChild(champLabel);
             champBlock.appendChild(makeMatchup(champTeams, 6));
             body.appendChild(champBlock);
 
             // ── Champion ──
             const champion = allTeams.find(t => t.is_champion);
+            const champBanner = document.createElement('div');
+            champBanner.className = 'champion-block';
+
+            const champTitle = document.createElement('div');
+            champTitle.className = 'champion-label';
+            champTitle.innerHTML = `${makeBracketIcon('Final Four', 24)}<span>Champion</span>${makeBracketIcon('Final Four', 24)}`;
+            champBanner.appendChild(champTitle);
+
             if (champion) {
-                const champBanner = document.createElement('div');
-                champBanner.className = 'champion-block';
-
-                const champTitle = document.createElement('div');
-                champTitle.className = 'champion-label';
-                champTitle.textContent = '🏆 Champion';
-                champBanner.appendChild(champTitle);
-
                 const champTeamDiv = document.createElement('div');
                 champTeamDiv.className = 'champion-team';
 
+                champTeamDiv.appendChild(document.createTextNode('🏆'));
                 const logo = document.createElement('img');
                 logo.alt = champion.team_name;
                 logo.src = champion.logo_url || logoSrc(champion.team_name);
                 logo.onerror = function() { this.onerror = null; this.src = '/images/Scoonies.jpg'; };
-
                 champTeamDiv.appendChild(logo);
-                champTeamDiv.appendChild(document.createTextNode(
-                    `#${champion.seed} ${champion.team_name} (${champion.region})`));
-                champTeamDiv.style.cursor = 'pointer';
+                const nameSpan = document.createElement('span');
+                nameSpan.textContent = `#${champion.seed} ${champion.team_name}`;
+                champTeamDiv.appendChild(nameSpan);
+                champTeamDiv.appendChild(document.createTextNode('🏆'));
+
                 champTeamDiv.addEventListener('click', (e) => {
                     e.stopPropagation();
                     showPicksPopup(champion.team_name, champion.region, champTeamDiv);
                 });
                 champBanner.appendChild(champTeamDiv);
-                body.appendChild(champBanner);
+            } else {
+                const tbd = document.createElement('div');
+                tbd.className = 'champion-tbd';
+                tbd.textContent = 'TBD';
+                champBanner.appendChild(tbd);
             }
+            body.appendChild(champBanner);
 
             section.appendChild(body);
             return section;
@@ -776,11 +801,12 @@
 
         function makeBracketIcon(activeRegion, size) {
             size = size || 44;
+            const active = Array.isArray(activeRegion) ? activeRegion : [activeRegion];
             const regions = ['East', 'South', 'West', 'Midwest'];
             const paths = regions.map(name =>
-                `<path d="${BRACKET_PATHS[name]}" fill="${name === activeRegion ? '#dc3545' : '#dee2e6'}" stroke="#fff" stroke-width="8"/>`
+                `<path d="${BRACKET_PATHS[name]}" fill="${active.includes(name) ? '#dc3545' : '#dee2e6'}" stroke="#fff" stroke-width="8"/>`
             ).join('');
-            const ffFill = activeRegion === 'Final Four' ? '#dc3545' : '#dee2e6';
+            const ffFill = active.includes('Final Four') ? '#dc3545' : '#dee2e6';
             return `<svg viewBox="0 0 200 200" width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg" style="display:inline-block;vertical-align:middle;flex-shrink:0;background:rgba(255,255,255,0.85);border-radius:4px;padding:2px">${paths}<circle cx="100" cy="100" r="45" fill="${ffFill}" stroke="#fff" stroke-width="8"/></svg>`;
         }
 

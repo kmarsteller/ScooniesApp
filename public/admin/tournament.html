@@ -290,22 +290,42 @@
         }
         
         .champion-container {
-            margin-top: 30px;
+            width: 300px;
+            margin-top: 20px;
             text-align: center;
         }
-        
+
         .champion-title {
-            font-size: 20px;
-            margin-bottom: 10px;
-            color: #dc3545;
-        }
-        
-        .champion-team {
-            display: inline-flex;
+            text-align: center;
+            padding: 10px;
+            background-color: #ffc107;
+            color: #212529;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            font-weight: bold;
+            display: flex;
             align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .champion-team {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
             padding: 15px;
             background-color: gold;
             border-radius: 8px;
+            font-weight: bold;
+        }
+
+        .champion-tbd {
+            padding: 12px;
+            background-color: #f0f0f0;
+            border-radius: 8px;
+            color: #aaa;
+            font-style: italic;
         }
         
         .empty-slot {
@@ -844,11 +864,12 @@
 
     function makeBracketIcon(activeRegion, size) {
         size = size || 44;
+        const active = Array.isArray(activeRegion) ? activeRegion : [activeRegion];
         const regions = ['East', 'South', 'West', 'Midwest'];
         const paths = regions.map(name =>
-            `<path d="${BRACKET_PATHS[name]}" fill="${name === activeRegion ? '#dc3545' : '#dee2e6'}" stroke="#fff" stroke-width="8"/>`
+            `<path d="${BRACKET_PATHS[name]}" fill="${active.includes(name) ? '#dc3545' : '#dee2e6'}" stroke="#fff" stroke-width="8"/>`
         ).join('');
-        const ffFill = activeRegion === 'Final Four' ? '#dc3545' : '#dee2e6';
+        const ffFill = active.includes('Final Four') ? '#dc3545' : '#dee2e6';
         return `<svg viewBox="0 0 200 200" width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg" style="display:inline-block;vertical-align:middle;flex-shrink:0;background:rgba(255,255,255,0.85);border-radius:4px;padding:2px">${paths}<circle cx="100" cy="100" r="45" fill="${ffFill}" stroke="#fff" stroke-width="8"/></svg>`;
     }
 
@@ -1277,7 +1298,8 @@
         
         const semifinal1Title = document.createElement('div');
         semifinal1Title.className = 'semifinal-title';
-        semifinal1Title.textContent = `${matchups.semifinal1[0]} vs ${matchups.semifinal1[1]}`;
+        semifinal1Title.style.cssText = 'display:flex;align-items:center;justify-content:center;gap:4px;flex-wrap:wrap';
+        semifinal1Title.innerHTML = `${makeBracketIcon(matchups.semifinal1[0], 20)}<span>${matchups.semifinal1[0]}</span><span>vs</span>${makeBracketIcon(matchups.semifinal1[1], 20)}<span>${matchups.semifinal1[1]}</span>`;
         semifinal1.appendChild(semifinal1Title);
         
         const semifinal1Matchup = document.createElement('div');
@@ -1326,7 +1348,8 @@
         
         const semifinal2Title = document.createElement('div');
         semifinal2Title.className = 'semifinal-title';
-        semifinal2Title.textContent = `${matchups.semifinal2[0]} vs ${matchups.semifinal2[1]}`;
+        semifinal2Title.style.cssText = 'display:flex;align-items:center;justify-content:center;gap:4px;flex-wrap:wrap';
+        semifinal2Title.innerHTML = `${makeBracketIcon(matchups.semifinal2[0], 20)}<span>${matchups.semifinal2[0]}</span><span>vs</span>${makeBracketIcon(matchups.semifinal2[1], 20)}<span>${matchups.semifinal2[1]}</span>`;
         semifinal2.appendChild(semifinal2Title);
         
         const semifinal2Matchup = document.createElement('div');
@@ -1377,7 +1400,8 @@
         
         const championshipTitle = document.createElement('div');
         championshipTitle.className = 'championship-title';
-        championshipTitle.textContent = 'Championship Game';
+        championshipTitle.style.cssText = 'display:flex;align-items:center;justify-content:center;gap:6px';
+        championshipTitle.innerHTML = `${makeBracketIcon(matchups.semifinal1, 24)}<span>Championship</span>${makeBracketIcon(matchups.semifinal2, 24)}`;
         championshipContainer.appendChild(championshipTitle);
         
         const championshipMatchup = document.createElement('div');
@@ -1423,45 +1447,41 @@
         
         // Champion
         const champion = tournamentData.find(team => team.is_champion);
-        
+
+        const championContainer = document.createElement('div');
+        championContainer.className = 'champion-container';
+
+        const championTitle = document.createElement('div');
+        championTitle.className = 'champion-title';
+        championTitle.innerHTML = `${makeBracketIcon('Final Four', 24)}<span>Champion</span>${makeBracketIcon('Final Four', 24)}`;
+        championContainer.appendChild(championTitle);
+
         if (champion) {
-            const championContainer = document.createElement('div');
-            championContainer.className = 'champion-container';
-            
-            const championTitle = document.createElement('div');
-            championTitle.className = 'champion-title';
-            championTitle.textContent = '2025 NCAA Champion';
-            championContainer.appendChild(championTitle);
-            
             const championTeam = document.createElement('div');
             championTeam.className = 'champion-team';
-            
-            const seedSpan = document.createElement('span');
-            seedSpan.className = 'team-seed';
-            seedSpan.textContent = champion.seed;
-            
+
+            championTeam.appendChild(document.createTextNode('🏆'));
             const logo = document.createElement('img');
             logo.className = 'team-logo';
             logo.src = champion.logo_url || `/images/logos/${teamLogoFilename(champion.team_name)}.png`;
             logo.alt = champion.team_name;
-            logo.onerror = function() {
-                // Fallback if logo can't be found
-                this.onerror = null;
-                this.src = '/images/Scoonies.jpg';
-            };
-            
-            const nameSpan = document.createElement('span');
-            nameSpan.style.marginLeft = '10px';
-            nameSpan.style.fontWeight = 'bold';
-            nameSpan.textContent = champion.team_name;
-            
-            championTeam.appendChild(seedSpan);
+            logo.onerror = function() { this.onerror = null; this.src = '/images/Scoonies.jpg'; };
             championTeam.appendChild(logo);
+
+            const nameSpan = document.createElement('span');
+            nameSpan.textContent = `#${champion.seed} ${champion.team_name}`;
             championTeam.appendChild(nameSpan);
-            
+            championTeam.appendChild(document.createTextNode('🏆'));
+
             championContainer.appendChild(championTeam);
-            finalFourContainer.appendChild(championContainer);
+        } else {
+            const tbd = document.createElement('div');
+            tbd.className = 'champion-tbd';
+            tbd.textContent = 'TBD';
+            championContainer.appendChild(tbd);
         }
+
+        finalFourContainer.appendChild(championContainer);
     }
     
     // Create a team div
