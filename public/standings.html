@@ -110,6 +110,93 @@
             padding: 8px 15px;
             border-radius: 4px;
         }
+
+        .max-score-btn {
+            font-size: 22px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #6c757d;
+            padding: 4px 8px;
+            margin-left: 8px;
+            line-height: 1;
+            transition: color 0.15s;
+            title: "Max possible score";
+        }
+        .max-score-btn:hover { color: #dc3545; }
+
+        /* Modal */
+        .max-modal-backdrop {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        .max-modal-backdrop.open { display: flex; }
+        .max-modal {
+            background: #fff;
+            border-radius: 10px;
+            max-width: 520px;
+            width: 92%;
+            max-height: 85vh;
+            overflow-y: auto;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+        }
+        .max-modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 20px 12px;
+            border-bottom: 1px solid #ddd;
+        }
+        .max-modal-header h2 { margin: 0; font-size: 18px; }
+        .max-modal-close {
+            background: none; border: none; font-size: 22px;
+            cursor: pointer; color: #6c757d; line-height: 1;
+        }
+        .max-modal-scores {
+            display: flex;
+            gap: 16px;
+            padding: 16px 20px;
+            border-bottom: 1px solid #eee;
+        }
+        .max-modal-score-box {
+            flex: 1;
+            text-align: center;
+            background: #f8f9fa;
+            border-radius: 6px;
+            padding: 10px;
+        }
+        .max-modal-score-box .label { font-size: 11px; color: #6c757d; text-transform: uppercase; letter-spacing: 0.05em; }
+        .max-modal-score-box .value { font-size: 26px; font-weight: bold; color: #dc3545; }
+        .max-modal-score-box.highlight { background: #dc3545; }
+        .max-modal-score-box.highlight .label { color: rgba(255,255,255,0.8); }
+        .max-modal-score-box.highlight .value { color: #fff; }
+        .max-modal-scenario { padding: 16px 20px; }
+        .max-modal-scenario h3 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; color: #6c757d; margin: 0 0 12px; }
+        .scenario-team-block {
+            padding: 12px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .scenario-team-block:last-child { border-bottom: none; }
+        .scenario-team-header {
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+            margin-bottom: 4px;
+        }
+        .scenario-team-name { flex: 1; font-size: 14px; }
+        .scenario-seed { color: #6c757d; font-weight: normal; font-size: 13px; }
+        .scenario-region-tag { font-size: 11px; color: #adb5bd; white-space: nowrap; }
+        .scenario-team-pts { font-weight: bold; color: #28a745; white-space: nowrap; font-size: 14px; }
+        .scenario-team-wins { font-size: 12px; color: #495057; margin-bottom: 2px; }
+        .scenario-team-breakdown { font-size: 11px; color: #adb5bd; font-family: monospace; margin-bottom: 3px; }
+        .scenario-team-clash { font-size: 12px; color: #856404; font-style: italic; }
+        .max-modal-loading { text-align: center; padding: 40px; color: #6c757d; }
+        .max-modal-eliminated { text-align: center; padding: 24px; color: #6c757d; font-style: italic; }
         
         .entry-teams {
             padding: 15px;
@@ -255,6 +342,18 @@
     </style>
 </head>
 <body>
+
+    <!-- Max Score Modal -->
+    <div id="maxModalBackdrop" class="max-modal-backdrop">
+        <div class="max-modal">
+            <div class="max-modal-header">
+                <h2 id="maxModalTitle">𝔐 Max Possible Score</h2>
+                <button id="maxModalClose" class="max-modal-close">✕</button>
+            </div>
+            <div id="maxModalBody"></div>
+        </div>
+    </div>
+
     <header>
         <div class="header-top">
             <a href="/"><img src="../images/Scoonies.jpg" alt="The Scoonies Logo"></a>
@@ -602,14 +701,161 @@
                     entryTeams.appendChild(teamList);
                 }
                 
+                // 𝔐 max score button
+                const maxBtn = document.createElement('button');
+                maxBtn.className = 'max-score-btn';
+                maxBtn.textContent = '𝔐';
+                maxBtn.title = 'Max possible score';
+                maxBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    openMaxModal(entry);
+                });
+                entryHeader.appendChild(maxBtn);
+
                 // Add all elements to the card
                 entryCard.appendChild(entryHeader);
                 entryCard.appendChild(entryTeams);
-                
+
                 // Add card to standings content
                 standingsContent.appendChild(entryCard);
             });
         }
+        // Max score modal
+        function openMaxModal(entry) {
+            const backdrop = document.getElementById('maxModalBackdrop');
+            const title = document.getElementById('maxModalTitle');
+            const body = document.getElementById('maxModalBody');
+
+            title.textContent = `𝔐 — ${entry.nickname}`;
+            body.innerHTML = '<div class="max-modal-loading">Calculating...</div>';
+            backdrop.classList.add('open');
+
+            fetch(`/api/standings/max-score/${entry.id}`)
+                .then(r => r.json())
+                .then(data => {
+                    if (data.error) { body.innerHTML = `<div class="max-modal-eliminated">${data.error}</div>`; return; }
+
+                    const additional = data.maxAdditional;
+                    const eliminated = additional === 0;
+
+                    let html = `
+                        <div class="max-modal-scores">
+                            <div class="max-modal-score-box">
+                                <div class="label">Current</div>
+                                <div class="value">${data.currentScore}</div>
+                            </div>
+                            <div class="max-modal-score-box">
+                                <div class="label">Max Additional</div>
+                                <div class="value">+${additional}</div>
+                            </div>
+                            <div class="max-modal-score-box highlight">
+                                <div class="label">Max Possible</div>
+                                <div class="value">${data.maxScore}</div>
+                            </div>
+                        </div>`;
+
+                    if (eliminated || data.scenario.length === 0) {
+                        html += `<div class="max-modal-eliminated">All teams have been eliminated — no additional points possible.</div>`;
+                    } else {
+                        const FF_BONUSES = { 5: 5, 6: 10, 7: 15 };
+                        const LOSS_ROUND_NAMES = ['','Round of 64','Round of 32','Sweet 16','Elite 8','Final Four','Championship Game','Champion'];
+
+                        // Group events by team, keeping raw events for breakdown
+                        const teamData = new Map();
+                        data.scenario.forEach(ev => {
+                            if (!teamData.has(ev.team)) {
+                                teamData.set(ev.team, { team: ev.team, seed: ev.seed, region: ev.region, rounds: [], events: [], totalGain: 0, maxRound: 0 });
+                            }
+                            const t = teamData.get(ev.team);
+                            t.rounds.push(ev.roundName);
+                            t.events.push(ev);
+                            t.totalGain += ev.gain;
+                            if (ev.round > t.maxRound) t.maxRound = ev.round;
+                        });
+
+                        // Build points breakdown string: (base gains) + (bonuses) = total
+                        teamData.forEach(t => {
+                            const baseGains = t.events.map(ev => ev.seed * (ev.round - 1));
+                            const bonuses = t.events.filter(ev => FF_BONUSES[ev.round]).map(ev => FF_BONUSES[ev.round]);
+                            t.breakdown = bonuses.length
+                                ? `(${baseGains.join('+')})\u00a0+\u00a0(${bonuses.join('+')}) = ${t.totalGain}`
+                                : `(${baseGains.join('+')}) = ${t.totalGain}`;
+                        });
+
+                        // Detect collisions
+                        const losesTo = new Map(); // team → { opponent, round }
+                        // Same-region: pick with lower maxRound loses to pick with higher maxRound
+                        const byRegion = {};
+                        teamData.forEach(t => { if (!byRegion[t.region]) byRegion[t.region] = []; byRegion[t.region].push(t); });
+                        Object.values(byRegion).forEach(picks => {
+                            if (picks.length > 1) {
+                                picks.sort((a, b) => a.maxRound - b.maxRound);
+                                const winner = picks[picks.length - 1];
+                                for (let i = 0; i < picks.length - 1; i++) {
+                                    losesTo.set(picks[i].team, { opponent: winner, roundName: LOSS_ROUND_NAMES[picks[i].maxRound + 1] || 'next round' });
+                                }
+                            }
+                        });
+                        // FF collisions using semifinal brackets from the API
+                        const ffMatchups = data.ffMatchups;
+                        if (ffMatchups) {
+                            const sfBracket = {};
+                            ffMatchups.semifinal1.forEach(r => { sfBracket[r] = 1; });
+                            ffMatchups.semifinal2.forEach(r => { sfBracket[r] = 2; });
+                            // Teams that won their region (maxRound=5) but don't advance further
+                            teamData.forEach(t => {
+                                if (t.maxRound === 5 && !losesTo.has(t.team)) {
+                                    const sf = sfBracket[t.region];
+                                    const sfOpponent = [...teamData.values()].find(o =>
+                                        o.team !== t.team && o.maxRound >= 6 && sfBracket[o.region] === sf
+                                    );
+                                    if (sfOpponent) losesTo.set(t.team, { opponent: sfOpponent, roundName: 'Final Four' });
+                                }
+                            });
+                        }
+                        // Championship: maxRound=6 loses to maxRound=7
+                        const champion = [...teamData.values()].find(t => t.maxRound === 7);
+                        if (champion) {
+                            teamData.forEach(t => {
+                                if (t.maxRound === 6 && !losesTo.has(t.team))
+                                    losesTo.set(t.team, { opponent: champion, roundName: 'Championship Game' });
+                            });
+                        }
+
+                        const sorted = [...teamData.values()].sort((a, b) => b.totalGain - a.totalGain);
+
+                        html += `<div class="max-modal-scenario"><h3>𝔐 Optimal Scenario <span style="font-weight:normal;font-size:11px;color:#adb5bd;">(beta)</span></h3>`;
+                        sorted.forEach(t => {
+                            const winsText = t.rounds.length === 1
+                                ? `Needs one more win (${t.rounds[0]})`
+                                : `Wins: ${t.rounds.join(' → ')}`;
+                            const clash = losesTo.get(t.team);
+                            html += `
+                                <div class="scenario-team-block">
+                                    <div class="scenario-team-header">
+                                        <span class="scenario-team-name"><strong>${t.team}</strong> <span class="scenario-seed">(${t.seed})</span></span>
+                                        <span class="scenario-region-tag">${t.region}</span>
+                                        <span class="scenario-team-pts">+${t.totalGain} pts</span>
+                                    </div>
+                                    <div class="scenario-team-wins">${winsText}</div>
+                                    <div class="scenario-team-breakdown">${t.breakdown}</div>
+                                    ${clash ? `<div class="scenario-team-clash">must lose to your (${clash.opponent.seed}) ${clash.opponent.team} in the ${clash.roundName}</div>` : ''}
+                                </div>`;
+                        });
+                        html += `</div>`;
+                    }
+
+                    body.innerHTML = html;
+                })
+                .catch(() => { body.innerHTML = '<div class="max-modal-eliminated">Error loading max score.</div>'; });
+        }
+
+        document.getElementById('maxModalClose').addEventListener('click', () => {
+            document.getElementById('maxModalBackdrop').classList.remove('open');
+        });
+        document.getElementById('maxModalBackdrop').addEventListener('click', (e) => {
+            if (e.target === e.currentTarget) e.currentTarget.classList.remove('open');
+        });
     </script>
 </body>
 </html>

@@ -2,6 +2,7 @@
 const express = require('express');
 const router = express.Router();
 const { db } = require('../db/database');
+const { calcMaxScore } = require('../lib/maxScoreCalculator');
 
 // Get current standings
 router.get('/', (req, res) => {
@@ -110,6 +111,33 @@ router.get('/', (req, res) => {
             );
         }
     );
+});
+
+// Max possible score for an entry (public)
+router.get('/max-score/:entryId', (req, res) => {
+    const { entryId } = req.params;
+    db.all(
+        `SELECT ts.*, tp.is_eliminated, tp.round_reached
+         FROM team_selections ts
+         LEFT JOIN tournament_progress tp ON ts.team_name = tp.team_name AND ts.region = tp.region
+         WHERE ts.entry_id = ?`,
+        [entryId], (err, picks) => {
+        if (err) return res.status(500).json({ error: err.message });
+        if (!picks.length) return res.status(404).json({ error: 'Entry not found' });
+
+        db.all('SELECT * FROM tournament_progress', [], (err, allTeams) => {
+            if (err) return res.status(500).json({ error: err.message });
+
+            db.get("SELECT value FROM system_settings WHERE key = 'final_four_matchups'", [], (err, row) => {
+                const ffMatchups = row
+                    ? JSON.parse(row.value)
+                    : { semifinal1: ['East', 'West'], semifinal2: ['South', 'Midwest'] };
+
+                const result = calcMaxScore(picks, allTeams, ffMatchups);
+                res.json({ ...result, ffMatchups });
+            });
+        });
+    });
 });
 
 module.exports = router;

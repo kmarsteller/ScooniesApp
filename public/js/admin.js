@@ -37,9 +37,8 @@ router.post('/update-scores', (req, res) => {
                 advancingTeams.forEach(team => {
                     const { teamName, region, seed, roundReached } = team;
                     
-                    // Calculate points based on seed and round reached
-                    const roundMultiplier = Math.pow(2, roundReached - 1);
-                    const pointsEarned = seed * roundMultiplier;
+                    // Calculate points: seed × wins (rounds 1–6)
+                    const pointsEarned = seed * (roundReached - 1);
                     
                     updateStmt.run([pointsEarned, teamName, region], err => {
                         if (err) {
