@@ -736,6 +736,55 @@ router.post('/reset-tournament', requireAuth, (req, res) => {
     });
 });
 
+// Reset a single region
+router.post('/reset-region', requireAuth, (req, res) => {
+    const { region } = req.body;
+    if (!region) return res.status(400).json({ error: 'region is required' });
+
+    db.serialize(() => {
+        db.run('BEGIN TRANSACTION');
+
+        db.run(
+            `UPDATE tournament_progress SET
+             round_reached = 1,
+             is_eliminated = 0,
+             is_final_four = 0,
+             is_finalist = 0,
+             is_champion = 0
+             WHERE region = ?`,
+            [region],
+            err => {
+                if (err) {
+                    db.run('ROLLBACK');
+                    return res.status(500).json({ error: 'Error resetting region: ' + err.message });
+                }
+
+                db.run(
+                    `UPDATE team_selections SET points_earned = 0
+                     WHERE team_name IN (
+                         SELECT team_name FROM tournament_progress WHERE region = ?
+                     )`,
+                    [region],
+                    err => {
+                        if (err) {
+                            db.run('ROLLBACK');
+                            return res.status(500).json({ error: 'Error resetting region scores: ' + err.message });
+                        }
+
+                        db.run('COMMIT', err => {
+                            if (err) {
+                                db.run('ROLLBACK');
+                                return res.status(500).json({ error: 'Transaction error: ' + err.message });
+                            }
+                            res.json({ message: `${region} region reset successfully` });
+                        });
+                    }
+                );
+            }
+        );
+    });
+});
+
 // Delete an entry
 router.delete('/entry/:id', requireAuth, (req, res) => {
     const entryId = req.params.id;
