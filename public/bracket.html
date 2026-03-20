@@ -139,6 +139,8 @@
             overflow-x: auto;
         }
 
+        .bracket-rtl { flex-direction: row-reverse; }
+
         /* ── Rounds ── */
         .round {
             min-width: 190px;
@@ -626,6 +628,9 @@
 
             const container = document.createElement('div');
             container.className = 'bracket-container';
+            if (regionName === 'West' || regionName === 'Midwest') {
+                container.classList.add('bracket-rtl');
+            }
 
             // Round 1
             container.appendChild(makeRound(1, 'Round of 64',
@@ -789,7 +794,8 @@
                 regionMap[t.region].push(t);
             });
 
-            const regionNames = Object.keys(regionMap).sort();
+            const REGION_ORDER = ['East', 'South', 'West', 'Midwest'];
+            const regionNames = REGION_ORDER.filter(r => regionMap[r]);
             regionNames.forEach(region => {
                 content.appendChild(makeRegionSection(region, regionMap[region]));
             });

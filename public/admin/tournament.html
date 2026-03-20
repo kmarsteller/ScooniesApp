@@ -104,6 +104,8 @@
             overflow-x: auto;
         }
         
+        .bracket-rtl { flex-direction: row-reverse; }
+
         .round {
             min-width: 220px;
             margin: 0 10px;
@@ -810,8 +812,9 @@
             regions[team.region].push(team);
         });
         
-        // Sort regions alphabetically
-        const sortedRegionNames = Object.keys(regions).sort();
+        // Order regions: East, South, West, Midwest
+        const REGION_ORDER = ['East', 'South', 'West', 'Midwest'];
+        const sortedRegionNames = REGION_ORDER.filter(r => regions[r]);
         
         // Create region sections
         sortedRegionNames.forEach(region => {
@@ -870,6 +873,9 @@
         
         const bracketContainer = document.createElement('div');
         bracketContainer.className = 'bracket-container';
+        if (region === 'West' || region === 'Midwest') {
+            bracketContainer.classList.add('bracket-rtl');
+        }
         
         // Create rounds
         const rounds = [
