@@ -662,7 +662,7 @@
             const title = document.createElement('div');
             title.className = 'final-four-title';
             title.style.cssText = 'display:flex;align-items:center;gap:12px';
-            title.innerHTML = makeBracketIcon('Final Four') + `<span>Final Four &amp; Championship</span>`;
+            title.innerHTML = makeBracketIcon('Final Four') + `<span>Final Four</span>`;
             section.appendChild(title);
 
             const body = document.createElement('div');
@@ -878,6 +878,7 @@
                     } else if (data.picks.length === 0) {
                         popupList.innerHTML = '<li class="picks-none">Nobody picked this team</li>';
                     } else {
+                        popupTitle.textContent = `${teamName} picks (${data.picks.length})`;
                         data.picks.forEach(p => {
                             const li = document.createElement('li');
                             li.innerHTML = `<span>${p.nickname}</span><span class="pick-score">${p.score} pts</span>`;
