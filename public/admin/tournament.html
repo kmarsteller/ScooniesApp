@@ -435,6 +435,37 @@
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
+        /* ── Region tabs ── */
+        #bracket-tabs {
+            display: flex;
+            gap: 6px;
+            margin: 16px 0;
+            flex-wrap: nowrap;
+        }
+        .bracket-tab {
+            flex: 1;
+            padding: 10px 8px;
+            text-align: center;
+            background: #f8f9fa;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 0.9em;
+            color: #495057;
+            cursor: pointer;
+            transition: background 0.15s, border-color 0.15s, color 0.15s;
+            user-select: none;
+            white-space: nowrap;
+        }
+        .bracket-tab:hover { background: #f0f0f0; border-color: #aaa; }
+        .bracket-tab.active { background: #dc3545; border-color: #dc3545; color: #fff; }
+        .tab-short { display: none; }
+        @media (max-width: 600px) {
+            .bracket-tab { font-size: 0.75em; padding: 10px 4px; }
+            .tab-full  { display: none; }
+            .tab-short { display: inline; }
+        }
+
         /* Mobile-friendly confirmation modal */
         #scModal-overlay {
             display: none;
@@ -525,6 +556,7 @@
         <div id="statusMessage" class="status-message"></div>
     </div>
 </div>
+<div id="bracket-tabs"></div>
 <div id="bracketContent">
     <div class="loading">Loading tournament data...</div>
 </div>
@@ -793,13 +825,44 @@
         // Create Final Four section
         const finalFourSection = createFinalFourSection(data);
         bracketContent.appendChild(finalFourSection);
+
+        // Build region tabs and show first region
+        buildTabs(sortedRegionNames);
+        switchTab(sortedRegionNames[0]);
+    }
+
+    const SHORT_LABELS = { 'Midwest': 'Mid', 'Final Four': 'FF' };
+
+    function buildTabs(regionNames) {
+        const tabBar = document.getElementById('bracket-tabs');
+        tabBar.innerHTML = '';
+        const allTabs = [...regionNames, 'Final Four'];
+        allTabs.forEach((name, i) => {
+            const short = SHORT_LABELS[name] || name;
+            const tab = document.createElement('div');
+            tab.className = 'bracket-tab' + (i === 0 ? ' active' : '');
+            tab.dataset.region = name;
+            tab.innerHTML = `<span class="tab-full">${name}</span><span class="tab-short">${short}</span>`;
+            tab.addEventListener('click', () => switchTab(name));
+            tabBar.appendChild(tab);
+        });
+    }
+
+    function switchTab(regionName) {
+        document.querySelectorAll('.bracket-tab').forEach(t => {
+            t.classList.toggle('active', t.dataset.region === regionName);
+        });
+        document.querySelectorAll('#bracketContent [data-region]').forEach(s => {
+            s.style.display = s.dataset.region === regionName ? '' : 'none';
+        });
     }
     
     // Create a region section with properly aligned bracket
     function createRegionSection(region, teams, allTeams) {
         const regionSection = document.createElement('div');
         regionSection.className = 'region-section';
-        
+        regionSection.dataset.region = region;
+
         const regionTitle = document.createElement('div');
         regionTitle.className = 'region-title';
         regionTitle.textContent = region + ' Region';
@@ -1083,6 +1146,7 @@
         
         const finalFourSection = document.createElement('div');
         finalFourSection.className = 'final-four-section';
+        finalFourSection.dataset.region = 'Final Four';
         
         const finalFourTitle = document.createElement('div');
         finalFourTitle.className = 'final-four-title';
