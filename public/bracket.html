@@ -250,8 +250,8 @@
         }
 
         .final-four-title {
-            background-color: #dc3545;
-            color: white;
+            background-color: #f8f9fa;
+            color: #dc3545;
             padding: 12px 20px;
             font-size: 26px;
             font-weight: bold;
@@ -623,7 +623,8 @@
 
             const title = document.createElement('div');
             title.className = 'region-title';
-            title.textContent = regionName + ' Region';
+            title.style.cssText = 'display:flex;align-items:center;gap:12px';
+            title.innerHTML = makeBracketIcon(regionName) + `<span>${regionName} Region</span>`;
             section.appendChild(title);
 
             const container = document.createElement('div');
@@ -660,7 +661,8 @@
 
             const title = document.createElement('div');
             title.className = 'final-four-title';
-            title.textContent = 'Final Four & Championship';
+            title.style.cssText = 'display:flex;align-items:center;gap:12px';
+            title.innerHTML = makeBracketIcon('Final Four') + `<span>Final Four &amp; Championship</span>`;
             section.appendChild(title);
 
             const body = document.createElement('div');
@@ -747,6 +749,24 @@
 
             section.appendChild(body);
             return section;
+        }
+
+        // ── Bracket SVG icon ─────────────────────────────────────────────────
+        const BRACKET_PATHS = {
+            'East':    'M 0 0 L 100 0 L 100 55 A 45 45 0 0 0 55 100 L 0 100 Z',
+            'South':   'M 0 100 L 55 100 A 45 45 0 0 0 100 145 L 100 200 L 0 200 Z',
+            'West':    'M 100 0 L 200 0 L 200 100 L 145 100 A 45 45 0 0 0 100 55 Z',
+            'Midwest': 'M 200 100 L 200 200 L 100 200 L 100 145 A 45 45 0 0 0 145 100 Z',
+        };
+
+        function makeBracketIcon(activeRegion, size) {
+            size = size || 44;
+            const regions = ['East', 'South', 'West', 'Midwest'];
+            const paths = regions.map(name =>
+                `<path d="${BRACKET_PATHS[name]}" fill="${name === activeRegion ? '#dc3545' : '#dee2e6'}" stroke="#fff" stroke-width="8"/>`
+            ).join('');
+            const ffFill = activeRegion === 'Final Four' ? '#dc3545' : '#dee2e6';
+            return `<svg viewBox="0 0 200 200" width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg" style="display:inline-block;vertical-align:middle;flex-shrink:0;background:rgba(255,255,255,0.85);border-radius:4px;padding:2px">${paths}<circle cx="100" cy="100" r="45" fill="${ffFill}" stroke="#fff" stroke-width="8"/></svg>`;
         }
 
         // ── Tab switching ────────────────────────────────────────────────────
