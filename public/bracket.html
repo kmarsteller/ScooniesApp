@@ -160,6 +160,7 @@
             color: #495057;
         }
 
+
         .round-content {
             flex: 1;
             display: flex;
@@ -682,6 +683,37 @@
                 .sort((a, b) => (R4_TOP.includes(a.seed) ? 0 : 1) - (R4_TOP.includes(b.seed) ? 0 : 1));
             container.appendChild(makeRound(4, 'Elite 8', [r4Teams]));
 
+            // Regional Champion column — continues the bracket flow
+            const r5Col = document.createElement('div');
+            r5Col.className = 'round round-5';
+
+            const r5Title = document.createElement('div');
+            r5Title.className = 'round-title';
+            r5Title.style.cssText = 'background-color:#dc3545;color:#fff;';
+            r5Title.textContent = 'Regional Champ';
+            r5Col.appendChild(r5Title);
+
+            const r5Content = document.createElement('div');
+            r5Content.className = 'round-content';
+
+            const r5Slot = document.createElement('div');
+            r5Slot.className = 'matchup-slot';
+
+            const r5Matchup = document.createElement('div');
+            r5Matchup.className = 'matchup';
+
+            const regionalChamp = regionTeams.find(t => t.round_reached >= 5);
+            if (regionalChamp) {
+                r5Matchup.appendChild(makeTeamDiv(regionalChamp, 5));
+            } else {
+                r5Matchup.appendChild(makeTBD());
+            }
+
+            r5Slot.appendChild(r5Matchup);
+            r5Content.appendChild(r5Slot);
+            r5Col.appendChild(r5Content);
+            container.appendChild(r5Col);
+
             section.appendChild(container);
             return section;
         }
@@ -836,7 +868,7 @@
             });
 
             // Show/hide sections
-            document.querySelectorAll('#bracketContent [data-region]').forEach(s => {
+            document.querySelectorAll('#bracketContent > [data-region]').forEach(s => {
                 s.style.display = s.dataset.region === regionName ? '' : 'none';
             });
 

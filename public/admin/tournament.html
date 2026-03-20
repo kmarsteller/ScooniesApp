@@ -123,6 +123,7 @@
             color: #495057;
             flex: 0 0 auto;
         }
+
         
         /* Adjusted round content styles */
         .round-content {
@@ -812,7 +813,14 @@
     function renderBracket(data) {
         // Store the data in our global variable
         tournamentData = data;
-        
+
+        // Save scroll positions before re-render
+        const savedScrollY = window.scrollY;
+        const existingContainer = activeRegion
+            ? document.querySelector(`#bracketContent > [data-region="${activeRegion}"] .bracket-container`)
+            : document.querySelector('#bracketContent .bracket-container');
+        const savedScrollLeft = existingContainer ? existingContainer.scrollLeft : 0;
+
         const bracketContent = document.getElementById('bracketContent');
         bracketContent.innerHTML = '';
         
@@ -853,6 +861,15 @@
         const allTabNames = [...sortedRegionNames, 'Final Four'];
         const tabToRestore = activeRegion && allTabNames.includes(activeRegion) ? activeRegion : sortedRegionNames[0];
         switchTab(tabToRestore);
+
+        // Restore horizontal scroll position
+        if (savedScrollLeft > 0) {
+            const newContainer = document.querySelector(`#bracketContent > [data-region="${tabToRestore}"] .bracket-container`);
+            if (newContainer) newContainer.scrollLeft = savedScrollLeft;
+        }
+
+        // Restore vertical scroll position (page height collapses during innerHTML clear)
+        window.scrollTo(0, savedScrollY);
     }
 
     const BRACKET_PATHS = {
@@ -895,7 +912,7 @@
         document.querySelectorAll('.bracket-tab').forEach(t => {
             t.classList.toggle('active', t.dataset.region === regionName);
         });
-        document.querySelectorAll('#bracketContent [data-region]').forEach(s => {
+        document.querySelectorAll('#bracketContent > [data-region]').forEach(s => {
             s.style.display = s.dataset.region === regionName ? '' : 'none';
         });
     }
@@ -1201,10 +1218,45 @@
             bracketContainer.appendChild(roundDiv);
         });
         
+        // Regional Champion column — continues the bracket flow
+        const r5Col = document.createElement('div');
+        r5Col.className = 'round round-5';
+
+        const r5Title = document.createElement('div');
+        r5Title.className = 'round-title';
+        r5Title.style.cssText = 'background-color:#dc3545;color:#fff;';
+        r5Title.textContent = 'Regional Champ';
+        r5Col.appendChild(r5Title);
+
+        const r5Content = document.createElement('div');
+        r5Content.className = 'round-content';
+
+        const r5Slot = document.createElement('div');
+        r5Slot.className = 'matchup-slot';
+
+        const r5Matchup = document.createElement('div');
+        r5Matchup.className = 'matchup';
+
+        const regionalChamp = allTeams.find(t => t.region === region && t.round_reached >= 5);
+        if (regionalChamp) {
+            const teamDiv = createTeamDiv(regionalChamp, 5);
+            r5Matchup.appendChild(teamDiv);
+        } else {
+            const emptySlot = document.createElement('div');
+            emptySlot.className = 'empty-slot';
+            emptySlot.textContent = 'TBD';
+            r5Matchup.appendChild(emptySlot);
+        }
+
+        r5Slot.appendChild(r5Matchup);
+        r5Content.appendChild(r5Slot);
+        r5Col.appendChild(r5Content);
+        bracketContainer.appendChild(r5Col);
+
         regionSection.appendChild(bracketContainer);
         return regionSection;
     }
-    
+
     // Create Final Four section
     function createFinalFourSection(tournamentData) {
         console.log('Creating Final Four section');
