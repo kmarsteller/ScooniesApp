@@ -393,6 +393,9 @@
         .admin-nav a:hover:not(.active) {
             background-color: #dee2e6;
         }
+        @media (max-width: 480px) {
+            .admin-nav a { padding: 10px 12px; font-size: 13px; }
+        }
         
         /* Improved action buttons */
         .action-buttons {
@@ -432,6 +435,56 @@
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
+        /* Mobile-friendly confirmation modal */
+        #scModal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.55);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            box-sizing: border-box;
+        }
+        #scModal-overlay.active { display: flex; }
+        #scModal-box {
+            background: #fff;
+            border-radius: 12px;
+            padding: 24px;
+            max-width: 440px;
+            width: 100%;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        }
+        #scModal-message {
+            font-size: 16px;
+            line-height: 1.5;
+            margin: 0 0 24px;
+            color: #333;
+        }
+        #scModal-actions { display: flex; gap: 12px; }
+        #scModal-cancel {
+            flex: 1;
+            padding: 14px 16px;
+            font-size: 16px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: #f8f9fa;
+            color: #333;
+            cursor: pointer;
+        }
+        #scModal-confirm {
+            flex: 1;
+            padding: 14px 16px;
+            font-size: 16px;
+            border: none;
+            border-radius: 8px;
+            background: #dc3545;
+            color: white;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        #scModal-confirm.danger { background: #8b0000; }
     </style>
 </head>
 <body>
@@ -454,9 +507,9 @@
         <div class="section-header">Tournament Administration</div>
         
         <div class="admin-nav">
-            <a href="/admin/tournament" class="active">Tournament Bracket</a>
-            <a href="/admin/entries">Manage Entries</a>
-            <a href="/admin/communications">League Communications</a>
+            <a href="/admin/tournament" class="active">Bracket</a>
+            <a href="/admin/entries">Entries</a>
+            <a href="/admin/communications">Comms</a>
             <a href="#" id="logoutBtn" style="margin-left:auto; color:#721c24;">Logout</a>
         </div>
         
@@ -472,58 +525,6 @@
         <div id="statusMessage" class="status-message"></div>
     </div>
 </div>
-<div class="admin-section" style="margin-top: 20px; margin-bottom: 20px;">
-    <div class="section-header">Final Four Configuration</div>
-    <div class="section-content">
-        <h3>Configure Final Four Matchups</h3>
-        <p>The regional matchups are NOT the same every year. This section gives you the capability to set which regions will face each other in the Final Four. These settings MUST be configured at the start of the tournament before any teams are advanced.</p>
-        
-        <div id="finalFourConfig" style="margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 8px; background-color: #f8f9fa;">
-            <div style="margin-bottom: 15px;">
-                <h4>First Semifinal</h4>
-                <div class="matchup-selection" style="display: flex; gap: 10px; margin-top: 10px;">
-                    <select id="semifinal1Region1" class="region-select" style="flex: 1; padding: 8px; border-radius: 4px; border: 1px solid #ddd;">
-                        <option value="East">East</option>
-                        <option value="West">West</option>
-                        <option value="South">South</option>
-                        <option value="Midwest">Midwest</option>
-                    </select>
-                    <span style="align-self: center;">vs</span>
-                    <select id="semifinal1Region2" class="region-select" style="flex: 1; padding: 8px; border-radius: 4px; border: 1px solid #ddd;">
-                        <option value="West">West</option>
-                        <option value="East">East</option>
-                        <option value="South">South</option>
-                        <option value="Midwest">Midwest</option>
-                    </select>
-                </div>
-            </div>
-            
-            <div style="margin-bottom: 15px;">
-                <h4>Second Semifinal</h4>
-                <div class="matchup-selection" style="display: flex; gap: 10px; margin-top: 10px;">
-                    <select id="semifinal2Region1" class="region-select" style="flex: 1; padding: 8px; border-radius: 4px; border: 1px solid #ddd;">
-                        <option value="South">South</option>
-                        <option value="East">East</option>
-                        <option value="West">West</option>
-                        <option value="Midwest">Midwest</option>
-                    </select>
-                    <span style="align-self: center;">vs</span>
-                    <select id="semifinal2Region2" class="region-select" style="flex: 1; padding: 8px; border-radius: 4px; border: 1px solid #ddd;">
-                        <option value="Midwest">Midwest</option>
-                        <option value="East">East</option>
-                        <option value="West">West</option>
-                        <option value="South">South</option>
-                    </select>
-                </div>
-            </div>
-            
-            <div style="margin-top: 20px; text-align: center;">
-                <button id="saveFinalFourConfig" class="action-button">Save Final Four Configuration</button>
-                <div id="configStatus" class="status-message" style="margin-top: 10px;"></div>
-            </div>
-        </div>
-    </div>
-</div>
 <div id="bracketContent">
     <div class="loading">Loading tournament data...</div>
 </div>
@@ -533,6 +534,60 @@
         <div id="bracketContent">
             <div class="loading">Loading tournament data...</div>
         </div>
+
+    <!-- Final Four Configuration -->
+    <div class="admin-section" style="margin-top: 20px; margin-bottom: 20px;">
+        <div class="section-header">Final Four Configuration</div>
+        <div class="section-content">
+            <h3>Configure Final Four Matchups</h3>
+            <p>The regional matchups are NOT the same every year. This section gives you the capability to set which regions will face each other in the Final Four. These settings MUST be configured at the start of the tournament before any teams are advanced.</p>
+
+            <div id="finalFourConfig" style="margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 8px; background-color: #f8f9fa;">
+                <div style="margin-bottom: 15px;">
+                    <h4>First Semifinal</h4>
+                    <div class="matchup-selection" style="display: flex; gap: 10px; margin-top: 10px;">
+                        <select id="semifinal1Region1" class="region-select" style="flex: 1; padding: 8px; border-radius: 4px; border: 1px solid #ddd;">
+                            <option value="East">East</option>
+                            <option value="West">West</option>
+                            <option value="South">South</option>
+                            <option value="Midwest">Midwest</option>
+                        </select>
+                        <span style="align-self: center;">vs</span>
+                        <select id="semifinal1Region2" class="region-select" style="flex: 1; padding: 8px; border-radius: 4px; border: 1px solid #ddd;">
+                            <option value="West">West</option>
+                            <option value="East">East</option>
+                            <option value="South">South</option>
+                            <option value="Midwest">Midwest</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 15px;">
+                    <h4>Second Semifinal</h4>
+                    <div class="matchup-selection" style="display: flex; gap: 10px; margin-top: 10px;">
+                        <select id="semifinal2Region1" class="region-select" style="flex: 1; padding: 8px; border-radius: 4px; border: 1px solid #ddd;">
+                            <option value="South">South</option>
+                            <option value="East">East</option>
+                            <option value="West">West</option>
+                            <option value="Midwest">Midwest</option>
+                        </select>
+                        <span style="align-self: center;">vs</span>
+                        <select id="semifinal2Region2" class="region-select" style="flex: 1; padding: 8px; border-radius: 4px; border: 1px solid #ddd;">
+                            <option value="Midwest">Midwest</option>
+                            <option value="East">East</option>
+                            <option value="West">West</option>
+                            <option value="South">South</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div style="margin-top: 20px; text-align: center;">
+                    <button id="saveFinalFourConfig" class="action-button">Save Final Four Configuration</button>
+                    <div id="configStatus" class="status-message" style="margin-top: 10px;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Re-seed the Field -->
     <div class="admin-section" style="margin-top:30px;border:2px solid #dc3545;">
@@ -608,17 +663,17 @@
         
         // Set up event listeners for action buttons
         document.getElementById('updateScoresBtn').addEventListener('click', function() {
-            if (confirm('Are you sure you want to update all scores based on the current bracket?')) {
+            scConfirm('Are you sure you want to update all scores based on the current bracket?', function() {
                 updateAllScores();
-            }
+            });
         });
         
         document.getElementById('resetBracketBtn').addEventListener('click', function() {
-            if (confirm('Are you sure you want to reset the entire tournament bracket? This will eliminate all teams and reset all scores.')) {
-                if (confirm('THIS CANNOT BE UNDONE! Are you absolutely sure?')) {
+            scConfirm('Are you sure you want to reset the entire tournament bracket? This will eliminate all teams and reset all scores.', function() {
+                scConfirm('THIS CANNOT BE UNDONE! Are you absolutely sure?', function() {
                     resetBracket();
-                }
-            }
+                }, { confirmText: 'Yes, Reset Everything', danger: true });
+            }, { confirmText: 'Yes, Reset' });
         });
         
         // Final Four configuration
@@ -2078,5 +2133,38 @@ function advanceTeam(winner, loser) {
         };
     })();
 </script>
+    <div id="scModal-overlay">
+        <div id="scModal-box">
+            <p id="scModal-message"></p>
+            <div id="scModal-actions">
+                <button id="scModal-cancel">Cancel</button>
+                <button id="scModal-confirm">Confirm</button>
+            </div>
+        </div>
+    </div>
+    <script>
+        function scConfirm(message, onConfirm, opts) {
+            opts = opts || {};
+            var overlay = document.getElementById('scModal-overlay');
+            document.getElementById('scModal-message').textContent = message;
+            var cancelBtn = document.getElementById('scModal-cancel');
+            var confirmBtn = document.getElementById('scModal-confirm');
+            confirmBtn.textContent = opts.confirmText || 'Confirm';
+            confirmBtn.className = opts.danger ? 'danger' : '';
+            cancelBtn.style.display = '';
+            overlay.classList.add('active');
+            var nc = confirmBtn.cloneNode(true);
+            var nk = cancelBtn.cloneNode(true);
+            confirmBtn.parentNode.replaceChild(nc, confirmBtn);
+            cancelBtn.parentNode.replaceChild(nk, cancelBtn);
+            document.getElementById('scModal-confirm').addEventListener('click', function() {
+                overlay.classList.remove('active');
+                if (onConfirm) onConfirm();
+            });
+            document.getElementById('scModal-cancel').addEventListener('click', function() {
+                overlay.classList.remove('active');
+            });
+        }
+    </script>
 </body>
 </html>

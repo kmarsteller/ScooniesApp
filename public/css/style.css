@@ -341,4 +341,15 @@ footer {
     margin-right: 0;
     margin-bottom: 15px;
   }
+
+  nav {
+    gap: 4px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  nav a {
+    padding: 6px 10px;
+    font-size: 13px;
+  }
 }

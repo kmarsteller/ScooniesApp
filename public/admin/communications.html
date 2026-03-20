@@ -54,6 +54,9 @@
         .admin-nav a:hover:not(.active) {
             background-color: #dee2e6;
         }
+        @media (max-width: 480px) {
+            .admin-nav a { padding: 10px 12px; font-size: 13px; }
+        }
         
         .form-group {
             margin-bottom: 20px;
@@ -205,6 +208,57 @@
             padding-bottom: 5px;
             border-bottom: 1px solid #eee;
         }
+
+        /* Mobile-friendly confirmation modal */
+        #scModal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.55);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            box-sizing: border-box;
+        }
+        #scModal-overlay.active { display: flex; }
+        #scModal-box {
+            background: #fff;
+            border-radius: 12px;
+            padding: 24px;
+            max-width: 440px;
+            width: 100%;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        }
+        #scModal-message {
+            font-size: 16px;
+            line-height: 1.5;
+            margin: 0 0 24px;
+            color: #333;
+        }
+        #scModal-actions { display: flex; gap: 12px; }
+        #scModal-cancel {
+            flex: 1;
+            padding: 14px 16px;
+            font-size: 16px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: #f8f9fa;
+            color: #333;
+            cursor: pointer;
+        }
+        #scModal-confirm {
+            flex: 1;
+            padding: 14px 16px;
+            font-size: 16px;
+            border: none;
+            border-radius: 8px;
+            background: #dc3545;
+            color: white;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        #scModal-confirm.danger { background: #8b0000; }
     </style>
 </head>
 <body>
@@ -228,9 +282,9 @@
             <div class="section-header">Tournament Administration</div>
             
             <div class="admin-nav">
-                <a href="/admin/tournament">Tournament Bracket</a>
-                <a href="/admin/entries">Manage Entries</a>
-                <a href="/admin/communications" class="active">League Communications</a>
+                <a href="/admin/tournament">Bracket</a>
+                <a href="/admin/entries">Entries</a>
+                <a href="/admin/communications" class="active">Comms</a>
                 <a href="#" id="logoutBtn" style="margin-left:auto; color:#721c24;">Logout</a>
             </div>
             
@@ -719,10 +773,7 @@
                 return;
             }
             
-            if (!confirm(`Are you sure you want to send this email to ${recipients.length} recipients?`)) {
-                return;
-            }
-            
+            scConfirm(`Are you sure you want to send this email to ${recipients.length} recipients?`, function() {
             // Disable buttons
             document.getElementById('sendSpecificBtn').disabled = true;
             document.getElementById('previewSpecificBtn').disabled = true;
@@ -774,8 +825,9 @@
                 document.getElementById('sendSpecificBtn').disabled = false;
                 document.getElementById('previewSpecificBtn').disabled = false;
             });
+            }); // end scConfirm
         }
-        
+
         // Preview all participants message
         function previewAll() {
             const subject = document.getElementById('allSubject').value;
@@ -833,10 +885,7 @@
                 confirmMessage = 'Are you sure you want to send this email to all UNPAID participants?';
             }
             
-            if (!confirm(confirmMessage)) {
-                return;
-            }
-            
+            scConfirm(confirmMessage, function() {
             // Disable buttons
             document.getElementById('sendAllBtn').disabled = true;
             document.getElementById('previewAllBtn').disabled = true;
@@ -893,8 +942,9 @@
                 document.getElementById('sendAllBtn').disabled = false;
                 document.getElementById('previewAllBtn').disabled = false;
             });
+            }); // end scConfirm
         }
-        
+
         // Preview payment reminder
         function previewReminder() {
             const subject = document.getElementById('reminderSubject').value;
@@ -942,10 +992,7 @@
                 return;
             }
 
-            if (!confirm('Are you sure you want to send payment reminders to all unpaid participants?')) {
-                return;
-            }
-
+            scConfirm('Are you sure you want to send payment reminders to all unpaid participants?', function() {
             // Disable buttons
             document.getElementById('sendReminderBtn').disabled = true;
             document.getElementById('previewReminderBtn').disabled = true;
@@ -1004,12 +1051,12 @@
                 document.getElementById('sendReminderBtn').disabled = false;
                 document.getElementById('previewReminderBtn').disabled = false;
             });
+            }); // end scConfirm
         }
-        
+
         // Send scoring update to all participants
         function sendScoringUpdate() {
-            if (!confirm('Send the current standings to all participants?')) return;
-
+            scConfirm('Send the current standings to all participants?', function() {
             const btn = document.getElementById('sendScoringBtn');
             btn.disabled = true;
             showStatus('Sending scoring update...', 'info');
@@ -1049,6 +1096,7 @@
                     showStatus(`Error sending scoring update: ${error.message}`, 'error');
                     btn.disabled = false;
                 });
+            }); // end scConfirm
         }
 
         // Show status message
@@ -1148,6 +1196,39 @@
                 });
             };
         })();
+    </script>
+    <div id="scModal-overlay">
+        <div id="scModal-box">
+            <p id="scModal-message"></p>
+            <div id="scModal-actions">
+                <button id="scModal-cancel">Cancel</button>
+                <button id="scModal-confirm">Confirm</button>
+            </div>
+        </div>
+    </div>
+    <script>
+        function scConfirm(message, onConfirm, opts) {
+            opts = opts || {};
+            var overlay = document.getElementById('scModal-overlay');
+            document.getElementById('scModal-message').textContent = message;
+            var cancelBtn = document.getElementById('scModal-cancel');
+            var confirmBtn = document.getElementById('scModal-confirm');
+            confirmBtn.textContent = opts.confirmText || 'Confirm';
+            confirmBtn.className = opts.danger ? 'danger' : '';
+            cancelBtn.style.display = '';
+            overlay.classList.add('active');
+            var nc = confirmBtn.cloneNode(true);
+            var nk = cancelBtn.cloneNode(true);
+            confirmBtn.parentNode.replaceChild(nc, confirmBtn);
+            cancelBtn.parentNode.replaceChild(nk, cancelBtn);
+            document.getElementById('scModal-confirm').addEventListener('click', function() {
+                overlay.classList.remove('active');
+                if (onConfirm) onConfirm();
+            });
+            document.getElementById('scModal-cancel').addEventListener('click', function() {
+                overlay.classList.remove('active');
+            });
+        }
     </script>
 </body>
 </html>

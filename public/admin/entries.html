@@ -257,6 +257,9 @@
         .admin-nav a:hover:not(.active) {
             background-color: #dee2e6;
         }
+        @media (max-width: 480px) {
+            .admin-nav a { padding: 10px 12px; font-size: 13px; }
+        }
         
         /* Entry status control styling */
         .entry-status-control {
@@ -357,6 +360,57 @@
             opacity: 0.9;
             transform: translateY(-1px);
         }
+
+        /* Mobile-friendly confirmation modal */
+        #scModal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.55);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            box-sizing: border-box;
+        }
+        #scModal-overlay.active { display: flex; }
+        #scModal-box {
+            background: #fff;
+            border-radius: 12px;
+            padding: 24px;
+            max-width: 440px;
+            width: 100%;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        }
+        #scModal-message {
+            font-size: 16px;
+            line-height: 1.5;
+            margin: 0 0 24px;
+            color: #333;
+        }
+        #scModal-actions { display: flex; gap: 12px; }
+        #scModal-cancel {
+            flex: 1;
+            padding: 14px 16px;
+            font-size: 16px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: #f8f9fa;
+            color: #333;
+            cursor: pointer;
+        }
+        #scModal-confirm {
+            flex: 1;
+            padding: 14px 16px;
+            font-size: 16px;
+            border: none;
+            border-radius: 8px;
+            background: #dc3545;
+            color: white;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        #scModal-confirm.danger { background: #8b0000; }
     </style>
 </head>
 <body>
@@ -378,9 +432,9 @@
         <div class="section-header">Tournament Administration</div>
         
         <div class="admin-nav">
-            <a href="/admin/tournament">Tournament Bracket</a>
-            <a href="/admin/entries" class="active">Manage Entries</a>
-            <a href="/admin/communications">League Communications</a>
+            <a href="/admin/tournament">Bracket</a>
+            <a href="/admin/entries" class="active">Entries</a>
+            <a href="/admin/communications">Comms</a>
             <a href="#" id="logoutBtn" style="margin-left:auto; color:#721c24;">Logout</a>
         </div>
         
@@ -815,9 +869,9 @@
                 deleteBtn.textContent = 'Delete';
                 deleteBtn.dataset.entryId = entry.id;
                 deleteBtn.addEventListener('click', function() {
-                    if (confirm(`Are you sure you want to delete the entry "${entry.nickname}" by ${entry.player_name}?`)) {
+                    scConfirm(`Are you sure you want to delete the entry "${entry.nickname}" by ${entry.player_name}?`, function() {
                         deleteEntry(entry.id);
-                    }
+                    });
                 });
                 
                 actionsCell.appendChild(editBtn);
@@ -906,7 +960,7 @@
                 
                 // Validate required fields
                 if (!playerName || !nickname || !email) {
-                    alert('Please fill in all required fields');
+                    scAlert('Please fill in all required fields');
                     return;
                 }
                 
@@ -1085,9 +1139,9 @@
             if (toggleButton) {
                 toggleButton.addEventListener('click', function() {
                     console.log("Toggle button clicked");
-                    if (confirm('Are you sure you want to open entry submissions?')) {
+                    scConfirm('Are you sure you want to open entry submissions?', function() {
                         toggleEntryStatus();
-                    }
+                    });
                 });
             } else {
                 console.error("Toggle button element not found!");
@@ -1097,18 +1151,18 @@
             const closeNotYetBtn = document.getElementById('closeNotYetBtn');
             if (closeNotYetBtn) {
                 closeNotYetBtn.addEventListener('click', function() {
-                    if (confirm('Close entries as "Not Yet Open"? The Make a Scoonie page will show a "check back soon" message.')) {
+                    scConfirm('Close entries as "Not Yet Open"? The Make a Scoonie page will show a "check back soon" message.', function() {
                         toggleEntryStatus('not_yet_open');
-                    }
+                    });
                 });
             }
 
             const closeDeadlineBtn = document.getElementById('closeDeadlineBtn');
             if (closeDeadlineBtn) {
                 closeDeadlineBtn.addEventListener('click', function() {
-                    if (confirm('Close entries as "Tournament Has Begun"? The Make a Scoonie page will show a deadline-passed message.')) {
+                    scConfirm('Close entries as "Tournament Has Begun"? The Make a Scoonie page will show a deadline-passed message.', function() {
                         toggleEntryStatus('deadline_passed');
-                    }
+                    });
                 });
             }
         });
@@ -1219,9 +1273,9 @@
             const toggleVisBtn = document.getElementById('toggleVisibilityBtn');
             if (toggleVisBtn) {
                 toggleVisBtn.addEventListener('click', function() {
-                    if (confirm('Are you sure you want to change the team selections visibility?')) {
+                    scConfirm('Are you sure you want to change the team selections visibility?', function() {
                         toggleTeamVisibility();
-                    }
+                    });
                 });
             }
         });
@@ -1392,6 +1446,55 @@
                 });
             };
         })();
+    </script>
+    <div id="scModal-overlay">
+        <div id="scModal-box">
+            <p id="scModal-message"></p>
+            <div id="scModal-actions">
+                <button id="scModal-cancel">Cancel</button>
+                <button id="scModal-confirm">Confirm</button>
+            </div>
+        </div>
+    </div>
+    <script>
+        function scConfirm(message, onConfirm, opts) {
+            opts = opts || {};
+            var overlay = document.getElementById('scModal-overlay');
+            document.getElementById('scModal-message').textContent = message;
+            var cancelBtn = document.getElementById('scModal-cancel');
+            var confirmBtn = document.getElementById('scModal-confirm');
+            confirmBtn.textContent = opts.confirmText || 'Confirm';
+            confirmBtn.className = opts.danger ? 'danger' : '';
+            cancelBtn.style.display = '';
+            overlay.classList.add('active');
+            var nc = confirmBtn.cloneNode(true);
+            var nk = cancelBtn.cloneNode(true);
+            confirmBtn.parentNode.replaceChild(nc, confirmBtn);
+            cancelBtn.parentNode.replaceChild(nk, cancelBtn);
+            document.getElementById('scModal-confirm').addEventListener('click', function() {
+                overlay.classList.remove('active');
+                if (onConfirm) onConfirm();
+            });
+            document.getElementById('scModal-cancel').addEventListener('click', function() {
+                overlay.classList.remove('active');
+            });
+        }
+        function scAlert(message, onOk) {
+            var overlay = document.getElementById('scModal-overlay');
+            document.getElementById('scModal-message').textContent = message;
+            var cancelBtn = document.getElementById('scModal-cancel');
+            var confirmBtn = document.getElementById('scModal-confirm');
+            confirmBtn.textContent = 'OK';
+            confirmBtn.className = '';
+            cancelBtn.style.display = 'none';
+            overlay.classList.add('active');
+            var nc = confirmBtn.cloneNode(true);
+            confirmBtn.parentNode.replaceChild(nc, confirmBtn);
+            document.getElementById('scModal-confirm').addEventListener('click', function() {
+                overlay.classList.remove('active');
+                if (onOk) onOk();
+            });
+        }
     </script>
 </body>
 </html>
