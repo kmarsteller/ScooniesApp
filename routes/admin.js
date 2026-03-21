@@ -1165,58 +1165,67 @@ router.post('/reseed-teams', requireAuth, (req, res) => {
 
 // ── Commissioner's Banner ──────────────────────────────────────────────────
 router.get('/banner', requireAuth, (req, res) => {
-    db.get("SELECT value FROM system_settings WHERE key = 'commissioner_banner'", (err, row) => {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json({ banner: row ? row.value : '' });
-    });
-});
-
-router.put('/banner', requireAuth, (req, res) => {
-    const { banner } = req.body;
-    if (banner === undefined) return res.status(400).json({ error: 'banner field required' });
-
-    const text = banner.trim();
-    if (!text) {
-        db.run("DELETE FROM system_settings WHERE key = 'commissioner_banner'", err => {
-            if (err) return res.status(500).json({ error: err.message });
-            res.json({ success: true, banner: '' });
-        });
-    } else {
-        db.run(
-            "INSERT INTO system_settings (key, value) VALUES ('commissioner_banner', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value",
-            [text],
-            err => {
-                if (err) return res.status(500).json({ error: err.message });
-                res.json({ success: true, banner: text });
-            }
-        );
-    }
-});
-
-// ── Standings Banner (Seling's Shit-talking Corner) ───────────────────────
-router.get('/standings-banner', requireAuth, (req, res) => {
     db.all(
-        "SELECT key, value FROM system_settings WHERE key IN ('standings_banner', 'standings_banner_color', 'standings_banner_enabled')",
+        "SELECT key, value FROM system_settings WHERE key IN ('commissioner_banner', 'commissioner_banner_enabled')",
         (err, rows) => {
             if (err) return res.status(500).json({ error: err.message });
             const map = {};
             rows.forEach(r => { map[r.key] = r.value; });
             res.json({
-                banner:  map['standings_banner'] || '',
-                color:   map['standings_banner_color'] || '#ff00ff',
-                enabled: map['standings_banner_enabled'] !== 'false',
+                banner:  map['commissioner_banner'] || '',
+                enabled: map['commissioner_banner_enabled'] !== 'false',
+            });
+        }
+    );
+});
+
+router.put('/banner', requireAuth, (req, res) => {
+    const { banner, enabled } = req.body;
+    if (banner === undefined) return res.status(400).json({ error: 'banner field required' });
+
+    const text      = banner.trim();
+    const isEnabled = enabled !== false && enabled !== 'false';
+
+    const upsert = (key, val, cb) => db.run(
+        "INSERT INTO system_settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+        [key, val], cb
+    );
+
+    upsert('commissioner_banner', text, err => {
+        if (err) return res.status(500).json({ error: err.message });
+        upsert('commissioner_banner_enabled', String(isEnabled), err2 => {
+            if (err2) return res.status(500).json({ error: err2.message });
+            res.json({ success: true, banner: text, enabled: isEnabled });
+        });
+    });
+});
+
+// ── Standings Banner (Seling's Shit-talking Corner) ───────────────────────
+router.get('/standings-banner', requireAuth, (req, res) => {
+    db.all(
+        "SELECT key, value FROM system_settings WHERE key IN ('standings_banner', 'standings_banner_color', 'standings_banner_text_color', 'standings_banner_enabled')",
+        (err, rows) => {
+            if (err) return res.status(500).json({ error: err.message });
+            const map = {};
+            rows.forEach(r => { map[r.key] = r.value; });
+            res.json({
+                banner:    map['standings_banner'] || '',
+                color:     map['standings_banner_color'] || '#ff00ff',
+                textColor: map['standings_banner_text_color'] || '#ffffff',
+                enabled:   map['standings_banner_enabled'] !== 'false',
             });
         }
     );
 });
 
 router.put('/standings-banner', requireAuth, (req, res) => {
-    const { banner, color, enabled } = req.body;
+    const { banner, color, textColor, enabled } = req.body;
     if (banner === undefined) return res.status(400).json({ error: 'banner field required' });
 
-    const text      = banner.trim();
-    const hexColor  = (color || '#ff00ff').trim();
-    const isEnabled = enabled !== false && enabled !== 'false';
+    const text         = banner.trim();
+    const hexColor     = (color || '#ff00ff').trim();
+    const hexTextColor = (textColor || '#ffffff').trim();
+    const isEnabled    = enabled !== false && enabled !== 'false';
 
     const upsert = (key, val, cb) => db.run(
         "INSERT INTO system_settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value",
@@ -1227,9 +1236,12 @@ router.put('/standings-banner', requireAuth, (req, res) => {
         if (err) return res.status(500).json({ error: err.message });
         upsert('standings_banner_color', hexColor, err2 => {
             if (err2) return res.status(500).json({ error: err2.message });
-            upsert('standings_banner_enabled', String(isEnabled), err3 => {
+            upsert('standings_banner_text_color', hexTextColor, err3 => {
                 if (err3) return res.status(500).json({ error: err3.message });
-                res.json({ success: true, banner: text, color: hexColor, enabled: isEnabled });
+                upsert('standings_banner_enabled', String(isEnabled), err4 => {
+                    if (err4) return res.status(500).json({ error: err4.message });
+                    res.json({ success: true, banner: text, color: hexColor, textColor: hexTextColor, enabled: isEnabled });
+                });
             });
         });
     });

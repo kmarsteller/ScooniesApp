@@ -115,7 +115,7 @@
         }
 
         @keyframes commBannerScroll {
-            0%   { transform: translateX(100vw); }
+            0%   { transform: translateX(var(--banner-start, 600px)); }
             100% { transform: translateX(-100%); }
         }
     </style>
@@ -176,15 +176,22 @@
         </footer>
     </main>
     <script>
-        fetch('/api/bracket/banner')
+        fetch('/api/bracket/banner', { cache: 'no-store' })
             .then(r => r.json())
             .then(data => {
+                const bannerEl = document.getElementById('commissionerBanner');
                 if (data.banner) {
                     const el = document.getElementById('bannerMessage');
                     el.textContent = data.banner;
-                    // Scale scroll speed with text length: ~0.22s per char, min 8s
-                    el.style.animationDuration = Math.max(8, data.banner.length * 0.22) + 's';
-                    document.getElementById('commissionerBanner').style.display = 'flex';
+                    bannerEl.style.display = 'flex';
+                    requestAnimationFrame(() => {
+                        const trackWidth = bannerEl.querySelector('.banner-track').offsetWidth;
+                        el.style.setProperty('--banner-start', trackWidth + 'px');
+                        const totalPx = trackWidth + el.scrollWidth;
+                        el.style.animationDuration = Math.max(8, totalPx / 80) + 's';
+                    });
+                } else {
+                    bannerEl.style.display = 'none';
                 }
             })
             .catch(() => {});

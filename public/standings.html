@@ -395,7 +395,7 @@
             text-shadow: 0 0 8px rgba(255,255,255,0.6);
         }
         @keyframes shittalkScroll {
-            0%   { transform: translateX(100vw); }
+            0%   { transform: translateX(var(--banner-start, 600px)); }
             100% { transform: translateX(-100%); }
         }
     </style>
@@ -955,17 +955,29 @@
         });
 
         // Shittalking Corner banner
-        fetch('/api/bracket/standings-banner')
+        fetch('/api/bracket/standings-banner', { cache: 'no-store' })
             .then(r => r.json())
             .then(data => {
+                const banner = document.getElementById('shittalkBanner');
                 if (data.banner) {
-                    const banner  = document.getElementById('shittalkBanner');
-                    const el      = document.getElementById('shittalkMessage');
+                    const el = document.getElementById('shittalkMessage');
                     el.textContent = data.banner;
-                    el.style.animationDuration = Math.max(10, data.banner.length * 0.24) + 's';
+                    el.style.color      = data.textColor || '#ffffff';
+                    el.style.textShadow = `0 0 8px ${data.textColor || '#ffffff'}88`;
                     banner.style.background = `linear-gradient(to right, color-mix(in srgb, ${data.color} 70%, #000), ${data.color} 40%, ${data.color} 60%, color-mix(in srgb, ${data.color} 70%, #000))`;
                     banner.style.boxShadow  = `0 3px 18px ${data.color}88`;
                     banner.style.display    = 'flex';
+                    // Measure the track width AFTER display:flex so layout is ready,
+                    // then set the start position and duration based on actual pixels.
+                    requestAnimationFrame(() => {
+                        const trackWidth = banner.querySelector('.banner-track').offsetWidth;
+                        el.style.setProperty('--banner-start', trackWidth + 'px');
+                        // ~80px/s feels natural; minimum 8s
+                        const totalPx = trackWidth + el.scrollWidth;
+                        el.style.animationDuration = Math.max(8, totalPx / 80) + 's';
+                    });
+                } else {
+                    banner.style.display = 'none';
                 }
             })
             .catch(() => {});

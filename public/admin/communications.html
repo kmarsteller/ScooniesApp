@@ -293,8 +293,16 @@
 
                 <!-- Commissioner's Banner -->
                 <div style="background:#fff;border:1px solid #ddd;border-radius:6px;padding:18px 20px;margin-bottom:10px;">
-                    <h4 style="margin:0 0 6px;color:#dc3545;">Commissioner's Banner</h4>
-                    <p style="margin:0 0 14px;color:#555;font-size:0.9rem;">Display a message banner at the top of the home page. Leave blank to show no banner.</p>
+                    <div style="display:flex;align-items:center;gap:12px;margin-bottom:4px;">
+                        <h4 style="margin:0;color:#dc3545;">Commissioner's Banner</h4>
+                        <div id="commToggleWrap" style="position:relative;width:44px;height:24px;flex-shrink:0;cursor:pointer;">
+                            <input type="checkbox" id="commBannerEnabled" style="opacity:0;width:0;height:0;position:absolute;">
+                            <span id="commToggleTrack" style="position:absolute;inset:0;border-radius:24px;background:#ccc;transition:background 0.2s;"></span>
+                            <span id="commToggleThumb" style="position:absolute;left:3px;top:3px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,0.3);transition:transform 0.2s;pointer-events:none;"></span>
+                        </div>
+                        <span id="commToggleLabel" style="font-size:0.85rem;color:#6c757d;font-weight:bold;">Off</span>
+                    </div>
+                    <p style="margin:0 0 14px;color:#555;font-size:0.9rem;">Display a message banner at the top of the home page.</p>
                     <div class="form-group" style="margin-bottom:12px;">
                         <textarea id="bannerText" class="form-control" rows="2" placeholder="e.g. Entries are now open! Submit your Scoonie before tip-off on March 20th." style="min-height:unset;"></textarea>
                     </div>
@@ -310,23 +318,32 @@
 
                 <!-- Seling's Shit-talking Corner Banner -->
                 <div style="background:#fff;border:1px solid #ddd;border-radius:6px;padding:18px 20px;margin-bottom:10px;">
-                    <h4 style="margin:0 0 4px;color:#6f42c1;">🔥 Seling's Shit-talking Corner</h4>
-                    <p style="margin:0 0 14px;color:#555;font-size:0.9rem;">Display a trash-talk banner at the top of the Standings page. Leave blank to hide it. Pick a neon color to match your vibe.</p>
+                    <!-- Title row with toggle -->
+                    <div style="display:flex;align-items:center;gap:12px;margin-bottom:4px;">
+                        <h4 style="margin:0;color:#6f42c1;">🔥 Seling's Shit-talking Corner</h4>
+                        <div id="stBannerToggleWrap" style="position:relative;width:44px;height:24px;flex-shrink:0;cursor:pointer;">
+                            <input type="checkbox" id="stBannerEnabled" style="opacity:0;width:0;height:0;position:absolute;">
+                            <span id="stBannerToggleTrack" style="position:absolute;inset:0;border-radius:24px;background:#ccc;transition:background 0.2s;"></span>
+                            <span id="stBannerToggleThumb" style="position:absolute;left:3px;top:3px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,0.3);transition:transform 0.2s;pointer-events:none;"></span>
+                        </div>
+                        <span id="stBannerToggleLabel" style="font-size:0.85rem;color:#6c757d;font-weight:bold;">Banner Off</span>
+                    </div>
+                    <p style="margin:0 0 14px;color:#555;font-size:0.9rem;">Display a trash-talk banner at the top of the Standings page. Pick neon colors to match your vibe.</p>
 
-                    <!-- Color picker -->
+                    <!-- Background color picker -->
                     <div style="margin-bottom:14px;">
-                        <label style="display:block;font-weight:bold;margin-bottom:8px;font-size:0.9rem;">Banner Color</label>
+                        <label style="display:block;font-weight:bold;margin-bottom:8px;font-size:0.9rem;">Background Color</label>
                         <div id="neonSwatches" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px;">
-                            <button class="neon-swatch" data-color="#ff00ff" title="Neon Magenta"  style="background:#ff00ff;"></button>
-                            <button class="neon-swatch" data-color="#00ff41" title="Matrix Green"  style="background:#00ff41;"></button>
-                            <button class="neon-swatch" data-color="#00eeff" title="Electric Cyan"  style="background:#00eeff;"></button>
-                            <button class="neon-swatch" data-color="#ff6600" title="Neon Orange"   style="background:#ff6600;"></button>
-                            <button class="neon-swatch" data-color="#ffff00" title="Laser Yellow"  style="background:#ffff00;"></button>
-                            <button class="neon-swatch" data-color="#ff0055" title="Hot Red"       style="background:#ff0055;"></button>
-                            <button class="neon-swatch" data-color="#bf00ff" title="UV Purple"     style="background:#bf00ff;"></button>
-                            <button class="neon-swatch" data-color="#00ff99" title="Neon Mint"     style="background:#00ff99;"></button>
-                            <button class="neon-swatch" data-color="#ff007f" title="Neon Rose"     style="background:#ff007f;"></button>
-                            <button class="neon-swatch" data-color="#1e90ff" title="Dodger Blue"   style="background:#1e90ff;"></button>
+                            <button class="neon-swatch" data-color="#ff00ff" title="Neon Magenta" style="background:#ff00ff;"></button>
+                            <button class="neon-swatch" data-color="#00ff41" title="Matrix Green" style="background:#00ff41;"></button>
+                            <button class="neon-swatch" data-color="#00eeff" title="Electric Cyan" style="background:#00eeff;"></button>
+                            <button class="neon-swatch" data-color="#ff6600" title="Neon Orange"  style="background:#ff6600;"></button>
+                            <button class="neon-swatch" data-color="#ffff00" title="Laser Yellow" style="background:#ffff00;"></button>
+                            <button class="neon-swatch" data-color="#ff0055" title="Hot Red"      style="background:#ff0055;"></button>
+                            <button class="neon-swatch" data-color="#bf00ff" title="UV Purple"    style="background:#bf00ff;"></button>
+                            <button class="neon-swatch" data-color="#00ff99" title="Neon Mint"    style="background:#00ff99;"></button>
+                            <button class="neon-swatch" data-color="#ff007f" title="Neon Rose"    style="background:#ff007f;"></button>
+                            <button class="neon-swatch" data-color="#1e90ff" title="Dodger Blue"  style="background:#1e90ff;"></button>
                         </div>
                         <div style="display:flex;align-items:center;gap:10px;">
                             <input type="color" id="stBannerColorPicker" value="#ff00ff"
@@ -336,27 +353,42 @@
                         </div>
                     </div>
 
+                    <!-- Text color picker -->
+                    <div style="margin-bottom:14px;">
+                        <label style="display:block;font-weight:bold;margin-bottom:8px;font-size:0.9rem;">Text Color</label>
+                        <div id="textColorSwatches" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px;">
+                            <button class="text-swatch" data-color="#ffffff" title="White"        style="background:#ffffff;border:2px solid #ccc;"></button>
+                            <button class="text-swatch" data-color="#000000" title="Black"        style="background:#000000;"></button>
+                            <button class="text-swatch" data-color="#ffff00" title="Yellow"       style="background:#ffff00;border:2px solid #ccc;"></button>
+                            <button class="text-swatch" data-color="#000000" title="Black"        style="background:#111;"></button>
+                            <button class="text-swatch" data-color="#ff00ff" title="Magenta"      style="background:#ff00ff;"></button>
+                            <button class="text-swatch" data-color="#00ff41" title="Matrix Green" style="background:#00ff41;"></button>
+                            <button class="text-swatch" data-color="#00eeff" title="Cyan"         style="background:#00eeff;"></button>
+                            <button class="text-swatch" data-color="#ff6600" title="Orange"       style="background:#ff6600;"></button>
+                            <button class="text-swatch" data-color="#ff0055" title="Hot Red"      style="background:#ff0055;"></button>
+                            <button class="text-swatch" data-color="#bf00ff" title="Purple"       style="background:#bf00ff;"></button>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:10px;">
+                            <input type="color" id="stBannerTextColorPicker" value="#ffffff"
+                                style="width:38px;height:32px;border:none;padding:0;cursor:pointer;border-radius:4px;">
+                            <span id="stBannerTextColorHex" style="font-family:monospace;font-size:0.9rem;color:#555;">#ffffff</span>
+                            <div id="stBannerTextColorPreviewBar" style="flex:1;height:28px;border-radius:4px;background:#333;display:flex;align-items:center;padding:0 10px;font-weight:bold;font-size:0.85rem;transition:all 0.2s;">
+                                <span id="stBannerTextColorSample" style="color:#ffffff;">Sample text</span>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="form-group" style="margin-bottom:12px;">
                         <textarea id="stBannerText" class="form-control" rows="2"
                             placeholder="e.g. Nobody picked Duke to go this far — except maybe the guy who's about to lose to them 🤡"
                             style="min-height:unset;"></textarea>
-                    </div>
-                    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px;">
-                        <label style="display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none;font-weight:bold;font-size:0.9rem;">
-                            <div id="stBannerToggleWrap" style="position:relative;width:44px;height:24px;flex-shrink:0;">
-                                <input type="checkbox" id="stBannerEnabled" style="opacity:0;width:0;height:0;position:absolute;">
-                                <span id="stBannerToggleTrack" style="position:absolute;inset:0;border-radius:24px;background:#ccc;transition:background 0.2s;cursor:pointer;"></span>
-                                <span id="stBannerToggleThumb" style="position:absolute;left:3px;top:3px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,0.3);transition:transform 0.2s;pointer-events:none;"></span>
-                            </div>
-                            <span id="stBannerToggleLabel">Banner Off</span>
-                        </label>
                     </div>
                     <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
                         <button id="saveStBannerBtn" class="primary-button action-button" style="padding:8px 18px;background:#6f42c1;border-color:#6f42c1;">Save</button>
                         <button id="clearStBannerBtn" class="action-button" style="background-color:#6c757d;padding:8px 18px;">Clear</button>
                         <span id="stBannerStatus" style="font-size:0.9rem;color:#6c757d;font-style:italic;"></span>
                     </div>
-                    <div id="stBannerPreview" style="display:none;margin-top:14px;padding:10px 16px;border-radius:6px;color:#fff;font-weight:700;font-size:0.95rem;text-shadow:0 0 6px rgba(255,255,255,0.5);transition:all 0.2s;">
+                    <div id="stBannerPreview" style="display:none;margin-top:14px;padding:10px 16px;border-radius:6px;font-weight:700;font-size:0.95rem;transition:all 0.2s;">
                         🔥 Seling's Shit-talking Corner &nbsp;|&nbsp; <span id="stBannerPreviewText"></span>
                     </div>
                 </div>
@@ -1173,18 +1205,49 @@
     <script>
         // ── Commissioner's Banner ──────────────────────────────────────────
         (function() {
-            const textarea = document.getElementById('bannerText');
-            const saveBtn  = document.getElementById('saveBannerBtn');
-            const clearBtn = document.getElementById('clearBannerBtn');
-            const status   = document.getElementById('bannerStatus');
-            const preview  = document.getElementById('bannerPreview');
+            const textarea    = document.getElementById('bannerText');
+            const saveBtn     = document.getElementById('saveBannerBtn');
+            const clearBtn    = document.getElementById('clearBannerBtn');
+            const status      = document.getElementById('bannerStatus');
+            const preview     = document.getElementById('bannerPreview');
             const previewText = document.getElementById('bannerPreviewText');
+            const toggleInput = document.getElementById('commBannerEnabled');
+            const toggleTrack = document.getElementById('commToggleTrack');
+            const toggleThumb = document.getElementById('commToggleThumb');
+            const toggleLabel = document.getElementById('commToggleLabel');
+
+            function setToggle(on) {
+                toggleInput.checked = on;
+                toggleTrack.style.background = on ? '#dc3545' : '#ccc';
+                toggleThumb.style.transform  = on ? 'translateX(20px)' : '';
+                toggleLabel.textContent      = on ? 'On' : 'Off';
+                toggleLabel.style.color      = on ? '#dc3545' : '#6c757d';
+            }
+
+            function saveNow(enabled) {
+                return fetch('/api/admin/banner', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ banner: textarea.value, enabled }),
+                }).then(r => r.json());
+            }
+
+            document.getElementById('commToggleWrap').addEventListener('click', () => {
+                const newState = !toggleInput.checked;
+                setToggle(newState);
+                saveNow(newState).then(() => {
+                    status.textContent = newState ? 'Banner enabled.' : 'Banner disabled.';
+                    status.style.color = newState ? '#28a745' : '#6c757d';
+                    setTimeout(() => { status.textContent = ''; }, 3000);
+                }).catch(() => { status.textContent = 'Error saving.'; status.style.color = '#dc3545'; });
+            });
 
             // Load current banner
             fetch('/api/admin/banner')
                 .then(r => r.json())
                 .then(data => {
                     textarea.value = data.banner || '';
+                    setToggle(data.enabled !== false);
                     updatePreview(data.banner || '');
                 });
 
@@ -1192,21 +1255,12 @@
 
             function updatePreview(text) {
                 const t = text.trim();
-                if (t) {
-                    previewText.textContent = t;
-                    preview.style.display = 'block';
-                } else {
-                    preview.style.display = 'none';
-                }
+                if (t) { previewText.textContent = t; preview.style.display = 'block'; }
+                else   { preview.style.display = 'none'; }
             }
 
             saveBtn.addEventListener('click', () => {
-                fetch('/api/admin/banner', {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ banner: textarea.value }),
-                })
-                .then(r => r.json())
+                saveNow(toggleInput.checked)
                 .then(data => {
                     status.textContent = data.banner ? 'Banner saved!' : 'Banner cleared.';
                     status.style.color = '#28a745';
@@ -1217,13 +1271,9 @@
 
             clearBtn.addEventListener('click', () => {
                 textarea.value = '';
+                setToggle(false);
                 updatePreview('');
-                fetch('/api/admin/banner', {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ banner: '' }),
-                })
-                .then(() => {
+                saveNow(false).then(() => {
                     status.textContent = 'Banner cleared.';
                     status.style.color = '#6c757d';
                     setTimeout(() => { status.textContent = ''; }, 3000);
@@ -1234,59 +1284,96 @@
     <script>
         // ── Shittalking Corner Banner ──────────────────────────────────────
         (function() {
-            const textarea     = document.getElementById('stBannerText');
-            const saveBtn      = document.getElementById('saveStBannerBtn');
-            const clearBtn     = document.getElementById('clearStBannerBtn');
-            const status       = document.getElementById('stBannerStatus');
-            const preview      = document.getElementById('stBannerPreview');
-            const previewText  = document.getElementById('stBannerPreviewText');
-            const colorPicker  = document.getElementById('stBannerColorPicker');
-            const colorHex     = document.getElementById('stBannerColorHex');
-            const colorBar     = document.getElementById('stBannerColorPreviewBar');
-            const toggleInput  = document.getElementById('stBannerEnabled');
-            const toggleTrack  = document.getElementById('stBannerToggleTrack');
-            const toggleThumb  = document.getElementById('stBannerToggleThumb');
-            const toggleLabel  = document.getElementById('stBannerToggleLabel');
+            const textarea          = document.getElementById('stBannerText');
+            const saveBtn           = document.getElementById('saveStBannerBtn');
+            const clearBtn          = document.getElementById('clearStBannerBtn');
+            const status            = document.getElementById('stBannerStatus');
+            const preview           = document.getElementById('stBannerPreview');
+            const previewText       = document.getElementById('stBannerPreviewText');
+            const colorPicker       = document.getElementById('stBannerColorPicker');
+            const colorHex          = document.getElementById('stBannerColorHex');
+            const colorBar          = document.getElementById('stBannerColorPreviewBar');
+            const textColorPicker   = document.getElementById('stBannerTextColorPicker');
+            const textColorHex      = document.getElementById('stBannerTextColorHex');
+            const textColorSample   = document.getElementById('stBannerTextColorSample');
+            const toggleInput       = document.getElementById('stBannerEnabled');
+            const toggleTrack       = document.getElementById('stBannerToggleTrack');
+            const toggleThumb       = document.getElementById('stBannerToggleThumb');
+            const toggleLabel       = document.getElementById('stBannerToggleLabel');
 
             function setToggle(on) {
                 toggleInput.checked = on;
                 toggleTrack.style.background = on ? '#6f42c1' : '#ccc';
                 toggleThumb.style.transform  = on ? 'translateX(20px)' : '';
-                toggleLabel.textContent      = on ? 'Banner On 🔥' : 'Banner Off';
+                toggleLabel.textContent      = on ? 'On 🔥' : 'Off';
+                toggleLabel.style.color      = on ? '#6f42c1' : '#6c757d';
             }
             document.getElementById('stBannerToggleWrap').addEventListener('click', () => {
-                setToggle(!toggleInput.checked);
+                const newState = !toggleInput.checked;
+                setToggle(newState);
+                fetch('/api/admin/standings-banner', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ banner: textarea.value, color: colorPicker.value, textColor: textColorPicker.value, enabled: newState }),
+                })
+                .then(r => r.json())
+                .then(() => {
+                    status.textContent = newState ? 'Banner enabled.' : 'Banner disabled.';
+                    status.style.color = newState ? '#28a745' : '#6c757d';
+                    setTimeout(() => { status.textContent = ''; }, 3000);
+                })
+                .catch(() => { status.textContent = 'Error saving.'; status.style.color = '#dc3545'; });
             });
 
-            // Swatch styling
+            // Background color swatches
             document.querySelectorAll('.neon-swatch').forEach(sw => {
                 sw.style.cssText += ';width:28px;height:28px;border-radius:50%;border:2px solid rgba(255,255,255,0.4);cursor:pointer;box-shadow:0 0 8px ' + sw.dataset.color + '99;transition:transform 0.1s,box-shadow 0.1s;';
                 sw.addEventListener('mouseenter', () => { sw.style.transform='scale(1.2)'; sw.style.boxShadow='0 0 14px '+sw.dataset.color; });
                 sw.addEventListener('mouseleave', () => { sw.style.transform=''; sw.style.boxShadow='0 0 8px '+sw.dataset.color+'99'; });
-                sw.addEventListener('click', () => setColor(sw.dataset.color));
+                sw.addEventListener('click', () => setBgColor(sw.dataset.color));
             });
 
-            function setColor(hex) {
+            // Text color swatches
+            document.querySelectorAll('.text-swatch').forEach(sw => {
+                sw.style.cssText += ';width:28px;height:28px;border-radius:50%;cursor:pointer;box-shadow:0 0 6px rgba(0,0,0,0.3);transition:transform 0.1s;';
+                sw.addEventListener('mouseenter', () => { sw.style.transform='scale(1.2)'; });
+                sw.addEventListener('mouseleave', () => { sw.style.transform=''; });
+                sw.addEventListener('click', () => setTextColor(sw.dataset.color));
+            });
+
+            function setBgColor(hex) {
                 colorPicker.value = hex;
                 colorHex.textContent = hex;
                 colorBar.style.background = hex;
                 colorBar.style.boxShadow  = '0 0 12px ' + hex + 'bb';
-                updatePreview(textarea.value.trim(), hex);
-                // Highlight active swatch
+                updatePreview(textarea.value.trim(), hex, textColorPicker.value);
                 document.querySelectorAll('.neon-swatch').forEach(sw => {
-                    sw.style.outline = sw.dataset.color.toLowerCase() === hex.toLowerCase() ? '3px solid #fff' : '';
+                    sw.style.outline = sw.dataset.color.toLowerCase() === hex.toLowerCase() ? '3px solid #333' : '';
                 });
             }
 
-            colorPicker.addEventListener('input', () => setColor(colorPicker.value));
-            textarea.addEventListener('input', () => updatePreview(textarea.value.trim(), colorPicker.value));
+            function setTextColor(hex) {
+                textColorPicker.value = hex;
+                textColorHex.textContent = hex;
+                textColorSample.style.color = hex;
+                updatePreview(textarea.value.trim(), colorPicker.value, hex);
+                document.querySelectorAll('.text-swatch').forEach(sw => {
+                    sw.style.outline = sw.dataset.color.toLowerCase() === hex.toLowerCase() ? '3px solid #6f42c1' : '';
+                });
+            }
 
-            function updatePreview(text, color) {
+            colorPicker.addEventListener('input',     () => setBgColor(colorPicker.value));
+            textColorPicker.addEventListener('input', () => setTextColor(textColorPicker.value));
+            textarea.addEventListener('input', () => updatePreview(textarea.value.trim(), colorPicker.value, textColorPicker.value));
+
+            function updatePreview(text, bgColor, textColor) {
                 if (text) {
-                    previewText.textContent = text;
+                    previewText.textContent    = text;
                     preview.style.display      = 'block';
-                    preview.style.background   = color;
-                    preview.style.boxShadow    = '0 0 16px ' + color + 'cc';
+                    preview.style.background   = bgColor;
+                    preview.style.color        = textColor || '#fff';
+                    preview.style.boxShadow    = '0 0 16px ' + bgColor + 'cc';
+                    preview.style.textShadow   = '0 0 6px ' + (textColor || '#fff') + '88';
                 } else {
                     preview.style.display = 'none';
                 }
@@ -1297,16 +1384,17 @@
                 .then(r => r.json())
                 .then(data => {
                     textarea.value = data.banner || '';
-                    setColor(data.color || '#ff00ff');
+                    setBgColor(data.color || '#ff00ff');
+                    setTextColor(data.textColor || '#ffffff');
                     setToggle(data.enabled !== false);
-                    updatePreview(data.banner || '', data.color || '#ff00ff');
+                    updatePreview(data.banner || '', data.color || '#ff00ff', data.textColor || '#ffffff');
                 });
 
             saveBtn.addEventListener('click', () => {
                 fetch('/api/admin/standings-banner', {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ banner: textarea.value, color: colorPicker.value, enabled: toggleInput.checked }),
+                    body: JSON.stringify({ banner: textarea.value, color: colorPicker.value, textColor: textColorPicker.value, enabled: toggleInput.checked }),
                 })
                 .then(r => r.json())
                 .then(data => {
@@ -1320,11 +1408,11 @@
             clearBtn.addEventListener('click', () => {
                 textarea.value = '';
                 setToggle(false);
-                updatePreview('', colorPicker.value);
+                updatePreview('', colorPicker.value, textColorPicker.value);
                 fetch('/api/admin/standings-banner', {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ banner: '', color: colorPicker.value, enabled: false }),
+                    body: JSON.stringify({ banner: '', color: colorPicker.value, textColor: textColorPicker.value, enabled: false }),
                 })
                 .then(() => {
                     status.textContent = 'Banner cleared.';

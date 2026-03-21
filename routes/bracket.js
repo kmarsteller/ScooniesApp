@@ -92,24 +92,31 @@ router.get('/picks', (req, res) => {
 
 // Public read of commissioner banner
 router.get('/banner', (req, res) => {
-    db.get("SELECT value FROM system_settings WHERE key = 'commissioner_banner'", (err, row) => {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json({ banner: row ? row.value : '' });
-    });
+    db.all(
+        "SELECT key, value FROM system_settings WHERE key IN ('commissioner_banner', 'commissioner_banner_enabled')",
+        (err, rows) => {
+            if (err) return res.status(500).json({ error: err.message });
+            const map = {};
+            rows.forEach(r => { map[r.key] = r.value; });
+            const enabled = map['commissioner_banner_enabled'] !== 'false';
+            res.json({ banner: enabled ? (map['commissioner_banner'] || '') : '' });
+        }
+    );
 });
 
 // Public read of standings banner
 router.get('/standings-banner', (req, res) => {
     db.all(
-        "SELECT key, value FROM system_settings WHERE key IN ('standings_banner', 'standings_banner_color', 'standings_banner_enabled')",
+        "SELECT key, value FROM system_settings WHERE key IN ('standings_banner', 'standings_banner_color', 'standings_banner_text_color', 'standings_banner_enabled')",
         (err, rows) => {
             if (err) return res.status(500).json({ error: err.message });
             const map = {};
             rows.forEach(r => { map[r.key] = r.value; });
             const enabled = map['standings_banner_enabled'] !== 'false';
             res.json({
-                banner: enabled ? (map['standings_banner'] || '') : '',
-                color:  map['standings_banner_color'] || '#ff00ff',
+                banner:    enabled ? (map['standings_banner'] || '') : '',
+                color:     map['standings_banner_color'] || '#ff00ff',
+                textColor: map['standings_banner_text_color'] || '#ffffff',
             });
         }
     );
