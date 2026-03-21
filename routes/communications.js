@@ -43,28 +43,31 @@ function brandedHtml(title, bodyHtml) {
 </html>`;
 }
 
-// Get all entries with email addresses, but only unique addresses, no dupes.
+// Get all unique recipients (one row per email), including all nicknames for multi-entry people.
 router.get('/recipients', requireAuth, (req, res) => {
     db.all(
         `SELECT id, player_name, email, nickname, has_paid FROM entries ORDER BY player_name`,
         (err, entries) => {
-            if (err) {
-                return res.status(500).json({ error: 'Database error: ' + err.message });
-            }
-            
-            // Create a map to store unique email addresses
-            const uniqueEmails = new Map();
-            
-            // For each entry, keep only the first occurrence of each email
+            if (err) return res.status(500).json({ error: 'Database error: ' + err.message });
+
+            const byEmail = new Map();
             entries.forEach(entry => {
-                if (!uniqueEmails.has(entry.email)) {
-                    uniqueEmails.set(entry.email, entry);
+                const key = entry.email.toLowerCase();
+                if (!byEmail.has(key)) {
+                    byEmail.set(key, { ...entry, nicknames: [] });
                 }
+                byEmail.get(key).nicknames.push(entry.nickname);
             });
-            
-            // Convert map values back to array
-            const uniqueEntries = Array.from(uniqueEmails.values());
-            
+
+            // Build display label: if multiple entries, list all nicknames
+            const uniqueEntries = Array.from(byEmail.values()).map(e => ({
+                ...e,
+                nickname: e.nicknames.length > 1
+                    ? e.nicknames.join(', ')   // shown in UI as "Entry A, Entry B"
+                    : e.nicknames[0],
+                multiEntry: e.nicknames.length > 1,
+            }));
+
             res.json({ entries: uniqueEntries });
         }
     );
@@ -87,58 +90,46 @@ router.post('/send', requireAuth, async (req, res) => {
             successful: [],
             failed: []
         };
-        
-        // Get participant details for personalization
+
+        // Fetch all entries for these recipients and group by email,
+        // collecting every nickname so {all_nicknames} works correctly
         const participantDetails = await new Promise((resolve, reject) => {
-            const placeholders = ['name', 'nickname', 'email'];
-            // Only fetch details if message contains placeholders
-            if (placeholders.some(p => message.includes(`{${p}}`))) {
-                db.all(
-                    `SELECT id, player_name, email, nickname FROM entries WHERE email IN (${recipients.map(() => '?').join(',')})`,
-                    recipients,
-                    (err, rows) => {
-                        if (err) {
-                            reject(err);
-                            return;
+            db.all(
+                `SELECT player_name, email, nickname FROM entries WHERE email IN (${recipients.map(() => '?').join(',')})`,
+                recipients,
+                (err, rows) => {
+                    if (err) return reject(err);
+                    const map = {};
+                    rows.forEach(row => {
+                        if (!map[row.email]) {
+                            map[row.email] = { name: row.player_name, email: row.email, nickname: row.nickname, _nicknames: [] };
                         }
-                        
-                        // Create a map of email to participant details
-                        const detailsMap = {};
-                        rows.forEach(row => {
-                            detailsMap[row.email] = {
-                                name: row.player_name,
-                                nickname: row.nickname,
-                                email: row.email
-                            };
-                        });
-                        
-                        resolve(detailsMap);
-                    }
-                );
-            } else {
-                // No placeholders to replace, return empty map
-                resolve({});
-            }
+                        map[row.email]._nicknames.push(row.nickname);
+                    });
+                    // Build formatted all_nicknames string
+                    Object.values(map).forEach(d => {
+                        d.all_nicknames = d._nicknames.map(n => `"${n}"`).join(', ');
+                    });
+                    resolve(map);
+                }
+            );
         });
-        
+
         // Send to each recipient with personalized message
         for (const recipient of recipients) {
             try {
-                // Get participant details if available
                 const details = participantDetails[recipient] || {
-                    name: '',
-                    nickname: '',
-                    email: recipient
+                    name: '', nickname: '', email: recipient, all_nicknames: ''
                 };
-                
+
                 // Replace placeholders
                 let personalizedMessage = message;
-                for (const [key, value] of Object.entries(details)) {
+                ['name', 'nickname', 'email', 'all_nicknames'].forEach(key => {
                     personalizedMessage = personalizedMessage.replace(
-                        new RegExp(`\\{${key}\\}`, 'g'), 
-                        value || ''
+                        new RegExp(`\\{${key}\\}`, 'g'),
+                        details[key] || ''
                     );
-                }
+                });
                 
                 // Build branded HTML email
                 const bodyHtml = messageType === 'html'
@@ -192,26 +183,28 @@ router.post('/send-all', requireAuth, async (req, res) => {
             query += ` WHERE has_paid = 0`;
         }
         
-        // Get all participants
+        // Get all participants, grouping multiple entries per email so
+        // {all_nicknames} lists every entry for that person
         const allParticipants = await new Promise((resolve, reject) => {
             db.all(query, params, (err, rows) => {
-                if (err) {
-                    reject(err);
-                    return;
-                }
+                if (err) return reject(err);
                 resolve(rows);
             });
         });
-        
-        // De-duplicate by email address
-        const uniqueParticipants = new Map();
-        allParticipants.forEach(participant => {
-            if (!uniqueParticipants.has(participant.email)) {
-                uniqueParticipants.set(participant.email, participant);
+
+        // Group by email, collecting all nicknames
+        const byEmail = new Map();
+        allParticipants.forEach(p => {
+            if (!byEmail.has(p.email)) {
+                byEmail.set(p.email, { name: p.player_name, email: p.email, nickname: p.nickname, _nicknames: [] });
             }
+            byEmail.get(p.email)._nicknames.push(p.nickname);
         });
-        
-        const participants = Array.from(uniqueParticipants.values());
+        byEmail.forEach(d => {
+            d.all_nicknames = d._nicknames.map(n => `"${n}"`).join(', ');
+        });
+
+        const participants = Array.from(byEmail.values());
         
         if (participants.length === 0) {
             return res.json({ 
@@ -231,9 +224,12 @@ router.post('/send-all', requireAuth, async (req, res) => {
             try {
                 // Replace placeholders with real values
                 let personalizedMessage = message;
-                personalizedMessage = personalizedMessage.replace(/\{name\}/g, participant.player_name || '');
-                personalizedMessage = personalizedMessage.replace(/\{nickname\}/g, participant.nickname || '');
-                personalizedMessage = personalizedMessage.replace(/\{email\}/g, participant.email || '');
+                ['name', 'nickname', 'email', 'all_nicknames'].forEach(key => {
+                    personalizedMessage = personalizedMessage.replace(
+                        new RegExp(`\\{${key}\\}`, 'g'),
+                        participant[key] || ''
+                    );
+                });
                 
                 // Build branded HTML email
                 const bodyHtml = messageType === 'html'
@@ -411,6 +407,61 @@ router.post('/send-payment-reminders', requireAuth, async (req, res) => {
     }
 });
 
+// Preview scoring update email (returns HTML without sending)
+// Uses the first entry in the DB as the sample recipient for placeholder substitution
+router.get('/preview-scoring-update', requireAuth, async (req, res) => {
+    const customMessage = req.query.message || "Here's how everyone stacks up. Good luck the rest of the way!";
+    try {
+        const entries = await new Promise((resolve, reject) => {
+            db.all(`SELECT player_name, email, nickname, score FROM entries ORDER BY score DESC`,
+                (err, rows) => err ? reject(err) : resolve(rows));
+        });
+        if (!entries.length) return res.send('<p>No entries found.</p>');
+        let rank = 0, prevScore = null, sameRankCount = 0;
+        const ranked = entries.map(e => {
+            if (e.score !== prevScore) { rank += 1 + sameRankCount; sameRankCount = 0; }
+            else { sameRankCount++; }
+            prevScore = e.score;
+            return { ...e, rank };
+        });
+
+        // Build sample recipient from the top-ranked entry for placeholder preview
+        const sample = ranked[0];
+        const sampleNicknames = ranked.filter(e => e.email === sample.email).map(e => `"${e.nickname}"`).join(', ');
+        let previewMsg = customMessage;
+        previewMsg = previewMsg.replace(/\{name\}/g, sample.player_name || '');
+        previewMsg = previewMsg.replace(/\{nickname\}/g, sample.nickname || '');
+        previewMsg = previewMsg.replace(/\{email\}/g, sample.email || '');
+        previewMsg = previewMsg.replace(/\{all_nicknames\}/g, sampleNicknames || sample.nickname || '');
+
+        const rowsHtml = ranked.map(e => `
+        <tr>
+            <td style="padding:8px 12px;border-bottom:1px solid #eee;text-align:center;font-weight:bold;color:#dc3545;">${e.rank}</td>
+            <td style="padding:8px 12px;border-bottom:1px solid #eee;text-align:center;font-weight:bold;">${e.score}</td>
+            <td style="padding:8px 12px;border-bottom:1px solid #eee;font-weight:500;">${e.nickname}</td>
+            <td style="padding:8px 12px;border-bottom:1px solid #eee;color:#555;">${e.player_name}</td>
+        </tr>`).join('');
+
+        const scoringBody = `
+      <p style="color:#555;margin:0 0 4px;">${previewMsg}</p>
+      <p style="color:#aaa;font-size:11px;margin:0 0 20px;font-style:italic;">↑ Personalized for each recipient — previewing as: ${sample.player_name} (${sample.email})</p>
+      <table style="width:100%;border-collapse:collapse;font-size:14px;">
+        <thead>
+          <tr style="background:#dc3545;color:#fff;">
+            <th style="padding:10px 12px;text-align:center;font-weight:600;">Rank</th>
+            <th style="padding:10px 12px;text-align:center;font-weight:600;">Score</th>
+            <th style="padding:10px 12px;text-align:left;font-weight:600;">Entry Name</th>
+            <th style="padding:10px 12px;text-align:left;font-weight:600;">Submitted By</th>
+          </tr>
+        </thead>
+        <tbody>${rowsHtml}</tbody>
+      </table>`;
+        res.send(brandedHtml('📊 Scoring Update', scoringBody));
+    } catch (err) {
+        res.status(500).send(`<p>Error: ${err.message}</p>`);
+    }
+});
+
 // Send scoring update to all participants
 router.post('/send-scoring-update', requireAuth, async (req, res) => {
     const customMessage = (req.body && req.body.message) || "Here's how everyone stacks up. Good luck the rest of the way!";
@@ -442,7 +493,7 @@ router.post('/send-scoring-update', requireAuth, async (req, res) => {
             return { ...e, rank };
         });
 
-        // Build standings table rows (HTML)
+        // Build standings table (same for everyone)
         const rowsHtml = ranked.map(e => `
         <tr>
             <td style="padding:8px 12px;border-bottom:1px solid #eee;text-align:center;font-weight:bold;color:#dc3545;">${e.rank}</td>
@@ -451,13 +502,7 @@ router.post('/send-scoring-update', requireAuth, async (req, res) => {
             <td style="padding:8px 12px;border-bottom:1px solid #eee;color:#555;">${e.player_name}</td>
         </tr>`).join('');
 
-        // Plain text version
-        const textRows = ranked.map(e =>
-            `  ${String(e.rank).padStart(3)}. [${e.score} pts]  ${e.nickname}  — ${e.player_name}`
-        ).join('\n');
-
-        const scoringBody = `
-      <p style="color:#555;margin:0 0 24px;">${customMessage}</p>
+        const tableHtml = `
       <table style="width:100%;border-collapse:collapse;font-size:14px;">
         <thead>
           <tr style="background:#dc3545;color:#fff;">
@@ -467,22 +512,40 @@ router.post('/send-scoring-update', requireAuth, async (req, res) => {
             <th style="padding:10px 12px;text-align:left;font-weight:600;">Submitted By</th>
           </tr>
         </thead>
-        <tbody>
-          ${rowsHtml}
-        </tbody>
+        <tbody>${rowsHtml}</tbody>
       </table>`;
-        const html = brandedHtml('📊 Scoring Update', scoringBody);
 
-        const text = `THE SCOONIES — SCORING UPDATE\n${'─'.repeat(50)}\n\n${customMessage}\n\n${textRows}\n\n${'─'.repeat(50)}\n— The Scoonies`;
+        const textRows = ranked.map(e =>
+            `  ${String(e.rank).padStart(3)}. [${e.score} pts]  ${e.nickname}  — ${e.player_name}`
+        ).join('\n');
+
         const subject = '🏀 Scoonies Scoring Update';
 
-        // Get unique emails
-        const uniqueEmails = new Map();
-        entries.forEach(e => { if (!uniqueEmails.has(e.email)) uniqueEmails.set(e.email, e); });
-        const recipients = Array.from(uniqueEmails.values());
+        // Group entries by email so {all_nicknames} works for multi-entry people
+        const byEmail = new Map();
+        ranked.forEach(e => {
+            if (!byEmail.has(e.email)) {
+                byEmail.set(e.email, { name: e.player_name, email: e.email, nickname: e.nickname, _nicknames: [], rank: e.rank, score: e.score });
+            }
+            byEmail.get(e.email)._nicknames.push(e.nickname);
+        });
+        byEmail.forEach(d => {
+            d.all_nicknames = d._nicknames.map(n => `"${n}"`).join(', ');
+        });
 
         const results = { successful: [], failed: [] };
-        for (const recipient of recipients) {
+        for (const recipient of byEmail.values()) {
+            // Personalize the message for this recipient
+            let personalizedMsg = customMessage;
+            ['name', 'nickname', 'email', 'all_nicknames'].forEach(key => {
+                personalizedMsg = personalizedMsg.replace(new RegExp(`\\{${key}\\}`, 'g'), recipient[key] || '');
+            });
+
+            const scoringBody = `
+      <p style="color:#555;margin:0 0 24px;">${personalizedMsg}</p>${tableHtml}`;
+            const html = brandedHtml('📊 Scoring Update', scoringBody);
+            const text = `THE SCOONIES — SCORING UPDATE\n${'─'.repeat(50)}\n\n${personalizedMsg}\n\n${textRows}\n\n${'─'.repeat(50)}\n— The Scoonies`;
+
             const result = await emailService.sendEmail(recipient.email, subject, text, html);
             if (result.success) results.successful.push(recipient.email);
             else results.failed.push({ email: recipient.email, error: result.error });

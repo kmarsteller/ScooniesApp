@@ -433,7 +433,7 @@
                     
                     <div class="form-group">
                         <label for="specificMessage">Message:</label>
-                        <textarea id="specificMessage" class="form-control" placeholder="Enter your message here. Use {name}, {nickname}, and {email} as placeholders for personalization."></textarea>
+                        <textarea id="specificMessage" class="form-control" placeholder="Enter your message here. Use {name}, {nickname}, {email}, or {all_nicknames} as placeholders."></textarea>
                     </div>
                     
                     <div class="action-buttons">
@@ -467,7 +467,7 @@
                     
                     <div class="form-group">
                         <label for="allMessage">Message:</label>
-                        <textarea id="allMessage" class="form-control" placeholder="Enter your message here. Use {name}, {nickname}, and {email} as placeholders for personalization."></textarea>
+                        <textarea id="allMessage" class="form-control" placeholder="Enter your message here. Use {name}, {nickname}, {email}, or {all_nicknames} as placeholders."></textarea>
                     </div>
                     
                     <div class="action-buttons">
@@ -538,8 +538,20 @@
                         <textarea id="scoringMessage" class="form-control" style="min-height:80px;">Here's how everyone stacks up. Good luck the rest of the way!</textarea>
                     </div>
 
-                    <div class="action-buttons" style="justify-content:flex-end;">
+                    <div class="action-buttons" style="justify-content:flex-end;gap:10px;">
+                        <button id="previewScoringBtn" class="action-button" style="background:#6c757d;">Preview Email</button>
                         <button id="sendScoringBtn" class="primary-button action-button">Send Scoring Update to All</button>
+                    </div>
+                </div>
+
+                <!-- Email Preview Modal -->
+                <div id="emailPreviewBackdrop" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:2000;align-items:center;justify-content:center;">
+                    <div style="background:#fff;border-radius:10px;width:660px;max-width:95vw;max-height:88vh;display:flex;flex-direction:column;box-shadow:0 8px 32px rgba(0,0,0,0.25);">
+                        <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid #ddd;flex-shrink:0;">
+                            <strong style="font-size:15px;">Email Preview — 🏀 Scoonies Scoring Update</strong>
+                            <button id="closeEmailPreview" style="background:none;border:none;font-size:20px;cursor:pointer;color:#6c757d;line-height:1;">✕</button>
+                        </div>
+                        <iframe id="emailPreviewFrame" style="flex:1;border:none;border-radius:0 0 10px 10px;" src="about:blank"></iframe>
                     </div>
                 </div>
 
@@ -568,18 +580,20 @@
         
         // Add placeholder help text under message fields
         function addPlaceholderHelp() {
-            const helpText = document.createElement('div');
-            helpText.className = 'placeholder-help';
-            helpText.style.fontSize = '0.85em';
-            helpText.style.color = '#6c757d';
-            helpText.style.marginTop = '5px';
-            helpText.innerHTML = 'Available placeholders: <code>{name}</code>, <code>{nickname}</code>, <code>{email}</code>, <code>{all_nicknames}</code>';
-
-            [
-                document.getElementById('specificMessage').parentNode,
-                document.getElementById('allMessage').parentNode,
-                document.getElementById('reminderMessage').parentNode
-            ].forEach(field => field.appendChild(helpText.cloneNode(true)));
+            const ids = ['specificMessage', 'allMessage', 'reminderMessage', 'scoringMessage'];
+            ids.forEach(id => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                const helpText = document.createElement('div');
+                helpText.style.cssText = 'font-size:0.82em;color:#6c757d;margin-top:5px;line-height:1.5;';
+                helpText.innerHTML =
+                    '<strong>Placeholders:</strong> ' +
+                    '<code>{name}</code> — player\'s real name &nbsp;·&nbsp; ' +
+                    '<code>{nickname}</code> — entry name &nbsp;·&nbsp; ' +
+                    '<code>{email}</code> — email address &nbsp;·&nbsp; ' +
+                    '<code>{all_nicknames}</code> — all entry names for that person (e.g. <em>"Bracket Buster", "Chaos Theory"</em>)';
+                el.parentNode.appendChild(helpText);
+            });
         }
 
         document.addEventListener('DOMContentLoaded', function() {
@@ -678,26 +692,12 @@
             }
             
             recipientList.innerHTML = '';
-            
-            // Count entries per email
-            const entryCounts = {};
-            participants.forEach(p => {
-                entryCounts[p.email] = (entryCounts[p.email] || 0) + 1;
-            });
-            
-            // Create a map to deduplicate by email
-            const uniqueEmails = new Map();
+
+            // Backend already deduplicates — one row per email with multiEntry flag
             participants.forEach(participant => {
-                if (!uniqueEmails.has(participant.email)) {
-                    uniqueEmails.set(participant.email, participant);
-                }
-            });
-            
-            // Use the unique participants
-            Array.from(uniqueEmails.values()).forEach(participant => {
                 const item = document.createElement('div');
                 item.className = 'recipient-item';
-                
+
                 const checkbox = document.createElement('input');
                 checkbox.type = 'checkbox';
                 checkbox.className = 'recipient-check';
@@ -705,30 +705,26 @@
                 checkbox.dataset.id = participant.id;
                 checkbox.dataset.name = participant.player_name;
                 checkbox.dataset.nickname = participant.nickname;
-                
+
                 const info = document.createElement('div');
                 info.className = 'recipient-info';
-                
+
                 const name = document.createElement('div');
                 name.className = 'recipient-name';
                 name.textContent = participant.player_name;
-                
-                // Add entry count if more than 1
-                if (entryCounts[participant.email] > 1) {
-                    const entryCount = document.createElement('span');
-                    entryCount.style.marginLeft = '10px';
-                    entryCount.style.padding = '2px 5px';
-                    entryCount.style.borderRadius = '3px';
-                    entryCount.style.fontSize = '0.8em';
-                    entryCount.style.backgroundColor = '#e9ecef';
-                    entryCount.style.color = '#495057';
-                    entryCount.textContent = `${entryCounts[participant.email]} entries`;
-                    name.appendChild(entryCount);
+
+                // Show all entry nicknames for multi-entry people
+                if (participant.multiEntry) {
+                    const badge = document.createElement('span');
+                    badge.style.cssText = 'margin-left:8px;padding:2px 6px;border-radius:3px;font-size:0.78em;background:#fff3cd;color:#856404;font-weight:500;';
+                    badge.title = `Entries: ${participant.nickname}`;
+                    badge.textContent = `${participant.nicknames.length} entries`;
+                    name.appendChild(badge);
                 }
                 
                 const email = document.createElement('div');
                 email.className = 'recipient-email';
-                email.textContent = participant.email;
+                email.textContent = `${participant.email} — ${participant.nickname}`;
                 
                 // Add payment indicator
                 if (participant.has_paid !== undefined) {
@@ -1138,6 +1134,25 @@
             });
             }); // end scConfirm
         }
+
+        // Preview scoring update email
+        document.getElementById('previewScoringBtn').addEventListener('click', () => {
+            const msg = encodeURIComponent(document.getElementById('scoringMessage').value.trim());
+            const backdrop = document.getElementById('emailPreviewBackdrop');
+            const frame    = document.getElementById('emailPreviewFrame');
+            frame.src = `/api/communications/preview-scoring-update?message=${msg}`;
+            backdrop.style.display = 'flex';
+        });
+        document.getElementById('closeEmailPreview').addEventListener('click', () => {
+            document.getElementById('emailPreviewBackdrop').style.display = 'none';
+            document.getElementById('emailPreviewFrame').src = 'about:blank';
+        });
+        document.getElementById('emailPreviewBackdrop').addEventListener('click', e => {
+            if (e.target === e.currentTarget) {
+                e.currentTarget.style.display = 'none';
+                document.getElementById('emailPreviewFrame').src = 'about:blank';
+            }
+        });
 
         // Send scoring update to all participants
         function sendScoringUpdate() {
