@@ -1193,6 +1193,48 @@ router.put('/banner', requireAuth, (req, res) => {
     }
 });
 
+// ── Standings Banner (Seling's Shit-talking Corner) ───────────────────────
+router.get('/standings-banner', requireAuth, (req, res) => {
+    db.all(
+        "SELECT key, value FROM system_settings WHERE key IN ('standings_banner', 'standings_banner_color', 'standings_banner_enabled')",
+        (err, rows) => {
+            if (err) return res.status(500).json({ error: err.message });
+            const map = {};
+            rows.forEach(r => { map[r.key] = r.value; });
+            res.json({
+                banner:  map['standings_banner'] || '',
+                color:   map['standings_banner_color'] || '#ff00ff',
+                enabled: map['standings_banner_enabled'] !== 'false',
+            });
+        }
+    );
+});
+
+router.put('/standings-banner', requireAuth, (req, res) => {
+    const { banner, color, enabled } = req.body;
+    if (banner === undefined) return res.status(400).json({ error: 'banner field required' });
+
+    const text      = banner.trim();
+    const hexColor  = (color || '#ff00ff').trim();
+    const isEnabled = enabled !== false && enabled !== 'false';
+
+    const upsert = (key, val, cb) => db.run(
+        "INSERT INTO system_settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+        [key, val], cb
+    );
+
+    upsert('standings_banner', text, err => {
+        if (err) return res.status(500).json({ error: err.message });
+        upsert('standings_banner_color', hexColor, err2 => {
+            if (err2) return res.status(500).json({ error: err2.message });
+            upsert('standings_banner_enabled', String(isEnabled), err3 => {
+                if (err3) return res.status(500).json({ error: err3.message });
+                res.json({ success: true, banner: text, color: hexColor, enabled: isEnabled });
+            });
+        });
+    });
+});
+
 // Max possible score for an entry
 router.get('/max-score/:entryId', requireAuth, (req, res) => {
     const { entryId } = req.params;

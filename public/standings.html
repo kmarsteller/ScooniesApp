@@ -347,6 +347,57 @@
             background-color: #f8d7da;
             color: #721c24;
         }
+
+        /* ── Shittalking Corner banner ── */
+        .shittalk-banner {
+            border-radius: 6px;
+            margin-bottom: 24px;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            height: 42px;
+            box-shadow: 0 3px 14px rgba(0,0,0,0.35);
+        }
+        .shittalk-banner .banner-label {
+            background: rgba(0,0,0,0.35);
+            color: #fff;
+            font-size: 0.62rem;
+            font-weight: 900;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            padding: 0 14px;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            white-space: nowrap;
+            flex-shrink: 0;
+            border-right: 1px solid rgba(255,255,255,0.3);
+            gap: 5px;
+            line-height: 1.2;
+            text-align: center;
+        }
+        .shittalk-banner .banner-track {
+            flex: 1;
+            overflow: hidden;
+            height: 100%;
+            display: flex;
+            align-items: center;
+        }
+        .shittalk-banner .banner-scroll {
+            display: inline-block;
+            white-space: nowrap;
+            color: #fff;
+            font-weight: 700;
+            font-size: 0.95rem;
+            letter-spacing: 0.02em;
+            padding-right: 80px;
+            animation: shittalkScroll 22s linear infinite;
+            text-shadow: 0 0 8px rgba(255,255,255,0.6);
+        }
+        @keyframes shittalkScroll {
+            0%   { transform: translateX(100vw); }
+            100% { transform: translateX(-100%); }
+        }
     </style>
 </head>
 <body>
@@ -376,6 +427,14 @@
     </header>
     
     <main>
+        <!-- Seling's Shit-talking Corner -->
+        <div id="shittalkBanner" class="shittalk-banner" style="display:none;">
+            <div class="banner-label">🔥 Seling's<br>Shit-talking Corner</div>
+            <div class="banner-track">
+                <span class="banner-scroll" id="shittalkMessage"></span>
+            </div>
+        </div>
+
         <h1 class="main-title">Standings</h1>
         <div id="tournamentStatus" class="tournament-status"></div>
 
@@ -894,6 +953,22 @@
         document.getElementById('maxModalBackdrop').addEventListener('click', (e) => {
             if (e.target === e.currentTarget) e.currentTarget.classList.remove('open');
         });
+
+        // Shittalking Corner banner
+        fetch('/api/bracket/standings-banner')
+            .then(r => r.json())
+            .then(data => {
+                if (data.banner) {
+                    const banner  = document.getElementById('shittalkBanner');
+                    const el      = document.getElementById('shittalkMessage');
+                    el.textContent = data.banner;
+                    el.style.animationDuration = Math.max(10, data.banner.length * 0.24) + 's';
+                    banner.style.background = `linear-gradient(to right, color-mix(in srgb, ${data.color} 70%, #000), ${data.color} 40%, ${data.color} 60%, color-mix(in srgb, ${data.color} 70%, #000))`;
+                    banner.style.boxShadow  = `0 3px 18px ${data.color}88`;
+                    banner.style.display    = 'flex';
+                }
+            })
+            .catch(() => {});
     </script>
 </body>
 </html>
