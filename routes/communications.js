@@ -132,15 +132,16 @@ router.post('/send', requireAuth, async (req, res) => {
                 });
                 
                 // Build branded HTML email
+                const normalizedMessage = personalizedMessage.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
                 const bodyHtml = messageType === 'html'
-                    ? personalizedMessage
-                    : `<p style="color:#333;font-size:15px;line-height:1.6;">${personalizedMessage.replace(/\n\n/g, '</p><p style="color:#333;font-size:15px;line-height:1.6;">').replace(/\n/g, '<br>')}</p>`;
+                    ? normalizedMessage
+                    : `<p style="color:#333;font-size:15px;line-height:1.6;">${normalizedMessage.replace(/\n\n/g, '</p><p style="color:#333;font-size:15px;line-height:1.6;">').replace(/\n/g, '<br>')}</p>`;
                 const htmlMessage = brandedHtml(subject, bodyHtml);
 
                 const result = await emailService.sendEmail(
                     recipient,
                     subject,
-                    personalizedMessage, // Plain text version
+                    normalizedMessage, // Plain text version
                     htmlMessage // HTML version
                 );
                 
@@ -232,15 +233,16 @@ router.post('/send-all', requireAuth, async (req, res) => {
                 });
                 
                 // Build branded HTML email
+                const normalizedMessage = personalizedMessage.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
                 const bodyHtml = messageType === 'html'
-                    ? personalizedMessage
-                    : `<p style="color:#333;font-size:15px;line-height:1.6;">${personalizedMessage.replace(/\n\n/g, '</p><p style="color:#333;font-size:15px;line-height:1.6;">').replace(/\n/g, '<br>')}</p>`;
+                    ? normalizedMessage
+                    : `<p style="color:#333;font-size:15px;line-height:1.6;">${normalizedMessage.replace(/\n\n/g, '</p><p style="color:#333;font-size:15px;line-height:1.6;">').replace(/\n/g, '<br>')}</p>`;
                 const htmlMessage = brandedHtml(subject, bodyHtml);
 
                 const result = await emailService.sendEmail(
                     participant.email,
                     subject,
-                    personalizedMessage, // Plain text version
+                    normalizedMessage, // Plain text version
                     htmlMessage // HTML version
                 );
                 
@@ -372,7 +374,8 @@ router.post('/send-payment-reminders', requireAuth, async (req, res) => {
                         }
 
                         // Custom message — convert plain text to branded HTML
-                        const reminderBody = `<p style="color:#333;font-size:15px;line-height:1.6;">${personalizedMessage.replace(/\n\n/g, '</p><p style="color:#333;font-size:15px;line-height:1.6;">').replace(/\n/g, '<br>')}</p>`;
+                        const normalizedMsg = personalizedMessage.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+                        const reminderBody = `<p style="color:#333;font-size:15px;line-height:1.6;">${normalizedMsg.replace(/\n\n/g, '</p><p style="color:#333;font-size:15px;line-height:1.6;">').replace(/\n/g, '<br>')}</p>`;
                         htmlMessage = brandedHtml('💰 Payment Reminder', reminderBody);
                     }
                     
@@ -442,8 +445,9 @@ router.get('/preview-scoring-update', requireAuth, async (req, res) => {
             <td style="padding:8px 12px;border-bottom:1px solid #eee;color:#555;">${e.player_name}</td>
         </tr>`).join('');
 
+        const normalizedPreviewMsg = previewMsg.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
         const scoringBody = `
-      <p style="color:#555;margin:0 0 4px;">${previewMsg}</p>
+      <p style="color:#555;margin:0 0 4px;">${normalizedPreviewMsg.replace(/\n\n/g, '</p><p style="color:#555;margin:0 0 4px;">').replace(/\n/g, '<br>')}</p>
       <p style="color:#aaa;font-size:11px;margin:0 0 20px;font-style:italic;">↑ Personalized for each recipient — previewing as: ${sample.player_name} (${sample.email})</p>
       <table style="width:100%;border-collapse:collapse;font-size:14px;">
         <thead>
@@ -541,8 +545,9 @@ router.post('/send-scoring-update', requireAuth, async (req, res) => {
                 personalizedMsg = personalizedMsg.replace(new RegExp(`\\{${key}\\}`, 'g'), recipient[key] || '');
             });
 
+            const normalizedMsg = personalizedMsg.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
             const scoringBody = `
-      <p style="color:#555;margin:0 0 24px;">${personalizedMsg}</p>${tableHtml}`;
+      <p style="color:#555;margin:0 0 24px;">${normalizedMsg.replace(/\n\n/g, '</p><p style="color:#555;margin:0 0 24px;">').replace(/\n/g, '<br>')}</p>${tableHtml}`;
             const html = brandedHtml('📊 Scoring Update', scoringBody);
             const text = `THE SCOONIES — SCORING UPDATE\n${'─'.repeat(50)}\n\n${personalizedMsg}\n\n${textRows}\n\n${'─'.repeat(50)}\n— The Scoonies`;
 
