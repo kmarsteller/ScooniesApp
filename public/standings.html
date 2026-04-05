@@ -125,6 +125,77 @@
         }
         .max-score-btn:hover { color: #dc3545; }
 
+        /* Perfect Hindsight trigger button */
+        .hindsight-btn {
+            font-size: 20px;
+            background: none;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            cursor: pointer;
+            color: #6c757d;
+            padding: 5px 10px;
+            line-height: 1;
+            transition: color 0.15s, border-color 0.15s;
+        }
+        .hindsight-btn:hover { color: #dc3545; border-color: #dc3545; }
+
+        /* Perfect Hindsight modal */
+        .hindsight-modal-backdrop {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        .hindsight-modal-backdrop.open { display: flex; }
+        .hindsight-modal {
+            background: #fff;
+            border-radius: 10px;
+            max-width: 580px;
+            width: 92%;
+            max-height: 88vh;
+            overflow-y: auto;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+        }
+        .hindsight-modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 20px 12px;
+            border-bottom: 1px solid #ddd;
+        }
+        .hindsight-modal-header h2 { margin: 0; font-size: 18px; }
+        .hindsight-modal-close {
+            background: none; border: none; font-size: 22px;
+            cursor: pointer; color: #6c757d; line-height: 1;
+        }
+        .hindsight-modal-body { padding: 0; }
+        /* Inside the modal we reuse .entry-card / .entry-header / .team-list etc. */
+        .hindsight-modal-body .entry-card {
+            border: none;
+            border-radius: 0;
+            margin-bottom: 0;
+        }
+        .hindsight-modal-body .entry-header {
+            border-bottom: 1px solid #ddd;
+        }
+        .hindsight-modal-methodology {
+            border-top: 1px solid #dee2e6;
+            padding: 10px 16px 12px;
+        }
+        .hindsight-methodology-toggle {
+            background: none; border: none; cursor: pointer;
+            font-size: 12px; color: #6c757d; padding: 0;
+            display: flex; align-items: center; gap: 5px;
+        }
+        .hindsight-methodology-toggle:hover { color: #343a40; }
+        .hindsight-methodology-body { display: none; padding-top: 8px; }
+        .hindsight-modal-methodology.open .hindsight-methodology-body { display: block; }
+        .hindsight-methodology-body p { font-size: 12px; color: #495057; margin: 0 0 8px; line-height: 1.5; }
+        .hindsight-loading { text-align: center; padding: 40px; color: #6c757d; }
+
         /* Modal */
         .max-modal-backdrop {
             display: none;
@@ -402,6 +473,19 @@
 </head>
 <body>
 
+    <!-- Perfect Hindsight Modal -->
+    <div id="hindsightModalBackdrop" class="hindsight-modal-backdrop">
+        <div class="hindsight-modal">
+            <div class="hindsight-modal-header">
+                <h2>🔮 Perfect Hindsight Scoonie</h2>
+                <button id="hindsightModalClose" class="hindsight-modal-close">✕</button>
+            </div>
+            <div id="hindsightModalBody" class="hindsight-modal-body">
+                <div class="hindsight-loading">Calculating…</div>
+            </div>
+        </div>
+    </div>
+
     <!-- Max Score Modal -->
     <div id="maxModalBackdrop" class="max-modal-backdrop">
         <div class="max-modal">
@@ -444,6 +528,7 @@
                     <input type="text" id="searchInput" class="standings-search" placeholder="Search by name or email…">
                     <button id="clearSearch" title="Clear search" style="display:none;position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;font-size:1rem;cursor:pointer;color:#6c757d;padding:0;line-height:1;">✕</button>
                 </div>
+                <button id="hindsightBtn" class="hindsight-btn" title="Best possible Scoonie given tournament results">🔮</button>
                 <button id="refreshBtn" class="action-button">Refresh Standings</button>
             </div>
 
@@ -570,6 +655,7 @@
         
         function renderStandings(data) {
             const standingsContent = document.getElementById('standingsContent');
+            hindsightCache = null; // invalidate so 🔮 re-fetches with updated results
             document.getElementById('searchInput').value = '';
             document.getElementById('clearSearch').style.display = 'none';
 
@@ -625,6 +711,7 @@
 
             // Create entry cards
             const isTournamentComplete = data.tournamentStatus && data.tournamentStatus.currentRound === null;
+            tournamentComplete = isTournamentComplete;
             sortedEntries.forEach((entry, index) => {
                 const entryCard = document.createElement('div');
                 entryCard.className = 'entry-card';
@@ -953,6 +1040,118 @@
         document.getElementById('maxModalBackdrop').addEventListener('click', (e) => {
             if (e.target === e.currentTarget) e.currentTarget.classList.remove('open');
         });
+
+        // ── Perfect Hindsight ──────────────────────────────────────────────
+        let hindsightCache = null;
+        let tournamentComplete = false; // updated when standings load
+
+        document.getElementById('hindsightBtn').addEventListener('click', openHindsightModal);
+
+        document.getElementById('hindsightModalClose').addEventListener('click', () => {
+            document.getElementById('hindsightModalBackdrop').classList.remove('open');
+        });
+        document.getElementById('hindsightModalBackdrop').addEventListener('click', (e) => {
+            if (e.target === e.currentTarget) e.currentTarget.classList.remove('open');
+        });
+
+        function openHindsightModal() {
+            const backdrop = document.getElementById('hindsightModalBackdrop');
+            const body     = document.getElementById('hindsightModalBody');
+
+            // Update modal header title based on tournament state
+            document.querySelector('#hindsightModalBackdrop h2').textContent =
+                tournamentComplete ? '🔮 Perfect Hindsight Scoonie' : '🔮 Best Possible Scoonie So Far';
+
+            backdrop.classList.add('open');
+
+            if (hindsightCache) { renderHindsight(hindsightCache); return; }
+
+            body.innerHTML = '<div class="hindsight-loading">Calculating…</div>';
+
+            fetch('/api/standings/perfect-hindsight')
+                .then(r => r.json())
+                .then(data => { hindsightCache = data; renderHindsight(data); })
+                .catch(() => { body.innerHTML = '<div class="hindsight-loading">Error loading perfect hindsight.</div>'; });
+        }
+
+        function renderHindsight(data) {
+            const body = document.getElementById('hindsightModalBody');
+
+            // ── Entry-card style header ────────────────────────────────────
+            const cardTitle    = tournamentComplete ? 'Perfect Hindsight Scoonie' : 'Best Possible Scoonie So Far';
+            const cardSubtitle = tournamentComplete
+                ? 'The highest-scoring Scoonie possible — with perfect foresight'
+                : 'The highest-scoring Scoonie possible given results to date';
+
+            let html = `
+                <div class="entry-card">
+                    <div class="entry-header">
+                        <div class="entry-rank" style="font-size:24px;">🔮</div>
+                        <div class="entry-info">
+                            <div class="entry-nickname">${cardTitle}</div>
+                            <div class="entry-player">${cardSubtitle}</div>
+                        </div>
+                        <div class="entry-score">${data.totalScore} pts</div>
+                    </div>
+                    <div class="entry-teams">
+                        <div class="team-list">`;
+
+            // ── Team items (same structure as regular entries) ─────────────
+            const picks = data.picks || [];
+            picks.forEach(team => {
+                const logoSrc = `/images/logos/${team.team_name.toLowerCase().replace(/[^a-z0-9]/g, '-')}.png`;
+                const fallback = team.logo_url || '/images/Scoonies.jpg';
+                const hasPlayed = team.round_reached > 1 || team.is_eliminated;
+                const isAlive   = !team.is_eliminated;
+                const dotClass  = hasPlayed ? (isAlive ? 'alive' : 'elim') : '';
+                const ptsClass  = hasPlayed ? (isAlive ? ' alive' : ' elim') : '';
+                const itemClass = team.is_eliminated ? 'team-item eliminated' : 'team-item';
+                const breakdown = buildBreakdown(team);
+
+                html += `
+                    <div class="${itemClass}">
+                        <div class="team-main-row">
+                            <span class="team-seed">#${team.seed}</span>
+                            <img class="team-logo" src="${logoSrc}" alt="${team.team_name}"
+                                 onerror="this.onerror=null;this.src='${fallback}'">
+                            <span class="team-name">${team.team_name}</span>
+                            <span class="team-region">(${team.region})</span>
+                            <div class="team-status-wrap">
+                                ${hasPlayed ? `<span class="status-dot ${dotClass}"></span>` : ''}
+                                <span class="team-points${ptsClass}">[${team.points_earned} pts]</span>
+                            </div>
+                        </div>
+                        ${breakdown ? `<div class="team-breakdown">${breakdown}</div>` : ''}
+                    </div>`;
+            });
+
+            html += `
+                        </div>
+                        <div style="text-align:right;font-size:12px;color:#6c757d;padding:6px 4px 2px;">
+                            Budget used: ${data.totalCost} / 200 pts
+                        </div>
+                    </div>
+                </div>`;
+
+            // ── Methodology note ───────────────────────────────────────────
+            html += `
+                <div class="hindsight-modal-methodology">
+                    <button class="hindsight-methodology-toggle"
+                        onclick="const p=this.parentElement; p.classList.toggle('open'); this.childNodes[0].textContent=p.classList.contains('open')?'▼ ':'▶ ';">
+                        ▶ How is this calculated?
+                    </button>
+                    <div class="hindsight-methodology-body">
+                        <p>Each team has a fixed cost determined by their seed: Seed 1 = 80 pts, Seed 2 = 75 pts, … Seed 16 = 5 pts. Every entry must spend exactly 200 points.</p>
+                        <p>This calculator uses dynamic programming (0/1 knapsack) to find the combination of teams — from the actual 64-team field — whose costs sum to exactly 200 and whose combined tournament earnings are as high as possible, given results to date.</p>
+                        <p>${tournamentComplete
+                            ? 'Think of it as the Scoonie a perfect oracle would have submitted. No real entry can beat this score.'
+                            : 'Since the tournament is still in progress, this reflects the best possible Scoonie <em>so far</em> — it will shift as more results come in.'
+                        }</p>
+                    </div>
+                </div>`;
+
+            body.innerHTML = html;
+        }
 
         // Shittalking Corner banner
         fetch('/api/bracket/standings-banner', { cache: 'no-store' })

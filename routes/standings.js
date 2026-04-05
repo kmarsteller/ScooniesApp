@@ -3,6 +3,7 @@ const express = require('express');
 const router = express.Router();
 const { db } = require('../db/database');
 const { calcMaxScore } = require('../lib/maxScoreCalculator');
+const { calcPerfectHindsight } = require('../lib/perfectHindsightCalculator');
 
 // Get current standings
 router.get('/', (req, res) => {
@@ -137,6 +138,15 @@ router.get('/max-score/:entryId', (req, res) => {
                 res.json({ ...result, ffMatchups });
             });
         });
+    });
+});
+
+// Perfect hindsight bracket (public) — what was the highest possible score anyone could have gotten?
+router.get('/perfect-hindsight', (req, res) => {
+    db.all('SELECT * FROM tournament_progress', [], (err, allTeams) => {
+        if (err) return res.status(500).json({ error: err.message });
+        const result = calcPerfectHindsight(allTeams);
+        res.json(result);
     });
 });
 
