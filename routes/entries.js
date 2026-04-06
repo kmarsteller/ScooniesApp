@@ -35,6 +35,11 @@ router.post('/', (req, res) => {
         return res.status(400).json({ error: 'All fields are required including at least one team selection' });
     }
 
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/;
+    if (!emailRegex.test(email)) {
+        return res.status(400).json({ error: 'Invalid email address format.' });
+    }
+
     // Enforce 200 points exactly
     const totalPoints = selectedTeams.reduce((sum, team) => sum + team.cost, 0);
     if (totalPoints !== 200) {

@@ -14,3 +14,5 @@ db/game.db
 # Environment files
 .env
 # IDE-specific files
+.claude/
+

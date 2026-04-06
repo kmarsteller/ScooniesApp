@@ -1185,6 +1185,13 @@
                     alert('Please fill in all required fields: Name, Nickname, and Email');
                     return;
                 }
+
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/;
+                if (!emailRegex.test(email)) {
+                    debug('Validation failed: Invalid email format');
+                    alert('Please enter a valid email address.');
+                    return;
+                }
                 
                 // Calculate total points spent
                 const pointsSpent = selectedTeams.reduce((sum, team) => sum + team.cost, 0);

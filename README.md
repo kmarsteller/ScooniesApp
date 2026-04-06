@@ -46,9 +46,20 @@ Server-Side Components
 
 	Route Handlers
 
-		entries.js: Manages user entry submissions
+		entries.js: Manages user entry submissions (with server-side email validation)
 		standings.js: Provides current tournament standings with team visibility control
 		admin.js: Admin authentication and tournament management functions
+		bracket.js: Serves bracket data for the public bracket visualization page
+		communications.js: Admin email blast endpoints
+
+
+	Calculators (lib/)
+
+		maxScoreCalculator.js: Computes each entry's theoretical maximum remaining score,
+		                        accounting for bracket collisions between picks in the same region or FF half.
+		                        Returns a scenario breakdown per future win.
+		perfectHindsightCalculator.js: Solves a 0/1 knapsack to find the highest-scoring bracket
+		                                that could have been submitted with perfect foresight of the tournament results.
 
 
 	Admin Management (scripts/admin-manager.js)
@@ -59,26 +70,36 @@ Server-Side Components
 
 	Utility Scripts
 		download-logos.js: Downloads team logos from ESPN based on teams.csv data
+		rename-first-four.js: Updates First Four placeholder team names once games are decided
+		check-entry.js: CLI tool to inspect a specific entry in the database
+		debug-db.js: Prints raw database state for debugging
+		fix-database.js: One-off migration/repair utility
 
 	EMAIL
 
-		For the email services in the admin panel to work, you need to make a .env file in the ScooniesApp/ directory.
-		That file will look like this:
+		Emails are sent via Brevo (formerly Sendinblue) using the sib-api-v3-sdk package.
+		Gmail's DMARC policy blocks third-party sends from @gmail.com addresses; Brevo
+		with proper SPF/DKIM/DMARC records set in Cloudflare allows sending from thescoonies@scoonies.com.
+
+		For the email services to work, create a .env file in the ScooniesApp/ directory:
 
 		# Email Configuration
-		EMAIL_SERVICE=gmail
-		EMAIL_USER=thescoonies.basketball@gmail.com
-		EMAIL_PASS=yfjxmqgcvwrsrzzh
+		BREVO_API_KEY=your_brevo_api_key_here
+		FROM_EMAIL=thescoonies@scoonies.com
+		REPLY_TO=thescoonies.basketball@gmail.com
+		SESSION_SECRET=a_random_secret_for_session_cookies
+		SITE_URL=https://scoonies.com
 
-		(In this case, I have created a free basketball gmail account, set it up with 2FA, and gotten a 16-character "app password" for it. (The thing displayed here is not the real password.))
+		See INFRASTRUCTURE.md for the full infrastructure explanation including Brevo setup.
 
 -----------------------------
 Client-Side Components
 -----------------------------
 	Public Pages
 		index.html: Welcome page and game overview
-		submit.html: Team selection interface with 200-point budget system
+		submit.html: Team selection interface with 200-point budget system (client + server-side email validation)
 		standings.html: Current participant rankings and team selections
+		bracket.html: Visual tournament bracket page
 		404.html & 500.html: Error pages
 
 
@@ -86,6 +107,7 @@ Client-Side Components
 		admin/index.html: Admin login
 		admin/tournament.html: Tournament bracket management
 		admin/entries.html: Entry management and control panel
+		admin/communications.html: Email blast interface (custom, payment reminder, scoring update, commish banner)
 
 
 	JavaScript
@@ -156,13 +178,19 @@ Server Core
 
 Database
 	db/database.js: Database connection setup, schema creation, initial data population
+	db/session-store.js: SQLite-backed session store for admin login sessions
 	db/game.db: SQLite database file (generated on first run)
 
 API Routes
 	routes/admin.js: Admin API endpoints (authentication, tournament management)
-	routes/entries.js: Entry submission and management endpoints
+	routes/entries.js: Entry submission and management endpoints (validates email format server-side)
 	routes/standings.js: Standings data endpoints and team visibility management
 	routes/communications.js: Email communication endpoints
+	routes/bracket.js: Bracket data endpoints (serves tournament_progress for bracket visualization)
+
+Calculators
+	lib/maxScoreCalculator.js: Max remaining score calculator (accounts for bracket collisions between picks)
+	lib/perfectHindsightCalculator.js: Perfect hindsight calculator — finds optimal bracket via 0/1 knapsack
 
 Public HTML
 	public/index.html: Homepage with game description
@@ -181,9 +209,12 @@ CSS and JavaScript
 Utility Scripts
 	scripts/admin-manager.js: CLI tool for secure admin user management
 	scripts/download-logos.js: Script to download team logos from ESPN
+	scripts/rename-first-four.js: Updates First Four placeholder names after games complete
+	scripts/check-entry.js: CLI tool to inspect an entry in the database
+	scripts/FIRST-FOUR-README.md: Per-game commands for updating First Four results
 
 Services
-	email-service.js:  Provides e-mail sending functionality
+	services/email-service.js: Brevo (Sendinblue) API wrapper for sending emails
 	
 Data Files
 	public/teams.csv: List of NCAA tournament teams with seed, region, and logo URL
@@ -211,10 +242,15 @@ Project Structure Outline
 -----------------------------
 This outline represents the current state of the Scoonies application after recent updates and improvements to security, user interface, and privacy controls.
 
-Scoonies/
+ScooniesApp/
 ├── db/
 │   ├── database.js         # SQLite database setup and connection
+│   ├── session-store.js    # SQLite-backed session store for admin auth
 │   └── game.db             # SQLite database file (generated)
+│
+├── lib/                    # Pure-function business logic (no Express/DB dependencies)
+│   ├── maxScoreCalculator.js          # Max remaining score per entry (bracket-collision-aware)
+│   └── perfectHindsightCalculator.js  # Optimal bracket via 0/1 knapsack
 │
 ├── node_modules/           # Dependencies (generated)
 │
@@ -241,25 +277,47 @@ Scoonies/
 │   ├── index.html          # Homepage with game description
 │   ├── submit.html         # Team selection/entry submission page
 │   ├── standings.html      # Tournament standings page
+│   ├── bracket.html        # Interactive tournament bracket visualization
 │   ├── 404.html            # Error page for 404 not found
 │   ├── 500.html            # Error page for server errors
 │   └── teams.csv           # CSV file with team data
 │
 ├── routes/                 # API route handlers
 │   ├── admin.js            # Admin routes (tournament management, entries)
-│   ├── entries.js          # Entry submission endpoints
+│   ├── entries.js          # Entry submission endpoints (with email validation)
 │   ├── standings.js        # Standings data endpoints
-│   └── communications.js   # Email communication endpoints
+│   ├── communications.js   # Email communication endpoints
+│   └── bracket.js          # Bracket data endpoints
 │
 ├── services/               # Business logic services
-│   └── email-service.js    # Email sending functionality
+│   └── email-service.js    # Brevo API wrapper for email sending
 │
 ├── scripts/
 │   ├── admin-manager.js    # Admin user management utility
-│   └── download-logos.js   # Script to download team logos from ESPN
+│   ├── download-logos.js   # Script to download team logos from ESPN
+│   ├── rename-first-four.js # Updates First Four placeholder names post-game
+│   ├── check-entry.js      # CLI tool to inspect a DB entry
+│   ├── debug-db.js         # Raw DB state printer for debugging
+│   ├── fix-database.js     # One-off migration/repair utility
+│   └── FIRST-FOUR-README.md # Per-game commands for First Four updates
 │
-├── .env                    # Environment variables (email credentials, etc.)
+├── tests/                  # Jest test suite
+│   ├── scoring.test.js              # Point calculation tests
+│   ├── filename.test.js             # Team name → logo filename tests
+│   ├── standings-search.test.js     # Standings search/filter tests
+│   ├── standings-trophies.test.js   # Trophy display logic tests
+│   ├── bracket-pretourney.test.js   # Pre-tourney TBD bracket logic tests
+│   ├── maxScoreCalculator.test.js   # Max remaining score calculator tests
+│   ├── perfectHindsightCalculator.test.js # Perfect hindsight knapsack tests
+│   └── email-validation.test.js    # Email format validation tests
+│
+├── utils/
+│   ├── scoring.js          # calculatePoints() — pure scoring function
+│   └── filename.js         # teamNameToFilename() — logo filename helper
+│
+├── .env                    # Environment variables (Brevo key, session secret, etc.)
 ├── .gitignore              # Git ignore file
+├── INFRASTRUCTURE.md       # Plain-English infra overview (GoDaddy/Cloudflare/DO/Brevo)
 ├── package.json            # Project dependencies
 ├── package-lock.json       # Dependency lock file
 ├── README.md               # Project documentation
@@ -269,4 +327,4 @@ Scoonies/
 
 
 
---Keith Marsteller, May 14, 2025
+--Keith Marsteller, April 6, 2026
