@@ -1,6 +1,6 @@
 {
   "name": "scoonies-app",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "The Scoonies — a fantasy sports pool for the NCAA Basketball Tournament where participants draft teams on a 200-point budget and score points based on how far their teams advance.",
   "main": "server.js",
   "scripts": {
