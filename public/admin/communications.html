@@ -406,6 +406,7 @@
                         <a href="#" class="tab-link" data-tab="all">All Participants</a>
                         <a href="#" class="tab-link" data-tab="reminders">Payment Reminders</a>
                         <a href="#" class="tab-link" data-tab="scoring">Scoring Update</a>
+                        <a href="#" class="tab-link" data-tab="invite">Invite Past Players</a>
                     </div>
                 </div>
                 
@@ -544,6 +545,53 @@
                     </div>
                 </div>
 
+                <!-- Invite Past Players Tab -->
+                <div id="invite-tab" class="tab-content">
+                    <h4>Invite Past Players</h4>
+
+                    <div style="background:#fff5f5;border-left:4px solid #dc3545;border-radius:4px;padding:14px 18px;margin-bottom:20px;">
+                        <p style="margin:0 0 6px;font-weight:bold;color:#dc3545;">📋 Who's in this list?</p>
+                        <p style="margin:0 0 12px;color:#555;font-size:14px;">Everyone who has ever submitted an entry — one unique email per person, preserved across season resets. Use <code>{name}</code> and <code>{email}</code> as placeholders.</p>
+                        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+                            <button id="syncPlayersBtn" class="action-button" style="background:#6c757d;padding:7px 16px;font-size:14px;">🔄 Sync from Current Season</button>
+                            <span id="syncStatus" style="font-size:13px;color:#6c757d;font-style:italic;"></span>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <div class="selection-controls">
+                            <button id="inviteSelectAllBtn" class="secondary-button action-button" style="padding:5px 10px;font-size:14px;">Select All</button>
+                            <button id="inviteSelectNoneBtn" class="secondary-button action-button" style="padding:5px 10px;font-size:14px;">Select None</button>
+                            <span id="inviteCount" style="margin-left:10px;font-size:13px;color:#6c757d;"></span>
+                        </div>
+                        <label style="margin-top:10px;">Past Players:</label>
+                        <div id="inviteRecipientList" class="recipient-list">
+                            <div class="loading">Loading past players...</div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="inviteSubject">Subject:</label>
+                        <input type="text" id="inviteSubject" class="form-control" value="You're invited — The Scoonies are back!">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="inviteMessage">Message:</label>
+                        <textarea id="inviteMessage" class="form-control">Hi {name},
+
+The Scoonies are back for another year! We'd love to have you join us again.
+
+Head over to scoonies.com to submit your entry before the tournament begins. It's $20 per entry — you pick teams using a 200-point budget, and earn points as they advance through the bracket.
+
+Good luck!
+— The Scoonies</textarea>
+                    </div>
+
+                    <div class="action-buttons" style="justify-content:flex-end;gap:10px;">
+                        <button id="sendInviteBtn" class="primary-button action-button">Send Invites</button>
+                    </div>
+                </div>
+
                 <!-- Email Preview Modal -->
                 <div id="emailPreviewBackdrop" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:2000;align-items:center;justify-content:center;">
                     <div style="background:#fff;border-radius:10px;width:660px;max-width:95vw;max-height:88vh;display:flex;flex-direction:column;box-shadow:0 8px 32px rgba(0,0,0,0.25);">
@@ -616,6 +664,19 @@
             document.getElementById('sendReminderBtn').addEventListener('click', sendReminder);
 
             document.getElementById('sendScoringBtn').addEventListener('click', sendScoringUpdate);
+
+            // Invite Past Players tab
+            loadPastPlayers();
+            document.getElementById('inviteSelectAllBtn').addEventListener('click', () => {
+                document.querySelectorAll('#inviteRecipientList input[type=checkbox]').forEach(cb => cb.checked = true);
+                updateInviteCount();
+            });
+            document.getElementById('inviteSelectNoneBtn').addEventListener('click', () => {
+                document.querySelectorAll('#inviteRecipientList input[type=checkbox]').forEach(cb => cb.checked = false);
+                updateInviteCount();
+            });
+            document.getElementById('sendInviteBtn').addEventListener('click', sendInvites);
+            document.getElementById('syncPlayersBtn').addEventListener('click', syncPlayers);
         });
         
         // Setup tab navigation
@@ -1215,6 +1276,114 @@
                     statusDiv.className = 'status-message';
                 }, 10000);
             }
+        }
+
+        // ── Invite Past Players ────────────────────────────────────────────
+        let pastPlayers = [];
+
+        function loadPastPlayers() {
+            fetch('/api/communications/past-players', { credentials: 'include' })
+                .then(r => r.json())
+                .then(data => {
+                    pastPlayers = data.players || [];
+                    renderPastPlayerList();
+                })
+                .catch(() => {
+                    document.getElementById('inviteRecipientList').innerHTML =
+                        '<div style="color:#721c24;">Error loading past players.</div>';
+                });
+        }
+
+        function renderPastPlayerList() {
+            const list = document.getElementById('inviteRecipientList');
+            if (pastPlayers.length === 0) {
+                list.innerHTML = '<div style="color:#6c757d;padding:8px;">No past players found. Run <code>node scripts/sync-players.js</code> to import the current season\'s entries.</div>';
+                return;
+            }
+            list.innerHTML = pastPlayers.map(p => `
+                <div class="recipient-item">
+                    <input type="checkbox" class="recipient-check invite-cb" value="${p.email}" checked
+                           onchange="updateInviteCount()">
+                    <div class="recipient-info">
+                        <div class="recipient-name">${p.player_name}</div>
+                        <div class="recipient-email">${p.email}
+                            <span style="margin-left:8px;font-size:0.8em;color:#aaa;">last seen: ${p.last_seen ? p.last_seen.slice(0,10) : '?'}</span>
+                        </div>
+                    </div>
+                </div>`).join('');
+            updateInviteCount();
+        }
+
+        function updateInviteCount() {
+            const checked = document.querySelectorAll('.invite-cb:checked').length;
+            document.getElementById('inviteCount').textContent =
+                `${checked} of ${pastPlayers.length} selected`;
+        }
+
+        function syncPlayers() {
+            const btn = document.getElementById('syncPlayersBtn');
+            const status = document.getElementById('syncStatus');
+            btn.disabled = true;
+            status.textContent = 'Syncing...';
+            status.style.color = '#6c757d';
+
+            fetch('/api/communications/sync-players', {
+                method: 'POST',
+                credentials: 'include'
+            })
+            .then(r => r.json())
+            .then(data => {
+                btn.disabled = false;
+                if (data.success) {
+                    status.textContent = `Done — ${data.synced} player(s) synced from ${data.total} entr${data.total === 1 ? 'y' : 'ies'}.${data.errors > 0 ? ` (${data.errors} error(s))` : ''}`;
+                    status.style.color = data.errors > 0 ? '#856404' : '#155724';
+                    loadPastPlayers(); // Refresh the list
+                } else {
+                    status.textContent = 'Error: ' + (data.error || 'Unknown error');
+                    status.style.color = '#721c24';
+                }
+            })
+            .catch(err => {
+                btn.disabled = false;
+                status.textContent = 'Error: ' + err.message;
+                status.style.color = '#721c24';
+            });
+        }
+
+        function sendInvites() {
+            const recipients = Array.from(document.querySelectorAll('.invite-cb:checked')).map(cb => cb.value);
+            if (recipients.length === 0) { showStatus('No recipients selected.', 'warning'); return; }
+            const subject = document.getElementById('inviteSubject').value.trim();
+            const message = document.getElementById('inviteMessage').value.trim();
+            if (!subject || !message) { showStatus('Subject and message are required.', 'warning'); return; }
+
+            scConfirm(
+                `Send invite to ${recipients.length} past player(s)?`,
+                () => {
+                    document.getElementById('sendInviteBtn').disabled = true;
+                    fetch('/api/communications/send-invite', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
+                        body: JSON.stringify({ recipients, subject, message })
+                    })
+                    .then(r => r.json())
+                    .then(data => {
+                        document.getElementById('sendInviteBtn').disabled = false;
+                        if (data.success) {
+                            const s = data.results.successful.length;
+                            const f = data.results.failed.length;
+                            showStatus(`Sent ${s} invite(s)${f > 0 ? `, ${f} failed` : ''}.`, f > 0 ? 'warning' : 'success');
+                        } else {
+                            showStatus('Error: ' + (data.error || 'Unknown error'), 'error');
+                        }
+                    })
+                    .catch(err => {
+                        document.getElementById('sendInviteBtn').disabled = false;
+                        showStatus('Error: ' + err.message, 'error');
+                    });
+                }
+            );
         }
     </script>
     <script>

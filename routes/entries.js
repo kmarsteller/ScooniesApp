@@ -2,6 +2,7 @@
 const express = require('express');
 const router = express.Router();
 const { db, getCurrentEasternTime } = require('../db/database');
+const { upsertPlayer } = require('../db/players-db');
 const { sendEmail } = require('../services/email-service');
 const { teamLogoFilename } = require('../utils/filename');
 
@@ -109,6 +110,9 @@ router.post('/', (req, res) => {
                                     }
 
                                     res.status(201).json({ message: 'Entry submitted successfully', entryId });
+
+                                    // Record player in persistent roster (fire and forget)
+                                    upsertPlayer(playerName, email, currentEasternTime);
 
                                     // Send confirmation email (fire and forget)
                                     sendConfirmationEmail(playerName, email, nickname, selectedTeams);

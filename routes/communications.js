@@ -2,6 +2,7 @@
 const express = require('express');
 const router = express.Router();
 const { db } = require('../db/database');
+const { playersDb } = require('../db/players-db');
 const emailService = require('../services/email-service');
 
 const SITE_URL = (process.env.SITE_URL || 'https://scoonies.com').replace(/\/$/, '');
@@ -561,6 +562,108 @@ router.post('/send-scoring-update', requireAuth, async (req, res) => {
         console.error('Error sending scoring update:', error);
         res.status(500).json({ error: 'Error sending scoring update: ' + error.message });
     }
+});
+
+// Sync unique players from game.db into players.db
+router.post('/sync-players', requireAuth, (req, res) => {
+    db.all(
+        `SELECT
+             player_name,
+             LOWER(email) AS email,
+             MIN(submission_date) AS first_seen,
+             MAX(submission_date) AS last_seen
+         FROM entries
+         GROUP BY LOWER(email)
+         ORDER BY player_name`,
+        (err, rows) => {
+            if (err) return res.status(500).json({ error: 'Error reading entries: ' + err.message });
+            if (rows.length === 0) return res.json({ success: true, synced: 0, message: 'No entries found in game.db.' });
+
+            let done = 0, synced = 0, errors = 0;
+
+            rows.forEach(row => {
+                playersDb.run(
+                    `INSERT INTO players (player_name, email, first_seen, last_seen)
+                     VALUES (?, ?, ?, ?)
+                     ON CONFLICT(email) DO UPDATE SET
+                         player_name = excluded.player_name,
+                         last_seen   = MAX(last_seen, excluded.last_seen)`,
+                    [row.player_name, row.email, row.first_seen, row.last_seen],
+                    function(err) {
+                        if (err) errors++;
+                        else synced++;
+                        done++;
+                        if (done === rows.length) {
+                            console.log(`sync-players: ${synced} synced, ${errors} errors`);
+                            res.json({ success: true, synced, errors, total: rows.length });
+                        }
+                    }
+                );
+            });
+        }
+    );
+});
+
+// Get all past players from the persistent players.db
+router.get('/past-players', requireAuth, (req, res) => {
+    playersDb.all(
+        `SELECT id, player_name, email, first_seen, last_seen FROM players ORDER BY player_name`,
+        (err, rows) => {
+            if (err) return res.status(500).json({ error: 'Database error: ' + err.message });
+            res.json({ players: rows });
+        }
+    );
+});
+
+// Send a season-invite email to selected past players
+router.post('/send-invite', requireAuth, async (req, res) => {
+    const { recipients, subject, message } = req.body;
+
+    if (!recipients || !Array.isArray(recipients) || recipients.length === 0) {
+        return res.status(400).json({ error: 'Recipients are required' });
+    }
+    if (!subject || !message) {
+        return res.status(400).json({ error: 'Subject and message are required' });
+    }
+
+    // Fetch player details for placeholder substitution
+    const playerMap = await new Promise((resolve, reject) => {
+        playersDb.all(
+            `SELECT player_name, email FROM players WHERE email IN (${recipients.map(() => '?').join(',')})`,
+            recipients,
+            (err, rows) => {
+                if (err) return reject(err);
+                const map = {};
+                rows.forEach(r => { map[r.email.toLowerCase()] = r; });
+                resolve(map);
+            }
+        );
+    }).catch(err => { res.status(500).json({ error: err.message }); return null; });
+
+    if (!playerMap) return;
+
+    const results = { successful: [], failed: [] };
+
+    for (const email of recipients) {
+        const player = playerMap[email.toLowerCase()] || { player_name: '', email };
+        let personalizedMessage = message
+            .replace(/\{name\}/g, player.player_name)
+            .replace(/\{email\}/g, player.email);
+
+        const normalized = personalizedMessage.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+        const bodyHtml = `<p style="color:#333;font-size:15px;line-height:1.6;">${normalized.replace(/\n\n/g, '</p><p style="color:#333;font-size:15px;line-height:1.6;">').replace(/\n/g, '<br>')}</p>`;
+        const html = brandedHtml(subject, bodyHtml);
+
+        try {
+            const result = await emailService.sendEmail(email, subject, normalized, html);
+            if (result.success) results.successful.push(email);
+            else results.failed.push({ email, error: result.error });
+        } catch (err) {
+            results.failed.push({ email, error: err.message });
+        }
+    }
+
+    res.json({ success: true, results });
 });
 
 module.exports = router;

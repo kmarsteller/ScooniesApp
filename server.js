@@ -5,6 +5,7 @@ const session = require('express-session');
 const path = require('path');
 const fs = require('fs');
 const { initializeDatabase, db } = require('./db/database');
+const { initializePlayersDatabase } = require('./db/players-db');
 const SqliteStore = require('./db/session-store');
 
 // Import routes
@@ -26,8 +27,9 @@ console.log(`Current server time: ${now.toString()}`);
 console.log(`ISO time: ${now.toISOString()}`);
 console.log(`Locale time: ${now.toLocaleString('en-US', { timeZone: 'America/New_York' })}`);
 
-// Initialize database
+// Initialize databases
 initializeDatabase();
+initializePlayersDatabase();
 
 // Middleware
 app.use(session({

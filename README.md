@@ -43,6 +43,11 @@ Finally, from the top-level directory, run the server with this command: "npm st
 	- admin_users: Administrator credentials with secure password hashing
 	- system_settings: Application configuration (entries open/closed, team visibility)
 
+**Player Roster (db/players-db.js)**
+- Separate persistent SQLite database (`players.db`) that survives season resets of `game.db`
+- Upserts a player record on every entry submission (keyed by email, case-insensitive)
+- Tracks `first_seen` and `last_seen` timestamps across seasons
+
 **Route Handlers**
 - entries.js: Manages user entry submissions (with server-side email validation)
 - standings.js: Provides current tournament standings with team visibility control
@@ -70,6 +75,7 @@ Finally, from the top-level directory, run the server with this command: "npm st
 - check-entry.js: CLI tool to inspect a specific entry in the database
 - debug-db.js: Prints raw database state for debugging
 - fix-database.js: One-off migration/repair utility
+- sync-players.js: Backfills players.db from existing game.db entries (repeatable/safe)
 
 **EMAIL**
 
@@ -176,7 +182,9 @@ Deployment
 **Database**
 - db/database.js: Database connection setup, schema creation, initial data population
 - db/session-store.js: SQLite-backed session store for admin login sessions
+- db/players-db.js: Persistent player roster; survives game.db season resets; upserts on each entry submission
 - db/game.db: SQLite database file (generated on first run)
+- db/players.db: Persistent player roster database (generated on first run)
 
 **API Routes**
 - routes/admin.js: Admin API endpoints (authentication, tournament management)
@@ -210,6 +218,7 @@ Deployment
 - scripts/check-entry.js: CLI tool to inspect an entry in the database
 - scripts/debug-db.js: Raw DB state printer for debugging
 - scripts/fix-database.js: One-off migration/repair utility
+- scripts/sync-players.js: Backfills players.db from existing game.db entries (repeatable/safe)
 - scripts/FIRST-FOUR-README.md: Per-game commands for First Four updates
 
 **Services**
@@ -237,6 +246,9 @@ admin_users: Administrator credentials
 system_settings: Application configuration
 - id, key, value (entries_open, teams_visible)
 
+players (players.db — persistent across seasons):
+- id, player_name, email (unique, lowercase), first_seen, last_seen
+
 ### Project Structure Outline
 This outline represents the current state of the Scoonies application after recent updates and improvements to security, user interface, and privacy controls.
 
@@ -245,7 +257,9 @@ ScooniesApp/
 ├── db/
 │   ├── database.js         # SQLite database setup and connection
 │   ├── session-store.js    # SQLite-backed session store for admin auth
-│   └── game.db             # SQLite database file (generated)
+│   ├── players-db.js       # Persistent player roster (survives season resets)
+│   ├── game.db             # SQLite database file (generated)
+│   └── players.db          # Persistent player roster DB (generated)
 │
 ├── lib/                    # Pure-function business logic (no Express/DB dependencies)
 │   ├── maxScoreCalculator.js          # Max remaining score per entry (bracket-collision-aware)
@@ -298,6 +312,7 @@ ScooniesApp/
 │   ├── check-entry.js      # CLI tool to inspect a DB entry
 │   ├── debug-db.js         # Raw DB state printer for debugging
 │   ├── fix-database.js     # One-off migration/repair utility
+│   ├── sync-players.js     # Backfills players.db from game.db (repeatable)
 │   └── FIRST-FOUR-README.md # Per-game commands for First Four updates
 │
 ├── tests/                  # Jest test suite
@@ -308,7 +323,8 @@ ScooniesApp/
 │   ├── bracket-pretourney.test.js   # Pre-tourney TBD bracket logic tests
 │   ├── maxScoreCalculator.test.js   # Max remaining score calculator tests
 │   ├── perfectHindsightCalculator.test.js # Perfect hindsight knapsack tests
-│   └── email-validation.test.js    # Email format validation tests
+│   ├── email-validation.test.js    # Email format validation tests
+│   └── players-db.test.js          # Player roster upsert logic tests (in-memory SQLite)
 │
 ├── utils/
 │   ├── scoring.js          # calculatePoints() — pure scoring function

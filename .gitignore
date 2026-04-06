@@ -6,8 +6,9 @@
 # Dependencies for Node.js
 node_modules/
 
-# SQLite3-related 
+# SQLite3-related
 db/game.db
+db/players.db
 
 # Build artifacts
 
