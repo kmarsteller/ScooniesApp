@@ -259,6 +259,28 @@
             font-weight: bold;
         }
         #scModal-confirm.danger { background: #8b0000; }
+
+        /* Collapsible drawer */
+        .drawer-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            user-select: none;
+        }
+        .drawer-header:hover { opacity: 0.85; }
+        .drawer-chevron {
+            font-size: 0.8rem;
+            color: #6c757d;
+            transition: transform 0.2s;
+            flex-shrink: 0;
+        }
+        .drawer-body {
+            display: none;
+            margin-top: 14px;
+        }
+        .drawer-body.open { display: block; }
+        .drawer-chevron.open { transform: rotate(180deg); }
     </style>
 </head>
 <body>
@@ -292,104 +314,113 @@
                 <h3>League Communications</h3>
 
                 <!-- Commissioner's Banner -->
-                <div style="background:#fff;border:1px solid #ddd;border-radius:6px;padding:18px 20px;margin-bottom:10px;">
-                    <div style="display:flex;align-items:center;gap:12px;margin-bottom:4px;">
-                        <h4 style="margin:0;color:#dc3545;">Commissioner's Banner</h4>
-                        <div id="commToggleWrap" style="position:relative;width:44px;height:24px;flex-shrink:0;cursor:pointer;">
-                            <input type="checkbox" id="commBannerEnabled" style="opacity:0;width:0;height:0;position:absolute;">
-                            <span id="commToggleTrack" style="position:absolute;inset:0;border-radius:24px;background:#ccc;transition:background 0.2s;"></span>
-                            <span id="commToggleThumb" style="position:absolute;left:3px;top:3px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,0.3);transition:transform 0.2s;pointer-events:none;"></span>
+                <div style="background:#fff;border:1px solid #ddd;border-radius:6px;padding:14px 20px;margin-bottom:10px;">
+                    <div class="drawer-header" onclick="toggleDrawer('commDrawer', 'commChevron')">
+                        <div style="display:flex;align-items:center;gap:12px;">
+                            <h4 style="margin:0;color:#dc3545;">Commissioner's Banner</h4>
+                            <div id="commToggleWrap" style="position:relative;width:44px;height:24px;flex-shrink:0;cursor:pointer;" onclick="event.stopPropagation()">
+                                <input type="checkbox" id="commBannerEnabled" style="opacity:0;width:0;height:0;position:absolute;">
+                                <span id="commToggleTrack" style="position:absolute;inset:0;border-radius:24px;background:#ccc;transition:background 0.2s;"></span>
+                                <span id="commToggleThumb" style="position:absolute;left:3px;top:3px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,0.3);transition:transform 0.2s;pointer-events:none;"></span>
+                            </div>
+                            <span id="commToggleLabel" style="font-size:0.85rem;color:#6c757d;font-weight:bold;">Off</span>
                         </div>
-                        <span id="commToggleLabel" style="font-size:0.85rem;color:#6c757d;font-weight:bold;">Off</span>
+                        <span id="commChevron" class="drawer-chevron">▼</span>
                     </div>
-                    <p style="margin:0 0 14px;color:#555;font-size:0.9rem;">Display a message banner at the top of the home page.</p>
-                    <div class="form-group" style="margin-bottom:12px;">
-                        <textarea id="bannerText" class="form-control" rows="2" placeholder="e.g. Entries are now open! Submit your Scoonie before tip-off on March 20th." style="min-height:unset;"></textarea>
-                    </div>
-                    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
-                        <button id="saveBannerBtn" class="primary-button action-button" style="padding:8px 18px;">Save Banner</button>
-                        <button id="clearBannerBtn" class="action-button" style="background-color:#6c757d;padding:8px 18px;">Clear Banner</button>
-                        <span id="bannerStatus" style="font-size:0.9rem;color:#6c757d;font-style:italic;"></span>
-                    </div>
-                    <div id="bannerPreview" style="display:none;margin-top:14px;padding:10px 16px;background:#fff3cd;border:1px solid #ffc107;border-radius:6px;color:#856404;font-weight:500;">
-                        <strong>Preview:</strong> <span id="bannerPreviewText"></span>
+                    <div id="commDrawer" class="drawer-body">
+                        <p style="margin:0 0 14px;color:#555;font-size:0.9rem;">Display a message banner at the top of the home page.</p>
+                        <div class="form-group" style="margin-bottom:12px;">
+                            <textarea id="bannerText" class="form-control" rows="2" placeholder="e.g. Entries are now open! Submit your Scoonie before tip-off on March 20th." style="min-height:unset;"></textarea>
+                        </div>
+                        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+                            <button id="saveBannerBtn" class="primary-button action-button" style="padding:8px 18px;">Save Banner</button>
+                            <button id="clearBannerBtn" class="action-button" style="background-color:#6c757d;padding:8px 18px;">Clear Banner</button>
+                            <span id="bannerStatus" style="font-size:0.9rem;color:#6c757d;font-style:italic;"></span>
+                        </div>
+                        <div id="bannerPreview" style="display:none;margin-top:14px;padding:10px 16px;background:#fff3cd;border:1px solid #ffc107;border-radius:6px;color:#856404;font-weight:500;">
+                            <strong>Preview:</strong> <span id="bannerPreviewText"></span>
+                        </div>
                     </div>
                 </div>
 
                 <!-- Seling's Shit-talking Corner Banner -->
-                <div style="background:#fff;border:1px solid #ddd;border-radius:6px;padding:18px 20px;margin-bottom:10px;">
-                    <!-- Title row with toggle -->
-                    <div style="display:flex;align-items:center;gap:12px;margin-bottom:4px;">
-                        <h4 style="margin:0;color:#6f42c1;">🔥 Seling's Shit-talking Corner</h4>
-                        <div id="stBannerToggleWrap" style="position:relative;width:44px;height:24px;flex-shrink:0;cursor:pointer;">
-                            <input type="checkbox" id="stBannerEnabled" style="opacity:0;width:0;height:0;position:absolute;">
-                            <span id="stBannerToggleTrack" style="position:absolute;inset:0;border-radius:24px;background:#ccc;transition:background 0.2s;"></span>
-                            <span id="stBannerToggleThumb" style="position:absolute;left:3px;top:3px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,0.3);transition:transform 0.2s;pointer-events:none;"></span>
+                <div style="background:#fff;border:1px solid #ddd;border-radius:6px;padding:14px 20px;margin-bottom:10px;">
+                    <div class="drawer-header" onclick="toggleDrawer('stDrawer', 'stChevron')">
+                        <div style="display:flex;align-items:center;gap:12px;">
+                            <h4 style="margin:0;color:#6f42c1;">🔥 Seling's Shit-talking Corner</h4>
+                            <div id="stBannerToggleWrap" style="position:relative;width:44px;height:24px;flex-shrink:0;cursor:pointer;" onclick="event.stopPropagation()">
+                                <input type="checkbox" id="stBannerEnabled" style="opacity:0;width:0;height:0;position:absolute;">
+                                <span id="stBannerToggleTrack" style="position:absolute;inset:0;border-radius:24px;background:#ccc;transition:background 0.2s;"></span>
+                                <span id="stBannerToggleThumb" style="position:absolute;left:3px;top:3px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,0.3);transition:transform 0.2s;pointer-events:none;"></span>
+                            </div>
+                            <span id="stBannerToggleLabel" style="font-size:0.85rem;color:#6c757d;font-weight:bold;">Banner Off</span>
                         </div>
-                        <span id="stBannerToggleLabel" style="font-size:0.85rem;color:#6c757d;font-weight:bold;">Banner Off</span>
+                        <span id="stChevron" class="drawer-chevron">▼</span>
                     </div>
-                    <p style="margin:0 0 14px;color:#555;font-size:0.9rem;">Display a trash-talk banner at the top of the Standings page. Pick neon colors to match your vibe.</p>
+                    <div id="stDrawer" class="drawer-body">
+                        <p style="margin:0 0 14px;color:#555;font-size:0.9rem;">Display a trash-talk banner at the top of the Standings page. Pick neon colors to match your vibe.</p>
 
-                    <!-- Background color picker -->
-                    <div style="margin-bottom:14px;">
-                        <label style="display:block;font-weight:bold;margin-bottom:8px;font-size:0.9rem;">Background Color</label>
-                        <div id="neonSwatches" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px;">
-                            <button class="neon-swatch" data-color="#ff00ff" title="Neon Magenta" style="background:#ff00ff;"></button>
-                            <button class="neon-swatch" data-color="#00ff41" title="Matrix Green" style="background:#00ff41;"></button>
-                            <button class="neon-swatch" data-color="#00eeff" title="Electric Cyan" style="background:#00eeff;"></button>
-                            <button class="neon-swatch" data-color="#ff6600" title="Neon Orange"  style="background:#ff6600;"></button>
-                            <button class="neon-swatch" data-color="#ffff00" title="Laser Yellow" style="background:#ffff00;"></button>
-                            <button class="neon-swatch" data-color="#ff0055" title="Hot Red"      style="background:#ff0055;"></button>
-                            <button class="neon-swatch" data-color="#bf00ff" title="UV Purple"    style="background:#bf00ff;"></button>
-                            <button class="neon-swatch" data-color="#00ff99" title="Neon Mint"    style="background:#00ff99;"></button>
-                            <button class="neon-swatch" data-color="#ff007f" title="Neon Rose"    style="background:#ff007f;"></button>
-                            <button class="neon-swatch" data-color="#1e90ff" title="Dodger Blue"  style="background:#1e90ff;"></button>
-                        </div>
-                        <div style="display:flex;align-items:center;gap:10px;">
-                            <input type="color" id="stBannerColorPicker" value="#ff00ff"
-                                style="width:38px;height:32px;border:none;padding:0;cursor:pointer;border-radius:4px;">
-                            <span id="stBannerColorHex" style="font-family:monospace;font-size:0.9rem;color:#555;">#ff00ff</span>
-                            <div id="stBannerColorPreviewBar" style="flex:1;height:28px;border-radius:4px;background:#ff00ff;box-shadow:0 0 10px #ff00ff88;transition:all 0.2s;"></div>
-                        </div>
-                    </div>
-
-                    <!-- Text color picker -->
-                    <div style="margin-bottom:14px;">
-                        <label style="display:block;font-weight:bold;margin-bottom:8px;font-size:0.9rem;">Text Color</label>
-                        <div id="textColorSwatches" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px;">
-                            <button class="text-swatch" data-color="#ffffff" title="White"        style="background:#ffffff;border:2px solid #ccc;"></button>
-                            <button class="text-swatch" data-color="#000000" title="Black"        style="background:#000000;"></button>
-                            <button class="text-swatch" data-color="#ffff00" title="Yellow"       style="background:#ffff00;border:2px solid #ccc;"></button>
-                            <button class="text-swatch" data-color="#000000" title="Black"        style="background:#111;"></button>
-                            <button class="text-swatch" data-color="#ff00ff" title="Magenta"      style="background:#ff00ff;"></button>
-                            <button class="text-swatch" data-color="#00ff41" title="Matrix Green" style="background:#00ff41;"></button>
-                            <button class="text-swatch" data-color="#00eeff" title="Cyan"         style="background:#00eeff;"></button>
-                            <button class="text-swatch" data-color="#ff6600" title="Orange"       style="background:#ff6600;"></button>
-                            <button class="text-swatch" data-color="#ff0055" title="Hot Red"      style="background:#ff0055;"></button>
-                            <button class="text-swatch" data-color="#bf00ff" title="Purple"       style="background:#bf00ff;"></button>
-                        </div>
-                        <div style="display:flex;align-items:center;gap:10px;">
-                            <input type="color" id="stBannerTextColorPicker" value="#ffffff"
-                                style="width:38px;height:32px;border:none;padding:0;cursor:pointer;border-radius:4px;">
-                            <span id="stBannerTextColorHex" style="font-family:monospace;font-size:0.9rem;color:#555;">#ffffff</span>
-                            <div id="stBannerTextColorPreviewBar" style="flex:1;height:28px;border-radius:4px;background:#333;display:flex;align-items:center;padding:0 10px;font-weight:bold;font-size:0.85rem;transition:all 0.2s;">
-                                <span id="stBannerTextColorSample" style="color:#ffffff;">Sample text</span>
+                        <!-- Background color picker -->
+                        <div style="margin-bottom:14px;">
+                            <label style="display:block;font-weight:bold;margin-bottom:8px;font-size:0.9rem;">Background Color</label>
+                            <div id="neonSwatches" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px;">
+                                <button class="neon-swatch" data-color="#ff00ff" title="Neon Magenta" style="background:#ff00ff;"></button>
+                                <button class="neon-swatch" data-color="#00ff41" title="Matrix Green" style="background:#00ff41;"></button>
+                                <button class="neon-swatch" data-color="#00eeff" title="Electric Cyan" style="background:#00eeff;"></button>
+                                <button class="neon-swatch" data-color="#ff6600" title="Neon Orange"  style="background:#ff6600;"></button>
+                                <button class="neon-swatch" data-color="#ffff00" title="Laser Yellow" style="background:#ffff00;"></button>
+                                <button class="neon-swatch" data-color="#ff0055" title="Hot Red"      style="background:#ff0055;"></button>
+                                <button class="neon-swatch" data-color="#bf00ff" title="UV Purple"    style="background:#bf00ff;"></button>
+                                <button class="neon-swatch" data-color="#00ff99" title="Neon Mint"    style="background:#00ff99;"></button>
+                                <button class="neon-swatch" data-color="#ff007f" title="Neon Rose"    style="background:#ff007f;"></button>
+                                <button class="neon-swatch" data-color="#1e90ff" title="Dodger Blue"  style="background:#1e90ff;"></button>
+                            </div>
+                            <div style="display:flex;align-items:center;gap:10px;">
+                                <input type="color" id="stBannerColorPicker" value="#ff00ff"
+                                    style="width:38px;height:32px;border:none;padding:0;cursor:pointer;border-radius:4px;">
+                                <span id="stBannerColorHex" style="font-family:monospace;font-size:0.9rem;color:#555;">#ff00ff</span>
+                                <div id="stBannerColorPreviewBar" style="flex:1;height:28px;border-radius:4px;background:#ff00ff;box-shadow:0 0 10px #ff00ff88;transition:all 0.2s;"></div>
                             </div>
                         </div>
-                    </div>
 
-                    <div class="form-group" style="margin-bottom:12px;">
-                        <textarea id="stBannerText" class="form-control" rows="2"
-                            placeholder="e.g. Nobody picked Duke to go this far — except maybe the guy who's about to lose to them 🤡"
-                            style="min-height:unset;"></textarea>
-                    </div>
-                    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
-                        <button id="saveStBannerBtn" class="primary-button action-button" style="padding:8px 18px;background:#6f42c1;border-color:#6f42c1;">Save</button>
-                        <button id="clearStBannerBtn" class="action-button" style="background-color:#6c757d;padding:8px 18px;">Clear</button>
-                        <span id="stBannerStatus" style="font-size:0.9rem;color:#6c757d;font-style:italic;"></span>
-                    </div>
-                    <div id="stBannerPreview" style="display:none;margin-top:14px;padding:10px 16px;border-radius:6px;font-weight:700;font-size:0.95rem;transition:all 0.2s;">
-                        🔥 Seling's Shit-talking Corner &nbsp;|&nbsp; <span id="stBannerPreviewText"></span>
+                        <!-- Text color picker -->
+                        <div style="margin-bottom:14px;">
+                            <label style="display:block;font-weight:bold;margin-bottom:8px;font-size:0.9rem;">Text Color</label>
+                            <div id="textColorSwatches" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px;">
+                                <button class="text-swatch" data-color="#ffffff" title="White"        style="background:#ffffff;border:2px solid #ccc;"></button>
+                                <button class="text-swatch" data-color="#000000" title="Black"        style="background:#000000;"></button>
+                                <button class="text-swatch" data-color="#ffff00" title="Yellow"       style="background:#ffff00;border:2px solid #ccc;"></button>
+                                <button class="text-swatch" data-color="#000000" title="Black"        style="background:#111;"></button>
+                                <button class="text-swatch" data-color="#ff00ff" title="Magenta"      style="background:#ff00ff;"></button>
+                                <button class="text-swatch" data-color="#00ff41" title="Matrix Green" style="background:#00ff41;"></button>
+                                <button class="text-swatch" data-color="#00eeff" title="Cyan"         style="background:#00eeff;"></button>
+                                <button class="text-swatch" data-color="#ff6600" title="Orange"       style="background:#ff6600;"></button>
+                                <button class="text-swatch" data-color="#ff0055" title="Hot Red"      style="background:#ff0055;"></button>
+                                <button class="text-swatch" data-color="#bf00ff" title="Purple"       style="background:#bf00ff;"></button>
+                            </div>
+                            <div style="display:flex;align-items:center;gap:10px;">
+                                <input type="color" id="stBannerTextColorPicker" value="#ffffff"
+                                    style="width:38px;height:32px;border:none;padding:0;cursor:pointer;border-radius:4px;">
+                                <span id="stBannerTextColorHex" style="font-family:monospace;font-size:0.9rem;color:#555;">#ffffff</span>
+                                <div id="stBannerTextColorPreviewBar" style="flex:1;height:28px;border-radius:4px;background:#333;display:flex;align-items:center;padding:0 10px;font-weight:bold;font-size:0.85rem;transition:all 0.2s;">
+                                    <span id="stBannerTextColorSample" style="color:#ffffff;">Sample text</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group" style="margin-bottom:12px;">
+                            <textarea id="stBannerText" class="form-control" rows="2"
+                                placeholder="e.g. Nobody picked Duke to go this far — except maybe the guy who's about to lose to them 🤡"
+                                style="min-height:unset;"></textarea>
+                        </div>
+                        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+                            <button id="saveStBannerBtn" class="primary-button action-button" style="padding:8px 18px;background:#6f42c1;border-color:#6f42c1;">Save</button>
+                            <button id="clearStBannerBtn" class="action-button" style="background-color:#6c757d;padding:8px 18px;">Clear</button>
+                            <span id="stBannerStatus" style="font-size:0.9rem;color:#6c757d;font-style:italic;"></span>
+                        </div>
+                        <div id="stBannerPreview" style="display:none;margin-top:14px;padding:10px 16px;border-radius:6px;font-weight:700;font-size:0.95rem;transition:all 0.2s;">
+                            🔥 Seling's Shit-talking Corner &nbsp;|&nbsp; <span id="stBannerPreviewText"></span>
+                        </div>
                     </div>
                 </div>
 
@@ -403,8 +434,6 @@
                 <div class="tab-controls">
                     <div class="admin-nav" style="margin: 20px 0;">
                         <a href="#" class="tab-link active" data-tab="specific">Specific Recipients</a>
-                        <a href="#" class="tab-link" data-tab="all">All Participants</a>
-                        <a href="#" class="tab-link" data-tab="reminders">Payment Reminders</a>
                         <a href="#" class="tab-link" data-tab="scoring">Scoring Update</a>
                         <a href="#" class="tab-link" data-tab="invite">Invite Past Players</a>
                     </div>
@@ -445,79 +474,6 @@
                     <div id="specificPreview" class="message-preview" style="display: none;">
                         <div class="preview-header">Message Preview</div>
                         <div id="specificPreviewContent"></div>
-                    </div>
-                </div>
-                
-                <!-- All Participants Tab -->
-                <div id="all-tab" class="tab-content">
-                    <h4>Send to All Participants</h4>
-                    
-                    <div class="form-group">
-                        <label for="filterAll">Filter:</label>
-                        <select id="filterAll" class="form-control">
-                            <option value="all">All Participants</option>
-                            <option value="paid">Paid Participants Only</option>
-                            <option value="unpaid">Unpaid Participants Only</option>
-                        </select>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="allSubject">Subject:</label>
-                        <input type="text" id="allSubject" class="form-control" placeholder="Email subject">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="allMessage">Message:</label>
-                        <textarea id="allMessage" class="form-control" placeholder="Enter your message here. Use {name}, {nickname}, {email}, or {all_nicknames} as placeholders."></textarea>
-                    </div>
-                    
-                    <div class="action-buttons">
-                        <button id="previewAllBtn" class="secondary-button action-button">Preview</button>
-                        <button id="sendAllBtn" class="primary-button action-button">Send to All</button>
-                    </div>
-                    
-                    <div id="allPreview" class="message-preview" style="display: none;">
-                        <div class="preview-header">Message Preview</div>
-                        <div id="allPreviewContent"></div>
-                    </div>
-                </div>
-                
-                <!-- Payment Reminders Tab -->
-                <div id="reminders-tab" class="tab-content">
-                    <h4>Send Payment Reminders</h4>
-                    
-                    <div class="form-group">
-                        <p>This will send payment reminder emails to all participants who have not yet paid for their entries.</p>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="reminderTemplate">Template:</label>
-                        <select id="reminderTemplate" class="form-control template-selector">
-                            <option value="default">Default Payment Reminder</option>
-                            <option value="gentle">Gentle Reminder</option>
-                            <option value="firm">Firm Reminder</option>
-                            <option value="custom">Custom Message</option>
-                        </select>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="reminderSubject">Subject:</label>
-                        <input type="text" id="reminderSubject" class="form-control" value="Reminder: Payment Required for Your Scoonies Entry">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="reminderMessage">Message:</label>
-                        <textarea id="reminderMessage" class="form-control" disabled></textarea>
-                    </div>
-                    
-                    <div class="action-buttons">
-                        <button id="previewReminderBtn" class="secondary-button action-button">Preview</button>
-                        <button id="sendReminderBtn" class="primary-button action-button">Send Reminders</button>
-                    </div>
-                    
-                    <div id="reminderPreview" class="message-preview" style="display: none;">
-                        <div class="preview-header">Message Preview</div>
-                        <div id="reminderPreviewContent"></div>
                     </div>
                 </div>
                 
@@ -614,9 +570,18 @@ Good luck!
     </footer>
     
     <script>
+        function toggleDrawer(drawerId, chevronId) {
+            const body = document.getElementById(drawerId);
+            const chevron = document.getElementById(chevronId);
+            body.classList.toggle('open');
+            chevron.classList.toggle('open');
+        }
+    </script>
+
+    <script>
         // Templates for payment reminders
         const reminderTemplates = {
-            default: `Hi {name},\n\nThis is a friendly reminder that payment is required for your Scoonies entry "{nickname}". Please submit your payment as soon as possible to ensure your entry is included in the competition.\n\nYou can pay via Venmo (@Brian-Swarts) or PayPal.\n\nThank you,\nThe Scoonies Team`,
+            default: `Hi {name},\n\nThis is a friendly reminder that payment is required for your Scoonies entry "{nickname}". Please submit your payment as soon as possible to ensure your entry is included in the competition.\n\nYou can pay via:\n  • Venmo: @Brian-Swarts\n  • PayPal: paypal.me/bswarts2\n\nThank you,\nThe Scoonies Team`,
             
             gentle: `Hi {name},\n\nWe hope you're excited about the upcoming tournament! We noticed that we haven't received payment yet for your Scoonies entry "{nickname}".\n\nTo complete your registration, please send your payment via Venmo (@Brian-Swarts) or PayPal at your earliest convenience.\n\nThank you for participating!\n\nBest regards,\nThe Scoonies Team`,
             
@@ -628,7 +593,7 @@ Good luck!
         
         // Add placeholder help text under message fields
         function addPlaceholderHelp() {
-            const ids = ['specificMessage', 'allMessage', 'reminderMessage', 'scoringMessage'];
+            const ids = ['specificMessage', 'scoringMessage'];
             ids.forEach(id => {
                 const el = document.getElementById(id);
                 if (!el) return;
@@ -646,7 +611,6 @@ Good luck!
 
         document.addEventListener('DOMContentLoaded', function() {
             loadRecipients();
-            setupReminderTemplates();
             setupTabs();
             addPlaceholderHelp();
 
@@ -656,12 +620,6 @@ Good luck!
 
             document.getElementById('previewSpecificBtn').addEventListener('click', previewSpecific);
             document.getElementById('sendSpecificBtn').addEventListener('click', sendSpecific);
-
-            document.getElementById('previewAllBtn').addEventListener('click', previewAll);
-            document.getElementById('sendAllBtn').addEventListener('click', sendAll);
-
-            document.getElementById('previewReminderBtn').addEventListener('click', previewReminder);
-            document.getElementById('sendReminderBtn').addEventListener('click', sendReminder);
 
             document.getElementById('sendScoringBtn').addEventListener('click', sendScoringUpdate);
 
@@ -696,27 +654,6 @@ Good luck!
                     const tabId = this.dataset.tab + '-tab';
                     document.getElementById(tabId).classList.add('active');
                 });
-            });
-        }
-        
-        // Setup reminder templates
-        function setupReminderTemplates() {
-            const templateSelector = document.getElementById('reminderTemplate');
-            const messageTextarea = document.getElementById('reminderMessage');
-            
-            // Set default template
-            messageTextarea.value = reminderTemplates.default;
-            
-            templateSelector.addEventListener('change', function() {
-                const selectedTemplate = this.value;
-                
-                if (selectedTemplate === 'custom') {
-                    messageTextarea.value = '';
-                    messageTextarea.disabled = false;
-                } else {
-                    messageTextarea.value = reminderTemplates[selectedTemplate];
-                    messageTextarea.disabled = true;
-                }
             });
         }
         
@@ -820,34 +757,46 @@ Good luck!
         
         // Select all recipients
         function selectAll() {
-            const checkboxes = document.querySelectorAll('.recipient-check');
-            checkboxes.forEach(checkbox => {
-                checkbox.checked = true;
-            });
+            document.querySelectorAll('.recipient-check').forEach(cb => cb.checked = true);
+            clearReminderIfPresent();
         }
-        
+
         // Select no recipients
         function selectNone() {
-            const checkboxes = document.querySelectorAll('.recipient-check');
-            checkboxes.forEach(checkbox => {
-                checkbox.checked = false;
-            });
+            document.querySelectorAll('.recipient-check').forEach(cb => cb.checked = false);
+            clearReminderIfPresent();
+        }
+
+        function clearReminderIfPresent() {
+            const subjectEl = document.getElementById('specificSubject');
+            const messageEl = document.getElementById('specificMessage');
+            if (subjectEl.value === 'Reminder: Payment Required for Your Scoonies Entry') {
+                subjectEl.value = '';
+            }
+            if (messageEl.value === reminderTemplates.default) {
+                messageEl.value = '';
+            }
         }
         
-        // Select only unpaid participants
+        // Select only unpaid participants and pre-fill payment reminder
         function selectUnpaid() {
             const checkboxes = document.querySelectorAll('.recipient-check');
-            
+
             checkboxes.forEach(checkbox => {
                 const participantId = parseInt(checkbox.dataset.id);
                 const participant = participants.find(p => p.id === participantId);
-                
-                if (participant && participant.has_paid === 0) {
-                    checkbox.checked = true;
-                } else {
-                    checkbox.checked = false;
-                }
+                checkbox.checked = participant && participant.has_paid === 0;
             });
+
+            // Pre-fill subject and message with default payment reminder
+            const subjectEl = document.getElementById('specificSubject');
+            const messageEl = document.getElementById('specificMessage');
+            if (!subjectEl.value) {
+                subjectEl.value = 'Reminder: Payment Required for Your Scoonies Entry';
+            }
+            if (!messageEl.value) {
+                messageEl.value = reminderTemplates.default;
+            }
         }
         
         // Get selected recipients
