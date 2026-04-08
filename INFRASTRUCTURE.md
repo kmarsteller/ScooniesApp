@@ -45,13 +45,14 @@ Brevo (sends emails)
 | Type | Name | Purpose |
 |------|------|---------|
 | A | scoonies.com | Points the domain to the DigitalOcean server's IP address |
+| A | admin.scoonies.com | Points the admin subdomain to the same DigitalOcean server |
 | TXT | scoonies.com | SPF record — tells email servers that Brevo is allowed to send on your behalf |
 | TXT | brevo._domainkey | DKIM record — a cryptographic signature proving emails are really from you |
 | TXT | _dmarc | DMARC record — instructs email providers what to do with fake/spoofed emails |
 
 The SPF/DKIM/DMARC records are what allow emails to be sent *from* `thescoonies@scoonies.com` without being flagged as spam.
 
-**What you need to do there:** Nothing regularly. If the DigitalOcean server ever gets a new IP address, you'd update the A record here.
+**What you need to do there:** Nothing regularly. If the DigitalOcean server ever gets a new IP address, you'd update both A records here.
 
 ---
 
@@ -65,7 +66,9 @@ The SPF/DKIM/DMARC records are what allow emails to be sent *from* `thescoonies@
 - **pm2** — a process manager that keeps the Node.js app running. If the app crashes, pm2 restarts it automatically. This is also how the app survives server reboots.
 - **SQLite** — the database, stored as a single file (`scoonies.db`) directly on the droplet's disk
 
-**How Nginx and Node.js work together:** Nginx sits in front and handles the public-facing connection. It passes requests through to Node.js on port 3000 (this is called a "reverse proxy"). Users never connect directly to port 3000.
+**How Nginx and Node.js work together:** Nginx sits in front and handles the public-facing connection. It passes requests through to Node.js on port 3001 (this is called a "reverse proxy"). Users never connect directly to port 3001.
+
+**Admin subdomain:** `https://admin.scoonies.com` is a separate nginx server block in `/etc/nginx/sites-available/default` that proxies to the same Node.js app on port 3001. HTTPS is handled by a Let's Encrypt certificate issued via Certbot (auto-renews). The admin link is intentionally absent from all public-facing pages — access the admin by navigating directly to `https://admin.scoonies.com/admin`. The session cookie is scoped to `.scoonies.com` so a login on either domain is recognized on the other.
 
 **Key commands on the droplet:**
 ```bash

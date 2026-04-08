@@ -37,7 +37,7 @@ app.use(session({
     secret: process.env.SESSION_SECRET || 'scoonies-dev-secret',
     resave: false,
     saveUninitialized: false,
-    cookie: { maxAge: 7 * 24 * 60 * 60 * 1000 } // 7 days
+    cookie: { maxAge: 7 * 24 * 60 * 60 * 1000, domain: '.scoonies.com' } // 7 days; shared across subdomains
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));

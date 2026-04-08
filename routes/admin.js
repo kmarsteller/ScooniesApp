@@ -1276,4 +1276,50 @@ router.get('/max-score/:entryId', requireAuth, (req, res) => {
     });
 });
 
+// Restore a full tournament snapshot (used by the undo stack)
+router.post('/restore-snapshot', requireAuth, (req, res) => {
+    const { teams } = req.body;
+    if (!Array.isArray(teams) || teams.length === 0) {
+        return res.status(400).json({ error: 'teams array required' });
+    }
+
+    db.serialize(() => {
+        db.run('BEGIN TRANSACTION', err => {
+            if (err) return res.status(500).json({ error: err.message });
+
+            let pending = teams.length;
+            let failed = false;
+
+            teams.forEach(team => {
+                db.run(
+                    `UPDATE tournament_progress
+                     SET round_reached = ?, is_eliminated = ?, is_final_four = ?, is_finalist = ?, is_champion = ?
+                     WHERE id = ?`,
+                    [
+                        team.round_reached,
+                        team.is_eliminated ? 1 : 0,
+                        team.is_final_four ? 1 : 0,
+                        team.is_finalist  ? 1 : 0,
+                        team.is_champion  ? 1 : 0,
+                        team.id
+                    ],
+                    err => {
+                        if (err && !failed) {
+                            failed = true;
+                            db.run('ROLLBACK');
+                            return res.status(500).json({ error: err.message });
+                        }
+                        if (--pending === 0 && !failed) {
+                            db.run('COMMIT', err => {
+                                if (err) return res.status(500).json({ error: err.message });
+                                res.json({ success: true });
+                            });
+                        }
+                    }
+                );
+            });
+        });
+    });
+});
+
 module.exports = router;

@@ -61,19 +61,21 @@
         #bracket-tabs {
             display: flex;
             gap: 6px;
-            margin-bottom: 16px;
+            margin-bottom: 12px;
             flex-wrap: nowrap;
+            overflow-x: auto;
         }
 
         .bracket-tab {
-            flex: 1;
-            padding: 10px 8px;
+            width: 150px;
+            flex-shrink: 0;
+            padding: 7px 8px;
             text-align: center;
             background: #f8f9fa;
             border: 2px solid #ddd;
             border-radius: 6px;
             font-weight: bold;
-            font-size: 0.9em;
+            font-size: 0.82em;
             color: #495057;
             cursor: pointer;
             transition: background 0.15s, border-color 0.15s, color 0.15s;
@@ -96,8 +98,8 @@
 
         @media (max-width: 600px) {
             .bracket-tab {
-                font-size: 0.75em;
-                padding: 10px 4px;
+                font-size: 0.72em;
+                padding: 6px 4px;
             }
             .tab-full  { display: none; }
             .tab-short { display: inline; }
@@ -135,7 +137,7 @@
 
         .bracket-container {
             display: flex;
-            padding: 15px;
+            padding: 10px;
             overflow-x: auto;
         }
 
@@ -143,23 +145,22 @@
 
         /* ── Rounds ── */
         .round {
-            min-width: 190px;
-            margin: 0 8px;
+            min-width: 150px;
+            margin: 0 5px;
             display: flex;
             flex-direction: column;
         }
 
         .round-title {
             text-align: center;
-            padding: 8px;
+            padding: 5px 8px;
             background-color: #f8f9fa;
             border-radius: 4px;
-            margin-bottom: 12px;
+            margin-bottom: 8px;
             font-weight: bold;
-            font-size: 0.85em;
+            font-size: 0.78em;
             color: #495057;
         }
-
 
         .round-content {
             flex: 1;
@@ -174,24 +175,25 @@
             justify-content: center;
         }
 
-        .round-1 .matchup-slot { min-height: 90px;  margin-bottom: 12px; }
-        .round-2 .matchup-slot { min-height: 110px; margin-bottom: 28px; }
-        .round-3 .matchup-slot { min-height: 130px; margin-bottom: 55px; }
-        .round-4 .matchup-slot { min-height: 110px; }
+        .round-1 .matchup-slot { min-height: 0; margin-bottom: 8px; }
+        .round-2 .matchup-slot { min-height: 0; margin-bottom: 16px; }
+        .round-3 .matchup-slot { min-height: 0; margin-bottom: 32px; }
+        .round-4 .matchup-slot { min-height: 0; }
 
         .matchup {
             border: 1px solid #ddd;
             border-radius: 4px;
             overflow: hidden;
+            margin-bottom: 6px;
         }
 
         /* ── Teams ── */
         .team {
             display: flex;
             align-items: center;
-            padding: 8px 10px;
+            padding: 5px 7px;
             border-bottom: 1px solid #eee;
-            min-height: 40px;
+            font-size: 12px;
         }
 
         .team:last-child { border-bottom: none; }
@@ -214,23 +216,23 @@
         }
 
         .team-seed {
-            width: 22px;
+            width: 18px;
             text-align: center;
             font-weight: bold;
-            font-size: 0.85em;
+            font-size: 10px;
             background-color: #f0f0f0;
-            padding: 3px;
+            padding: 2px 3px;
             border-radius: 3px;
-            margin-right: 8px;
+            margin-right: 5px;
             flex-shrink: 0;
         }
 
         .team.eliminated .team-seed { background-color: #f5c6cb; }
 
         .team-logo {
-            width: 24px;
-            height: 24px;
-            margin-right: 8px;
+            width: 20px;
+            height: 20px;
+            margin-right: 5px;
             object-fit: contain;
             flex-shrink: 0;
         }
@@ -244,7 +246,7 @@
 
         /* ── Final Four ── */
         .final-four-section {
-            margin-bottom: 35px;
+            margin-bottom: 20px;
             border: 2px solid #dc3545;
             border-radius: 8px;
             overflow: hidden;
@@ -253,68 +255,70 @@
         .final-four-title {
             background-color: #f8f9fa;
             color: #dc3545;
-            padding: 12px 20px;
-            font-size: 26px;
+            padding: 10px 16px;
+            font-size: 20px;
             font-weight: bold;
             text-align: center;
         }
 
         .final-four-body {
-            padding: 20px;
+            padding: 12px;
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 20px;
+            gap: 12px;
         }
 
         .semifinals-row {
             display: flex;
             justify-content: center;
-            gap: 40px;
+            gap: 20px;
             width: 100%;
             flex-wrap: wrap;
         }
 
         .semifinal-block {
-            width: 280px;
+            width: 200px;
         }
 
         .semifinal-label {
             text-align: center;
             font-weight: bold;
             color: #495057;
-            margin-bottom: 8px;
-            font-size: 0.9em;
+            margin-bottom: 6px;
+            font-size: 0.82em;
         }
 
         .championship-block {
-            width: 280px;
+            width: 200px;
         }
 
         .championship-label {
             text-align: center;
-            padding: 8px;
+            padding: 5px 8px;
             background-color: #ffc107;
             color: #212529;
             border-radius: 4px;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
             font-weight: bold;
+            font-size: 0.82em;
         }
 
         .champion-block {
-            width: 280px;
-            margin-top: 10px;
+            width: 200px;
+            margin-top: 8px;
             text-align: center;
         }
 
         .champion-label {
             text-align: center;
-            padding: 8px;
+            padding: 5px 8px;
             background-color: #ffc107;
             color: #212529;
             border-radius: 4px;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
             font-weight: bold;
+            font-size: 0.82em;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -325,18 +329,18 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 8px;
-            padding: 12px 20px;
+            gap: 6px;
+            padding: 8px 12px;
             background-color: gold;
             border-radius: 8px;
             font-weight: bold;
-            font-size: 1.1em;
+            font-size: 0.95em;
             cursor: pointer;
         }
 
         .champion-team img {
-            width: 36px;
-            height: 36px;
+            width: 24px;
+            height: 24px;
             object-fit: contain;
         }
 
@@ -468,7 +472,7 @@
             <a href="/submit.html">Make a Scoonie</a>
             <a href="/standings.html">Standings</a>
             <a href="/bracket.html" class="active">Bracket</a>
-            <a href="/admin">Admin</a>
+            
         </nav>
     </header>
 
