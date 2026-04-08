@@ -437,6 +437,10 @@
         }
         
         @media (max-width: 768px) {
+            .tournament-container {
+                flex-direction: column;
+            }
+
             .region {
                 max-width: 100%;
             }
@@ -473,6 +477,7 @@
             
             <div class="balance-display">
                 Points Remaining: <span id="balanceDisplay">200</span>
+                <button type="button" id="resetTeamsBtn" style="margin-left:12px;padding:4px 10px;font-size:14px;background:#6c757d;color:#fff;border:none;border-radius:4px;cursor:pointer;">Reset</button>
             </div>
             
             <div class="tournament-container" id="tournamentContainer">
@@ -909,14 +914,43 @@
                 
                 // Update balance display
                 document.getElementById('balanceDisplay').textContent = balance;
-                
+
                 // Update selected teams list
                 renderSelectedTeamsList();
-                
+
                 // Update affordability of all teams
                 updateAffordability();
+                updateResetButton();
             }
             
+            document.getElementById('resetTeamsBtn').addEventListener('click', resetAllTeams);
+
+            function updateResetButton() {
+                const btn = document.getElementById('resetTeamsBtn');
+                const hasSelections = selectedTeams.length > 0 || balance < 200;
+                btn.style.background = hasSelections ? '#dc3545' : '#6c757d';
+                btn.disabled = !hasSelections;
+            }
+
+            // Reset all team selections and restore budget to 200
+            function resetAllTeams() {
+                balance = 200;
+                selectedTeams = [];
+                document.getElementById('balanceDisplay').textContent = balance;
+                // Reset all purchased buttons and row states
+                document.querySelectorAll('.team-button.unpurchase').forEach(button => {
+                    const teamRow = button.closest('.team-row');
+                    const seed = parseInt(teamRow.dataset.seed);
+                    const cost = getTeamCost(seed);
+                    button.classList.remove('unpurchase');
+                    button.textContent = `Purchase\n(-${cost} pts)`;
+                    teamRow.classList.remove('selected');
+                });
+                renderSelectedTeamsList();
+                updateAffordability();
+                updateResetButton();
+            }
+
             // Completely re-render the selected teams list
             function renderSelectedTeamsList() {
                 debug('Rendering selected teams list');

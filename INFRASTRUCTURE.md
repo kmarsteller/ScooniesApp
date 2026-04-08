@@ -62,13 +62,15 @@ The SPF/DKIM/DMARC records are what allow emails to be sent *from* `thescoonies@
 
 **What's running on it:**
 - **Nginx** — a web server that receives incoming traffic on ports 80 (HTTP) and 443 (HTTPS) and forwards it to the Node.js app
-- **Node.js / Express** — the Scoonies app itself, running on port 3000
+- **Node.js / Express** — the Scoonies app itself, running on port 3001
 - **pm2** — a process manager that keeps the Node.js app running. If the app crashes, pm2 restarts it automatically. This is also how the app survives server reboots.
 - **SQLite** — the database, stored as a single file (`scoonies.db`) directly on the droplet's disk
 
 **How Nginx and Node.js work together:** Nginx sits in front and handles the public-facing connection. It passes requests through to Node.js on port 3001 (this is called a "reverse proxy"). Users never connect directly to port 3001.
 
-**Admin subdomain:** `https://admin.scoonies.com` is a separate nginx server block in `/etc/nginx/sites-available/default` that proxies to the same Node.js app on port 3001. HTTPS is handled by a Let's Encrypt certificate issued via Certbot (auto-renews). The admin link is intentionally absent from all public-facing pages — access the admin by navigating directly to `https://admin.scoonies.com/admin`. The session cookie is scoped to `.scoonies.com` so a login on either domain is recognized on the other.
+**SSL:** Both `scoonies.com` and `admin.scoonies.com` have their own Let's Encrypt certificates issued via Certbot (auto-renew). Each has a dedicated port 443 nginx server block in `/etc/nginx/sites-available/default` proxying to Node.js on port 3001. Cloudflare SSL/TLS mode must be set to **Full** (not Flexible) — Flexible causes an infinite redirect loop because nginx redirects HTTP→HTTPS and Cloudflare keeps sending HTTP.
+
+**Admin subdomain:** `https://admin.scoonies.com` is intentionally absent from all public-facing pages — access the admin by navigating directly to `https://admin.scoonies.com/admin`. Sessions are scoped per-domain (no shared cookie), so logging into admin does not affect the main site.
 
 **Key commands on the droplet:**
 ```bash
